@@ -1,0 +1,567 @@
+<?php
+
+namespace App\Http\Controllers\Storefront;
+
+use App\Core\Controller;
+use App\Core\Database;
+use App\Tenant\TenantContext;
+use App\Services\ThemeConfig;
+use App\Services\CartService;
+
+class ProductController extends Controller
+{
+    public function index(): void
+    {
+        $this->renderProductList();
+    }
+
+    public function category(string $slugCategoria): void
+    {
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar categoria por slug
+        $stmt = $db->prepare("
+            SELECT * FROM categorias 
+            WHERE tenant_id = :tenant_id AND slug = :slug
+            LIMIT 1
+        ");
+        $stmt->execute(['tenant_id' => $tenantId, 'slug' => $slugCategoria]);
+        $categoria = $stmt->fetch();
+
+        if (!$categoria) {
+            http_response_code(404);
+            $this->view('errors/404', ['message' => 'Categoria não encontrada']);
+            return;
+        }
+
+        $this->renderProductList($categoria['id'], $categoria);
+    }
+
+    private function renderProductList(?int $categoriaId = null, ?array $categoriaAtual = null): void
+    {
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Parâmetros de filtro
+        $q = trim($_GET['q'] ?? '');
+        $precoMin = !empty($_GET['preco_min']) ? (float)$_GET['preco_min'] : null;
+        $precoMax = !empty($_GET['preco_max']) ? (float)$_GET['preco_max'] : null;
+        $ordenar = $_GET['ordenar'] ?? 'novidades';
+        $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = 12;
+        $offset = ($currentPage - 1) * $perPage;
+
+        // Validar ordenação
+        $ordenacoesValidas = ['novidades', 'menor_preco', 'maior_preco', 'mais_vendidos'];
+        if (!in_array($ordenar, $ordenacoesValidas)) {
+            $ordenar = 'novidades';
+        }
+
+        // Montar query base
+        $where = ['p.tenant_id = :tenant_id', "p.status = 'publish'"];
+        $params = ['tenant_id' => $tenantId];
+        $joins = [];
+
+        // Filtro por categoria
+        if ($categoriaId !== null) {
+            $joins[] = "INNER JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id_pc";
+            $joins[] = "INNER JOIN categorias c ON c.id = pc.categoria_id AND c.tenant_id = :tenant_id_c AND c.id = :categoria_id";
+            $params['tenant_id_pc'] = $tenantId;
+            $params['tenant_id_c'] = $tenantId;
+            $params['categoria_id'] = $categoriaId;
+        } elseif (!empty($_GET['categoria'])) {
+            // Filtro por categoria via query string (slug)
+            $categoriaSlug = $_GET['categoria'];
+            $joins[] = "INNER JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id_pc";
+            $joins[] = "INNER JOIN categorias c ON c.id = pc.categoria_id AND c.tenant_id = :tenant_id_c AND c.slug = :categoria_slug";
+            $params['tenant_id_pc'] = $tenantId;
+            $params['tenant_id_c'] = $tenantId;
+            $params['categoria_slug'] = $categoriaSlug;
+        }
+
+        // Filtro de busca
+        if (!empty($q)) {
+            $where[] = "(p.nome LIKE :q OR p.sku LIKE :q)";
+            $params['q'] = '%' . $q . '%';
+        }
+
+        // Filtro de preço
+        if ($precoMin !== null || $precoMax !== null) {
+            $precoCondition = "COALESCE(p.preco_promocional, p.preco_regular)";
+            if ($precoMin !== null && $precoMax !== null) {
+                $where[] = "{$precoCondition} BETWEEN :preco_min AND :preco_max";
+                $params['preco_min'] = $precoMin;
+                $params['preco_max'] = $precoMax;
+            } elseif ($precoMin !== null) {
+                $where[] = "{$precoCondition} >= :preco_min";
+                $params['preco_min'] = $precoMin;
+            } elseif ($precoMax !== null) {
+                $where[] = "{$precoCondition} <= :preco_max";
+                $params['preco_max'] = $precoMax;
+            }
+        }
+
+        $whereClause = implode(' AND ', $where);
+        $joinClause = !empty($joins) ? implode(' ', $joins) : '';
+
+        // Ordenação
+        $orderBy = match($ordenar) {
+            'menor_preco' => 'ORDER BY COALESCE(p.preco_promocional, p.preco_regular) ASC',
+            'maior_preco' => 'ORDER BY COALESCE(p.preco_promocional, p.preco_regular) DESC',
+            'mais_vendidos' => 'ORDER BY p.data_criacao DESC', // Placeholder até ter métrica real
+            default => 'ORDER BY p.data_criacao DESC'
+        };
+
+        // Contar total
+        $countSql = "
+            SELECT COUNT(DISTINCT p.id) as total 
+            FROM produtos p
+            {$joinClause}
+            WHERE {$whereClause}
+        ";
+        $stmt = $db->prepare($countSql);
+        foreach ($params as $key => $value) {
+            $paramType = is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR;
+            $stmt->bindValue(':' . $key, $value, $paramType);
+        }
+        $stmt->execute();
+        $total = $stmt->fetch()['total'];
+
+        // Buscar produtos
+        $sql = "
+            SELECT DISTINCT p.*
+            FROM produtos p
+            {$joinClause}
+            WHERE {$whereClause}
+            {$orderBy}
+            LIMIT :limit OFFSET :offset
+        ";
+        $stmt = $db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $paramType = is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR;
+            $stmt->bindValue(':' . $key, $value, $paramType);
+        }
+        $stmt->bindValue(':limit', $perPage, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        $produtos = $stmt->fetchAll();
+
+        // Buscar imagem principal para cada produto
+        foreach ($produtos as &$produto) {
+            $stmtImg = $db->prepare("
+                SELECT * FROM produto_imagens 
+                WHERE tenant_id = :tenant_id 
+                AND produto_id = :produto_id 
+                ORDER BY tipo = 'main' DESC, ordem ASC, id ASC 
+                LIMIT 1
+            ");
+            $stmtImg->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $produto['id']
+            ]);
+            $imagem = $stmtImg->fetch();
+            $produto['imagem_principal'] = $imagem ? $imagem : null;
+        }
+
+        // Buscar categorias para filtro
+        $stmt = $db->prepare("
+            SELECT * FROM categorias 
+            WHERE tenant_id = :tenant_id 
+            ORDER BY nome ASC
+        ");
+        $stmt->execute(['tenant_id' => $tenantId]);
+        $categoriasFiltro = $stmt->fetchAll();
+
+        // Carregar tema para breadcrumb e header
+        $theme = [
+            'color_primary' => ThemeConfig::getColor('theme_color_primary', '#2E7D32'),
+            'color_secondary' => ThemeConfig::getColor('theme_color_secondary', '#F7931E'),
+            'color_topbar_bg' => ThemeConfig::getColor('theme_color_topbar_bg', '#1a1a1a'),
+            'color_topbar_text' => ThemeConfig::getColor('theme_color_topbar_text', '#ffffff'),
+            'color_header_bg' => ThemeConfig::getColor('theme_color_header_bg', '#ffffff'),
+            'color_header_text' => ThemeConfig::getColor('theme_color_header_text', '#333333'),
+        ];
+
+        $totalPages = ceil($total / $perPage);
+
+        // Dados do carrinho para o header
+        $cartTotalItems = CartService::getTotalItems();
+        $cartSubtotal = CartService::getSubtotal();
+
+        $this->view('storefront/products/index', [
+            'produtos' => $produtos,
+            'categoriasFiltro' => $categoriasFiltro,
+            'categoriaAtual' => $categoriaAtual,
+            'filtrosAtuais' => [
+                'q' => $q,
+                'categoria' => $categoriaAtual ? $categoriaAtual['slug'] : ($_GET['categoria'] ?? ''),
+                'preco_min' => $precoMin,
+                'preco_max' => $precoMax,
+                'ordenar' => $ordenar,
+            ],
+            'paginacao' => [
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'currentPage' => $currentPage,
+                'hasPrev' => $currentPage > 1,
+                'hasNext' => $currentPage < $totalPages,
+                'perPage' => $perPage
+            ],
+            'theme' => $theme,
+            'cartTotalItems' => $cartTotalItems,
+            'cartSubtotal' => $cartSubtotal,
+        ]);
+    }
+
+    public function show(string $slug): void
+    {
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar produto
+        $stmt = $db->prepare("
+            SELECT * FROM produtos 
+            WHERE tenant_id = :tenant_id 
+            AND slug = :slug 
+            AND status = 'publish'
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'slug' => $slug
+        ]);
+        $produto = $stmt->fetch();
+
+        if (!$produto) {
+            http_response_code(404);
+            $this->view('errors/404', ['message' => 'Produto não encontrado']);
+            return;
+        }
+
+        // Buscar todas as imagens
+        $stmt = $db->prepare("
+            SELECT * FROM produto_imagens 
+            WHERE tenant_id = :tenant_id 
+            AND produto_id = :produto_id 
+            ORDER BY tipo = 'main' DESC, ordem ASC, id ASC
+        ");
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'produto_id' => $produto['id']
+        ]);
+        $imagens = $stmt->fetchAll();
+
+        // Buscar categorias
+        $stmt = $db->prepare("
+            SELECT c.* 
+            FROM categorias c
+            JOIN produto_categorias pc ON pc.categoria_id = c.id
+            WHERE pc.tenant_id = :tenant_id_pc
+            AND c.tenant_id = :tenant_id_c
+            AND pc.produto_id = :produto_id
+            ORDER BY c.nome ASC
+        ");
+        $stmt->execute([
+            'tenant_id_pc' => $tenantId,
+            'tenant_id_c' => $tenantId,
+            'produto_id' => $produto['id']
+        ]);
+        $categorias = $stmt->fetchAll();
+
+        // Buscar vídeos do produto
+        $videosRaw = $this->getVideosByProductId($db, $tenantId, $produto['id']);
+        
+        // Processar vídeos: adicionar informações de embed e thumbnails
+        $videos = [];
+        foreach ($videosRaw as $video) {
+            $videoInfo = $this->processVideoInfo($video['url']);
+            $videos[] = array_merge($video, [
+                'tipo' => $videoInfo['type'],
+                'embed_url' => $videoInfo['embed_url'],
+                'thumb_url' => $videoInfo['thumb_url'],
+            ]);
+        }
+
+        // Buscar produtos relacionados
+        $produtosRelacionados = [];
+        if (!empty($categorias)) {
+            $categoriaPrincipalId = $categorias[0]['id'];
+            
+            $stmt = $db->prepare("
+                SELECT DISTINCT p.*
+                FROM produtos p
+                JOIN produto_categorias pc ON pc.produto_id = p.id
+                WHERE p.tenant_id = :tenant_id
+                AND p.status = 'publish'
+                AND pc.categoria_id = :categoria_id
+                AND pc.tenant_id = :tenant_id_pc
+                AND p.id <> :produto_id
+                ORDER BY p.data_criacao DESC
+                LIMIT 6
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'categoria_id' => $categoriaPrincipalId,
+                'tenant_id_pc' => $tenantId,
+                'produto_id' => $produto['id']
+            ]);
+            $produtosRelacionados = $stmt->fetchAll();
+
+            // Buscar imagem principal para cada produto relacionado
+            foreach ($produtosRelacionados as &$prodRel) {
+                $stmtImg = $db->prepare("
+                    SELECT * FROM produto_imagens 
+                    WHERE tenant_id = :tenant_id 
+                    AND produto_id = :produto_id 
+                    ORDER BY tipo = 'main' DESC, ordem ASC, id ASC 
+                    LIMIT 1
+                ");
+                $stmtImg->execute([
+                    'tenant_id' => $tenantId,
+                    'produto_id' => $prodRel['id']
+                ]);
+                $imagem = $stmtImg->fetch();
+                $prodRel['imagem_principal'] = $imagem ? $imagem : null;
+            }
+        }
+
+        // Carregar tema
+        $theme = [
+            'color_primary' => ThemeConfig::getColor('theme_color_primary', '#2E7D32'),
+            'color_secondary' => ThemeConfig::getColor('theme_color_secondary', '#F7931E'),
+        ];
+
+        // Buscar avaliações aprovadas do produto
+        $stmt = $db->prepare("
+            SELECT 
+                pa.*,
+                c.name as nome_cliente
+            FROM produto_avaliacoes pa
+            LEFT JOIN customers c ON c.id = pa.customer_id AND c.tenant_id = pa.tenant_id
+            WHERE pa.tenant_id = :tenant_id
+            AND pa.produto_id = :produto_id
+            AND pa.status = 'aprovado'
+            ORDER BY pa.created_at DESC
+            LIMIT 10
+        ");
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'produto_id' => $produto['id']
+        ]);
+        $avaliacoes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Calcular média e total de avaliações
+        $stmt = $db->prepare("
+            SELECT 
+                AVG(nota) as media,
+                COUNT(*) as total
+            FROM produto_avaliacoes
+            WHERE tenant_id = :tenant_id
+            AND produto_id = :produto_id
+            AND status = 'aprovado'
+        ");
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'produto_id' => $produto['id']
+        ]);
+        $resumo = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $avaliacoesResumo = [
+            'media' => $resumo['media'] ? (float)$resumo['media'] : 0,
+            'total' => (int)$resumo['total']
+        ];
+
+        // Verificar se cliente logado pode avaliar
+        $clientePodeAvaliar = [
+            'permitido' => false,
+            'motivo' => null
+        ];
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (isset($_SESSION['customer_id']) && !empty($_SESSION['customer_id'])) {
+            $customerId = (int)$_SESSION['customer_id'];
+
+            // Verificar se já avaliou
+            $stmt = $db->prepare("
+                SELECT id FROM produto_avaliacoes
+                WHERE tenant_id = :tenant_id
+                AND produto_id = :produto_id
+                AND customer_id = :customer_id
+                AND status IN ('pendente', 'aprovado')
+                LIMIT 1
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $produto['id'],
+                'customer_id' => $customerId
+            ]);
+
+            if ($stmt->fetch()) {
+                $clientePodeAvaliar['permitido'] = false;
+                $clientePodeAvaliar['motivo'] = 'já avaliou';
+            } else {
+                // Verificar se comprou o produto
+                $stmt = $db->prepare("
+                    SELECT pi.pedido_id
+                    FROM pedido_itens pi
+                    INNER JOIN pedidos p ON p.id = pi.pedido_id
+                    WHERE p.tenant_id = :tenant_id
+                    AND p.customer_id = :customer_id
+                    AND pi.produto_id = :produto_id
+                    AND p.status IN ('paid', 'completed', 'shipped')
+                    LIMIT 1
+                ");
+                $stmt->execute([
+                    'tenant_id' => $tenantId,
+                    'customer_id' => $customerId,
+                    'produto_id' => $produto['id']
+                ]);
+
+                if ($stmt->fetch()) {
+                    $clientePodeAvaliar['permitido'] = true;
+                } else {
+                    $clientePodeAvaliar['permitido'] = false;
+                    $clientePodeAvaliar['motivo'] = 'ainda não comprou este produto';
+                }
+            }
+        } else {
+            $clientePodeAvaliar['permitido'] = false;
+            $clientePodeAvaliar['motivo'] = 'precisa estar logado';
+        }
+
+        // Buscar avaliação do cliente atual (se existir)
+        $avaliacaoClienteAtual = null;
+        if (isset($_SESSION['customer_id']) && !empty($_SESSION['customer_id'])) {
+            $customerId = (int)$_SESSION['customer_id'];
+            $stmt = $db->prepare("
+                SELECT * FROM produto_avaliacoes
+                WHERE tenant_id = :tenant_id
+                AND produto_id = :produto_id
+                AND customer_id = :customer_id
+                LIMIT 1
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $produto['id'],
+                'customer_id' => $customerId
+            ]);
+            $avaliacaoClienteAtual = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        }
+
+        // Dados do carrinho para o header
+        $cartTotalItems = CartService::getTotalItems();
+        $cartSubtotal = CartService::getSubtotal();
+
+        // Mensagem flash de avaliação
+        $reviewMessage = $_SESSION['review_message'] ?? null;
+        $reviewMessageType = $_SESSION['review_message_type'] ?? 'success';
+        unset($_SESSION['review_message'], $_SESSION['review_message_type']);
+
+        $this->view('storefront/products/show', [
+            'produto' => $produto,
+            'imagens' => $imagens,
+            'categorias' => $categorias,
+            'videos' => $videos,
+            'produtosRelacionados' => $produtosRelacionados,
+            'avaliacoes' => $avaliacoes,
+            'avaliacoesResumo' => $avaliacoesResumo,
+            'clientePodeAvaliar' => $clientePodeAvaliar,
+            'avaliacaoClienteAtual' => $avaliacaoClienteAtual,
+            'reviewMessage' => $reviewMessage,
+            'reviewMessageType' => $reviewMessageType,
+            'theme' => $theme,
+            'cartTotalItems' => $cartTotalItems,
+            'cartSubtotal' => $cartSubtotal,
+        ]);
+    }
+
+    /**
+     * Busca vídeos de um produto
+     * 
+     * @param \PDO $db Conexão com o banco
+     * @param int $tenantId ID do tenant
+     * @param int $produtoId ID do produto
+     * @return array Array de vídeos
+     */
+    private function getVideosByProductId(\PDO $db, int $tenantId, int $produtoId): array
+    {
+        $stmt = $db->prepare("
+            SELECT * FROM produto_videos 
+            WHERE tenant_id = :tenant_id 
+            AND produto_id = :produto_id
+            AND (ativo = 1 OR ativo IS NULL)
+            ORDER BY ordem ASC, id ASC
+        ");
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'produto_id' => $produtoId
+        ]);
+        
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Processa informações de vídeo (tipo, embed URL, thumbnail)
+     * 
+     * @param string $url URL do vídeo
+     * @return array Array com 'type', 'embed_url', 'thumb_url'
+     */
+    private function processVideoInfo(string $url): array
+    {
+        $url = trim($url);
+        if (empty($url)) {
+            return [
+                'type' => 'unknown',
+                'embed_url' => '',
+                'thumb_url' => ''
+            ];
+        }
+        
+        // YouTube
+        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/', $url, $matches)) {
+            $videoId = $matches[1];
+            return [
+                'type' => 'youtube',
+                'embed_url' => 'https://www.youtube.com/embed/' . $videoId,
+                'thumb_url' => 'https://img.youtube.com/vi/' . $videoId . '/hqdefault.jpg'
+            ];
+        }
+        
+        // Vimeo
+        if (preg_match('/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/', $url, $matches)) {
+            $videoId = $matches[1];
+            // Vimeo não fornece thumbnail direto via URL simples, usaremos placeholder
+            return [
+                'type' => 'vimeo',
+                'embed_url' => 'https://player.vimeo.com/video/' . $videoId,
+                'thumb_url' => 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect fill="%23667eea" width="320" height="180"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="24">Vimeo</text></svg>')
+            ];
+        }
+        
+        // MP4 ou outros links diretos
+        if (preg_match('/\.(mp4|webm|ogg)(\?.*)?$/i', $url)) {
+            return [
+                'type' => 'mp4',
+                'embed_url' => $url,
+                'thumb_url' => 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect fill="%23764ba2" width="320" height="180"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="24">MP4</text></svg>')
+            ];
+        }
+        
+        // Tentar como MP4 se começar com http/https e não for YouTube/Vimeo
+        if (preg_match('/^https?:\/\//', $url)) {
+            return [
+                'type' => 'mp4',
+                'embed_url' => $url,
+                'thumb_url' => 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect fill="%23764ba2" width="320" height="180"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="24">Vídeo</text></svg>')
+            ];
+        }
+        
+        return [
+            'type' => 'unknown',
+            'embed_url' => $url,
+            'thumb_url' => 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect fill="%23ddd" width="320" height="180"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Vídeo</text></svg>')
+        ];
+    }
+}

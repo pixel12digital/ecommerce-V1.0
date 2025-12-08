@@ -1,0 +1,26 @@
+<?php
+
+use App\Core\Database;
+
+$db = Database::getConnection();
+
+$db->exec("
+    CREATE TABLE IF NOT EXISTS home_category_sections (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        tenant_id BIGINT UNSIGNED NOT NULL,
+        slug_secao VARCHAR(50) NOT NULL,
+        titulo VARCHAR(150) NOT NULL,
+        subtitulo VARCHAR(255) NULL,
+        categoria_id BIGINT UNSIGNED NOT NULL,
+        quantidade_produtos INT UNSIGNED NOT NULL DEFAULT 8,
+        ordem INT UNSIGNED NOT NULL DEFAULT 0,
+        ativo TINYINT(1) NOT NULL DEFAULT 1,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+        INDEX idx_tenant_id (tenant_id),
+        INDEX idx_tenant_slug (tenant_id, slug_secao)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+");
+
+

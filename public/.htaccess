@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Permitir acesso direto a arquivos estáticos e test.php
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(.*)$ - [L]
+
+# Redirecionar tudo para index.php exceto arquivos existentes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
