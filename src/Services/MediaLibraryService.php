@@ -35,16 +35,25 @@ class MediaLibraryService
             $baseDir = $uploadsBasePath . '/' . $tenantId . '/' . $pasta;
             $baseUrl = "/uploads/tenants/{$tenantId}/{$pasta}";
             
+            // Logs temporários para debug
+            error_log('[MEDIA SERVICE DEBUG] Verificando pasta: ' . $pasta);
+            error_log('[MEDIA SERVICE DEBUG] baseDir = ' . $baseDir);
+            error_log('[MEDIA SERVICE DEBUG] baseDir existe? ' . (is_dir($baseDir) ? 'SIM' : 'NÃO'));
+            
             if (is_dir($baseDir)) {
                 $handle = opendir($baseDir);
                 if ($handle) {
+                    $filesInDir = 0;
                     while (($file = readdir($handle)) !== false) {
                         if ($file === '.' || $file === '..') {
                             continue;
                         }
 
                         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                        error_log('[MEDIA SERVICE DEBUG] Arquivo encontrado: ' . $file . ' (ext: ' . $ext . ')');
+                        
                         if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                            error_log('[MEDIA SERVICE DEBUG] Arquivo ignorado (extensão não permitida): ' . $file);
                             continue;
                         }
 
@@ -55,9 +64,15 @@ class MediaLibraryService
                             'folderLabel' => $label,
                             'size' => file_exists($baseDir . '/' . $file) ? filesize($baseDir . '/' . $file) : 0,
                         ];
+                        $filesInDir++;
                     }
                     closedir($handle);
+                    error_log('[MEDIA SERVICE DEBUG] Arquivos válidos encontrados na pasta ' . $pasta . ': ' . $filesInDir);
+                } else {
+                    error_log('[MEDIA SERVICE DEBUG] Erro ao abrir diretório: ' . $baseDir);
                 }
+            } else {
+                error_log('[MEDIA SERVICE DEBUG] Diretório não existe: ' . $baseDir);
             }
         }
 
