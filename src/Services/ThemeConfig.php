@@ -256,26 +256,54 @@ class ThemeConfig
 
     /**
      * Obtém dados de uma página específica
+     * 
+     * Garante que sempre retorna uma estrutura completa com valores padrão,
+     * mesmo quando o conteúdo não foi configurado no admin.
+     * 
+     * Fluxo:
+     * 1. Busca dados salvos em tenant_settings (theme_pages)
+     * 2. Faz merge com defaults (defaults têm prioridade menor)
+     * 3. Garante que campos obrigatórios (title, content) sempre existam
+     * 4. Retorna estrutura completa e segura para renderização
+     * 
+     * @param string $slug Slug da página (ex: 'sobre', 'trocas_devolucoes')
+     * @return array Estrutura completa da página com title, content e outros campos
      */
     public static function getPage(string $slug): array
     {
-        $pages = self::getPages();
-        $page = $pages[$slug] ?? [];
         $defaults = self::getDefaultPages();
         $defaultPage = $defaults[$slug] ?? [];
         
-        // Merge para garantir estrutura completa (especialmente para FAQ com items)
-        $merged = array_merge($defaultPage, $page);
+        // Se não existe default para este slug, retornar página genérica
+        if (empty($defaultPage)) {
+            return [
+                'title' => 'Página não encontrada',
+                'content' => '<p>Esta página não está disponível.</p>',
+            ];
+        }
+        
+        // Buscar dados salvos
+        $pages = self::getPages();
+        $savedPage = $pages[$slug] ?? [];
+        
+        // Merge: defaults primeiro, depois dados salvos (salvos têm prioridade)
+        $merged = array_merge($defaultPage, $savedPage);
+        
+        // Garantir que campos obrigatórios sempre existam com valores seguros
+        $merged['title'] = $merged['title'] ?? $defaultPage['title'] ?? 'Página';
+        $merged['content'] = $merged['content'] ?? $defaultPage['content'] ?? '';
         
         // Garantir que FAQ sempre tenha items como array
         if ($slug === 'faq' && !isset($merged['items'])) {
             $merged['items'] = [];
         }
         
-        return $merged ?: [
-            'title' => 'Página não encontrada',
-            'content' => '<p>Conteúdo não disponível.</p>',
-        ];
+        // Garantir que content seja sempre string (não null)
+        if (!isset($merged['content']) || $merged['content'] === null) {
+            $merged['content'] = '';
+        }
+        
+        return $merged;
     }
 
     /**

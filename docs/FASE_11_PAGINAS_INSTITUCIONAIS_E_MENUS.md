@@ -25,6 +25,120 @@ Esta fase implementa:
 
 ---
 
+## Fase 11.7 - Correção de Erros 500 em Páginas Institucionais (Fail-Safe)
+
+### Problema Identificado
+
+Algumas páginas institucionais (`/sobre`, `/trocas-e-devolucoes`, `/formas-de-pagamento`, etc.) estavam retornando erro 500 quando o conteúdo não estava configurado no admin ou quando havia dados vazios/nulos.
+
+**Causa raiz:**
+- A view `base.php` acessava `$page['title']` diretamente sem verificar se o índice existia
+- O método `ThemeConfig::getPage()` podia retornar arrays incompletos em alguns casos
+- Não havia tratamento fail-safe para conteúdo vazio ou nulo
+
+### Solução Implementada
+
+#### 1. Método `ThemeConfig::getPage()` - Fail-Safe Completo
+
+**Arquivo:** `src/Services/ThemeConfig.php`
+
+**Mudanças:**
+- Sempre retorna estrutura completa com valores padrão
+- Garante que `title` e `content` sempre existam (nunca null)
+- Se slug não existe nos defaults, retorna página genérica
+- Adiciona documentação explicando o fluxo completo
+
+**Comportamento:**
+```php
+// Se conteúdo não configurado → usa defaults
+ThemeConfig::getPage('sobre') 
+// Retorna: ['title' => 'Sobre o Ponto do Golfe', 'content' => '<p>...</p>']
+
+// Se slug não existe → retorna página genérica
+ThemeConfig::getPage('pagina-inexistente')
+// Retorna: ['title' => 'Página não encontrada', 'content' => '<p>Esta página não está disponível.</p>']
+```
+
+#### 2. View `base.php` - Operadores Null Coalesce
+
+**Arquivo:** `themes/default/storefront/pages/base.php`
+
+**Mudanças:**
+- Todos os acessos a `$page['title']` agora usam `$page['title'] ?? 'Página'`
+- Conteúdo vazio exibe mensagem amigável: "Conteúdo em breve."
+- Corrigido erro de sintaxe na linha 17 (variável `$themeFull`)
+
+**Antes:**
+```php
+<title><?= htmlspecialchars($page['title']) ?> - ...</title>
+```
+
+**Depois:**
+```php
+<title><?= htmlspecialchars($page['title'] ?? 'Página') ?> - ...</title>
+```
+
+#### 3. Controller `StaticPageController::renderPage()` - Validação Extra
+
+**Arquivo:** `src/Http/Controllers/Storefront/StaticPageController.php`
+
+**Mudanças:**
+- Adiciona validação extra antes de passar dados para a view
+- Garante que `$page` sempre seja um array válido
+- Garante que campos obrigatórios existam antes do `extract()`
+- Adiciona documentação explicando o comportamento fail-safe
+
+**Comportamento:**
+```php
+// Se $page estiver vazio ou inválido → usa defaults
+if (empty($page) || !is_array($page)) {
+    $page = ['title' => 'Página', 'content' => '<p>Conteúdo em breve.</p>'];
+}
+```
+
+### Resultado Esperado
+
+✅ **Todas as páginas institucionais funcionam mesmo com conteúdo vazio:**
+- `/sobre` → Renderiza com título padrão e conteúdo padrão (ou vazio com mensagem amigável)
+- `/trocas-e-devolucoes` → Renderiza normalmente mesmo sem conteúdo configurado
+- `/formas-de-pagamento` → Renderiza normalmente mesmo sem conteúdo configurado
+- Qualquer página institucional → Nunca retorna erro 500 por causa de dados vazios
+
+✅ **Quando conteúdo é preenchido no admin:**
+- O conteúdo salvo aparece corretamente no frontend
+- Não há warnings ou notices nos logs
+- Layout não quebra com HTML do editor
+
+### Checklist de Testes
+
+Após deploy, testar:
+
+- [ ] Acessar `/sobre` com conteúdo vazio → Deve abrir normalmente (não 500)
+- [ ] Acessar `/trocas-e-devolucoes` com conteúdo vazio → Deve abrir normalmente (não 500)
+- [ ] Acessar `/formas-de-pagamento` com conteúdo vazio → Deve abrir normalmente (não 500)
+- [ ] Preencher conteúdo em `/admin/tema` → Salvar
+- [ ] Acessar página correspondente → Conteúdo deve aparecer corretamente
+- [ ] Verificar logs → Não deve haver warnings relacionados a `$page['title']` ou `$page['content']`
+
+### Arquivos Modificados
+
+1. `src/Services/ThemeConfig.php` - Método `getPage()` com fail-safe completo
+2. `themes/default/storefront/pages/base.php` - Operadores null coalesce e correção de sintaxe
+3. `src/Http/Controllers/Storefront/StaticPageController.php` - Validação extra em `renderPage()`
+
+### Notas Importantes
+
+- **Não altera lógica multi-tenant:** Todas as correções são genéricas e funcionam em modo single e multi
+- **Não altera roteamento:** Apenas garante que dados sempre existam antes da renderização
+- **Compatível com conteúdo existente:** Páginas já configuradas continuam funcionando normalmente
+- **Logs:** Quando uma página é renderizada sem conteúdo configurado, não há log de erro (comportamento esperado)
+
+---
+
+**Status:** ✅ Correção concluída - Aguardando testes em produção
+
+---
+
 ## Fase 1 - Diagnóstico e Mapeamento
 
 ### Arquivos Analisados

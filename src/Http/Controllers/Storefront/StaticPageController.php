@@ -313,9 +313,28 @@ class StaticPageController extends Controller
 
     /**
      * Renderiza uma página usando a view base
+     * 
+     * Garante que a página sempre tenha estrutura válida antes de renderizar.
+     * Se o conteúdo estiver vazio ou nulo, usa valores padrão para evitar erros 500.
+     * 
+     * @param string $viewName Nome da view (usado apenas para referência, não é incluído)
+     * @param array $page Dados da página retornados por ThemeConfig::getPage()
      */
     private function renderPage(string $viewName, array $page): void
     {
+        // Garantir que $page sempre tenha estrutura válida
+        // ThemeConfig::getPage() já garante isso, mas adicionamos uma camada extra de segurança
+        if (empty($page) || !is_array($page)) {
+            $page = [
+                'title' => 'Página',
+                'content' => '<p>Conteúdo em breve.</p>',
+            ];
+        }
+        
+        // Garantir que campos obrigatórios existam
+        $page['title'] = $page['title'] ?? 'Página';
+        $page['content'] = $page['content'] ?? '';
+        
         // Extrair variáveis para serem usadas na view
         extract([
             'page' => $page,

@@ -14,17 +14,6 @@ $loja = [
 
 // Carregar tema completo (incluindo topbar e footer)
 $themeFull = \App\Services\ThemeConfig::getFullThemeConfig();
-    'topbar_text' => \App\Services\ThemeConfig::get('topbar_text', 'Frete grátis acima de R$ 299 | Troca garantida em até 7 dias | Outlet de golfe'),
-    'menu_main' => \App\Services\ThemeConfig::getMainMenu(),
-    'logo_url' => \App\Services\ThemeConfig::get('logo_url', ''),
-    'footer_phone' => \App\Services\ThemeConfig::get('footer_phone', ''),
-    'footer_whatsapp' => \App\Services\ThemeConfig::get('footer_whatsapp', ''),
-    'footer_email' => \App\Services\ThemeConfig::get('footer_email', ''),
-    'footer_address' => \App\Services\ThemeConfig::get('footer_address', ''),
-    'footer_social_instagram' => \App\Services\ThemeConfig::get('footer_social_instagram', ''),
-    'footer_social_facebook' => \App\Services\ThemeConfig::get('footer_social_facebook', ''),
-    'footer_social_youtube' => \App\Services\ThemeConfig::get('footer_social_youtube', ''),
-];
 
 // Dados do carrinho
 $cartTotalItems = \App\Services\CartService::getTotalItems();
@@ -35,7 +24,7 @@ $cartSubtotal = \App\Services\CartService::getSubtotal();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($page['title']) ?> - <?= htmlspecialchars($loja['nome']) ?></title>
+    <title><?= htmlspecialchars($page['title'] ?? 'Página') ?> - <?= htmlspecialchars($loja['nome']) ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
@@ -651,16 +640,16 @@ $cartSubtotal = \App\Services\CartService::getSubtotal();
         <div class="breadcrumb-container">
             <a href="<?= $basePath ?>/">Home</a>
             <span>></span>
-            <span><?= htmlspecialchars($page['title']) ?></span>
+            <span><?= htmlspecialchars($page['title'] ?? 'Página') ?></span>
         </div>
     </div>
     
     <!-- Conteúdo -->
     <div class="container">
         <div class="page-content">
-            <h1 class="page-title"><?= htmlspecialchars($page['title']) ?></h1>
+            <h1 class="page-title"><?= htmlspecialchars($page['title'] ?? 'Página') ?></h1>
             <div class="page-body">
-                <?= $page['content'] ?? '' ?>
+                <?= !empty($page['content']) ? $page['content'] : '<p>Conteúdo em breve.</p>' ?>
             </div>
         </div>
     </div>
