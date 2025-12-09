@@ -34,7 +34,10 @@ class MediaLibraryService
         ];
         
         // Se folder foi especificado, filtrar apenas essa pasta
+        // MAS: se a pasta filtrada estiver vazia, fazer fallback para todas as pastas
+        $folderEspecifico = null;
         if ($folder !== null && isset($pastas[$folder])) {
+            $folderEspecifico = $folder;
             $pastas = [$folder => $pastas[$folder]];
             error_log('[MEDIA SERVICE DEBUG] Filtrando apenas pasta: ' . $folder);
         } else {
@@ -84,6 +87,55 @@ class MediaLibraryService
             } else {
                 error_log('[MEDIA SERVICE DEBUG] Diretório não existe: ' . $baseDir);
             }
+        }
+
+        // Se foi filtrado por uma pasta específica e não encontrou nada, fazer fallback para todas as pastas
+        if ($folderEspecifico !== null && count($arquivos) === 0) {
+            error_log('[MEDIA SERVICE DEBUG] Pasta ' . $folderEspecifico . ' está vazia - fazendo fallback para todas as pastas');
+            
+            // Reconstruir array de todas as pastas
+            $todasPastas = [
+                'category-pills' => 'Categorias em Destaque',
+                'produtos' => 'Produtos',
+                'logo' => 'Logos',
+                'banners' => 'Banners',
+            ];
+            
+            // Escanear todas as pastas novamente
+            foreach ($todasPastas as $pasta => $label) {
+                $baseDir = $uploadsBasePath . '/' . $tenantId . '/' . $pasta;
+                $baseUrl = "/uploads/tenants/{$tenantId}/{$pasta}";
+                
+                error_log('[MEDIA SERVICE DEBUG] [FALLBACK] Verificando pasta: ' . $pasta);
+                error_log('[MEDIA SERVICE DEBUG] [FALLBACK] baseDir = ' . $baseDir);
+                
+                if (is_dir($baseDir)) {
+                    $handle = opendir($baseDir);
+                    if ($handle) {
+                        while (($file = readdir($handle)) !== false) {
+                            if ($file === '.' || $file === '..') {
+                                continue;
+                            }
+
+                            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                                continue;
+                            }
+
+                            $arquivos[] = [
+                                'url' => $baseUrl . '/' . $file,
+                                'filename' => $file,
+                                'folder' => $pasta,
+                                'folderLabel' => $label,
+                                'size' => file_exists($baseDir . '/' . $file) ? filesize($baseDir . '/' . $file) : 0,
+                            ];
+                        }
+                        closedir($handle);
+                    }
+                }
+            }
+            
+            error_log('[MEDIA SERVICE DEBUG] [FALLBACK] Total após fallback: ' . count($arquivos));
         }
 
         // Ordenar por nome
