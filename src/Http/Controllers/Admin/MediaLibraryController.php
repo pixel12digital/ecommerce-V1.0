@@ -8,6 +8,25 @@ use App\Tenant\TenantContext;
 
 class MediaLibraryController extends Controller
 {
+    /**
+     * Helper para verificar se está em modo debug
+     */
+    private function isDebugMode(): bool
+    {
+        $config = require __DIR__ . '/../../../config/app.php';
+        return ($config['debug'] ?? false) === true || ($config['env'] ?? 'production') === 'development';
+    }
+    
+    /**
+     * Helper para log condicional (apenas em modo debug)
+     */
+    private function debugLog(string $message): void
+    {
+        if ($this->isDebugMode()) {
+            error_log($message);
+        }
+    }
+    
     public function index(): void
     {
         $tenantId = TenantContext::id();
@@ -51,10 +70,10 @@ class MediaLibraryController extends Controller
             $folder = $_GET['folder'] ?? null;
             $query = $_GET['q'] ?? '';
             
-            // Logs temporários para debug (remover após identificar problema)
-            error_log('[MEDIA PICKER DEBUG] tenant_id = ' . $tenantId);
-            error_log('[MEDIA PICKER DEBUG] folder = ' . ($folder ?? 'null'));
-            error_log('[MEDIA PICKER DEBUG] query = ' . ($query ?: 'empty'));
+            // Logs condicionais (apenas em modo debug)
+            $this->debugLog('[MEDIA PICKER DEBUG] tenant_id = ' . $tenantId);
+            $this->debugLog('[MEDIA PICKER DEBUG] folder = ' . ($folder ?? 'null'));
+            $this->debugLog('[MEDIA PICKER DEBUG] query = ' . ($query ?: 'empty'));
             
             if (!empty($query)) {
                 $imagens = MediaLibraryService::buscarImagens($tenantId, $query);
@@ -67,12 +86,11 @@ class MediaLibraryController extends Controller
                 $imagens = [];
             }
             
-            // Logs temporários para debug (reduzidos - paths.php já é logado no service)
-            error_log('[MEDIA PICKER DEBUG] quantidade de arquivos encontrados = ' . count($imagens));
-            if (count($imagens) > 0) {
-                error_log('[MEDIA PICKER DEBUG] primeiro arquivo = ' . json_encode($imagens[0]));
+            // Logs condicionais (apenas em modo debug)
+            $this->debugLog('[MEDIA PICKER DEBUG] quantidade de arquivos encontrados = ' . count($imagens));
+            if (count($imagens) > 0 && $this->isDebugMode()) {
+                $this->debugLog('[MEDIA PICKER DEBUG] primeiro arquivo = ' . json_encode($imagens[0]));
             }
-            // Removido: logs de caminho físico (já logados no MediaLibraryService)
             
             ob_clean();
             header('Content-Type: application/json; charset=utf-8');

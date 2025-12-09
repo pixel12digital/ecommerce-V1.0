@@ -5,6 +5,25 @@ namespace App\Services;
 class MediaLibraryService
 {
     /**
+     * Helper para verificar se está em modo debug
+     * Logs só são escritos se APP_DEBUG=true ou APP_ENV=development
+     */
+    private static function isDebugMode(): bool
+    {
+        $config = require __DIR__ . '/../../config/app.php';
+        return ($config['debug'] ?? false) === true || ($config['env'] ?? 'production') === 'development';
+    }
+    
+    /**
+     * Helper para log condicional (apenas em modo debug)
+     */
+    private static function debugLog(string $message): void
+    {
+        if (self::isDebugMode()) {
+            error_log($message);
+        }
+    }
+    /**
      * Lista todas as imagens disponíveis para um tenant
      * 
      * @param int $tenantId ID do tenant
@@ -16,12 +35,12 @@ class MediaLibraryService
         $paths = require __DIR__ . '/../../config/paths.php';
         $uploadsBasePath = $paths['uploads_produtos_base_path'];
         
-        // Logs temporários para debug
-        error_log('[MEDIA SERVICE DEBUG] ===== INÍCIO listarImagensDoTenant =====');
-        error_log('[MEDIA SERVICE DEBUG] tenant_id = ' . $tenantId);
-        error_log('[MEDIA SERVICE DEBUG] folder = ' . ($folder ?? 'null'));
-        error_log('[MEDIA SERVICE DEBUG] uploads_produtos_base_path = ' . $uploadsBasePath);
-        error_log('[MEDIA SERVICE DEBUG] caminho completo base = ' . $uploadsBasePath . '/' . $tenantId);
+        // Logs condicionais (apenas em modo debug)
+        self::debugLog('[MEDIA SERVICE DEBUG] ===== INÍCIO listarImagensDoTenant =====');
+        self::debugLog('[MEDIA SERVICE DEBUG] tenant_id = ' . $tenantId);
+        self::debugLog('[MEDIA SERVICE DEBUG] folder = ' . ($folder ?? 'null'));
+        self::debugLog('[MEDIA SERVICE DEBUG] uploads_produtos_base_path = ' . $uploadsBasePath);
+        self::debugLog('[MEDIA SERVICE DEBUG] caminho completo base = ' . $uploadsBasePath . '/' . $tenantId);
         
         $arquivos = [];
         
@@ -39,19 +58,19 @@ class MediaLibraryService
         if ($folder !== null && isset($pastas[$folder])) {
             $folderEspecifico = $folder;
             $pastas = [$folder => $pastas[$folder]];
-            error_log('[MEDIA SERVICE DEBUG] Filtrando apenas pasta: ' . $folder);
+            self::debugLog('[MEDIA SERVICE DEBUG] Filtrando apenas pasta: ' . $folder);
         } else {
-            error_log('[MEDIA SERVICE DEBUG] Sem filtro de pasta - escaneando todas as pastas');
+            self::debugLog('[MEDIA SERVICE DEBUG] Sem filtro de pasta - escaneando todas as pastas');
         }
         
         foreach ($pastas as $pasta => $label) {
             $baseDir = $uploadsBasePath . '/' . $tenantId . '/' . $pasta;
             $baseUrl = "/uploads/tenants/{$tenantId}/{$pasta}";
             
-            // Logs temporários para debug
-            error_log('[MEDIA SERVICE DEBUG] Verificando pasta: ' . $pasta);
-            error_log('[MEDIA SERVICE DEBUG] baseDir = ' . $baseDir);
-            error_log('[MEDIA SERVICE DEBUG] baseDir existe? ' . (is_dir($baseDir) ? 'SIM' : 'NÃO'));
+            // Logs condicionais (apenas em modo debug)
+            self::debugLog('[MEDIA SERVICE DEBUG] Verificando pasta: ' . $pasta);
+            self::debugLog('[MEDIA SERVICE DEBUG] baseDir = ' . $baseDir);
+            self::debugLog('[MEDIA SERVICE DEBUG] baseDir existe? ' . (is_dir($baseDir) ? 'SIM' : 'NÃO'));
             
             if (is_dir($baseDir)) {
                 $handle = opendir($baseDir);
@@ -79,18 +98,18 @@ class MediaLibraryService
                         $filesInDir++;
                     }
                     closedir($handle);
-                    error_log('[MEDIA SERVICE DEBUG] Arquivos válidos encontrados na pasta ' . $pasta . ': ' . $filesInDir);
+                    self::debugLog('[MEDIA SERVICE DEBUG] Arquivos válidos encontrados na pasta ' . $pasta . ': ' . $filesInDir);
                 } else {
-                    error_log('[MEDIA SERVICE DEBUG] Erro ao abrir diretório: ' . $baseDir);
+                    self::debugLog('[MEDIA SERVICE DEBUG] Erro ao abrir diretório: ' . $baseDir);
                 }
             } else {
-                error_log('[MEDIA SERVICE DEBUG] Diretório não existe: ' . $baseDir);
+                self::debugLog('[MEDIA SERVICE DEBUG] Diretório não existe: ' . $baseDir);
             }
         }
 
         // Se foi filtrado por uma pasta específica e não encontrou nada, fazer fallback para todas as pastas
         if ($folderEspecifico !== null && count($arquivos) === 0) {
-            error_log('[MEDIA SERVICE DEBUG] Pasta ' . $folderEspecifico . ' está vazia - fazendo fallback para todas as pastas');
+            self::debugLog('[MEDIA SERVICE DEBUG] Pasta ' . $folderEspecifico . ' está vazia - fazendo fallback para todas as pastas');
             
             // Reconstruir array de todas as pastas
             $todasPastas = [
@@ -105,8 +124,8 @@ class MediaLibraryService
                 $baseDir = $uploadsBasePath . '/' . $tenantId . '/' . $pasta;
                 $baseUrl = "/uploads/tenants/{$tenantId}/{$pasta}";
                 
-                error_log('[MEDIA SERVICE DEBUG] [FALLBACK] Verificando pasta: ' . $pasta);
-                error_log('[MEDIA SERVICE DEBUG] [FALLBACK] baseDir = ' . $baseDir);
+                self::debugLog('[MEDIA SERVICE DEBUG] [FALLBACK] Verificando pasta: ' . $pasta);
+                self::debugLog('[MEDIA SERVICE DEBUG] [FALLBACK] baseDir = ' . $baseDir);
                 
                 if (is_dir($baseDir)) {
                     $handle = opendir($baseDir);
@@ -134,7 +153,7 @@ class MediaLibraryService
                 }
             }
             
-            error_log('[MEDIA SERVICE DEBUG] [FALLBACK] Total após fallback: ' . count($arquivos));
+            self::debugLog('[MEDIA SERVICE DEBUG] [FALLBACK] Total após fallback: ' . count($arquivos));
         }
 
         // Ordenar por nome
@@ -142,9 +161,9 @@ class MediaLibraryService
             return strcmp($a['filename'], $b['filename']);
         });
 
-        // Log final
-        error_log('[MEDIA SERVICE DEBUG] Total de arquivos encontrados: ' . count($arquivos));
-        error_log('[MEDIA SERVICE DEBUG] ===== FIM listarImagensDoTenant =====');
+        // Log final (apenas em modo debug)
+        self::debugLog('[MEDIA SERVICE DEBUG] Total de arquivos encontrados: ' . count($arquivos));
+        self::debugLog('[MEDIA SERVICE DEBUG] ===== FIM listarImagensDoTenant =====');
 
         return $arquivos;
     }
