@@ -16,6 +16,13 @@ class MediaLibraryService
         $paths = require __DIR__ . '/../../config/paths.php';
         $uploadsBasePath = $paths['uploads_produtos_base_path'];
         
+        // Logs temporários para debug
+        error_log('[MEDIA SERVICE DEBUG] ===== INÍCIO listarImagensDoTenant =====');
+        error_log('[MEDIA SERVICE DEBUG] tenant_id = ' . $tenantId);
+        error_log('[MEDIA SERVICE DEBUG] folder = ' . ($folder ?? 'null'));
+        error_log('[MEDIA SERVICE DEBUG] uploads_produtos_base_path = ' . $uploadsBasePath);
+        error_log('[MEDIA SERVICE DEBUG] caminho completo base = ' . $uploadsBasePath . '/' . $tenantId);
+        
         $arquivos = [];
         
         // Definir pastas a escanear
@@ -29,6 +36,9 @@ class MediaLibraryService
         // Se folder foi especificado, filtrar apenas essa pasta
         if ($folder !== null && isset($pastas[$folder])) {
             $pastas = [$folder => $pastas[$folder]];
+            error_log('[MEDIA SERVICE DEBUG] Filtrando apenas pasta: ' . $folder);
+        } else {
+            error_log('[MEDIA SERVICE DEBUG] Sem filtro de pasta - escaneando todas as pastas');
         }
         
         foreach ($pastas as $pasta => $label) {
