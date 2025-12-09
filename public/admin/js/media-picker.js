@@ -347,8 +347,7 @@
                     
                     try {
                         var data = JSON.parse(text);
-                        console.log('[MEDIA PICKER] JSON parsed =', data);
-                        console.log('[MEDIA PICKER] success =', data && data.success, 'files length =', data && data.files && data.files.length);
+                        // Log reduzido (informação já será logada no próximo .then)
                         return data;
                     } catch (e) {
                         console.error('[MEDIA PICKER] Erro ao parsear JSON:', e);
@@ -382,17 +381,9 @@
 
                 grid.innerHTML = '';
                 
-                // Debug detalhado antes de verificar array
-                console.log('[MEDIA PICKER] Verificando data.files...');
-                console.log('[MEDIA PICKER] data.files existe?', typeof data.files !== 'undefined');
-                console.log('[MEDIA PICKER] data.files é array?', Array.isArray(data.files));
-                console.log('[MEDIA PICKER] data.files.length:', data.files ? data.files.length : 'undefined');
-                console.log('[MEDIA PICKER] data.files tipo:', typeof data.files);
-                console.log('[MEDIA PICKER] data.files valor completo:', data.files);
-                
+                // Debug reduzido (mantendo apenas logs essenciais)
                 if (!data.files || !Array.isArray(data.files) || data.files.length === 0) {
                     console.log('[Media Picker] Nenhuma imagem encontrada (array vazio ou não é array)');
-                    console.log('[Media Picker] data.files é array?', Array.isArray(data.files));
                     console.log('[Media Picker] data.files.length:', data.files ? data.files.length : 'undefined');
                     grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #666;">Nenhuma imagem encontrada ainda. Use o campo acima para fazer upload.</div>';
                     grid.style.display = 'grid';

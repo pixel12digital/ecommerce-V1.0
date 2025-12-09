@@ -67,17 +67,12 @@ class MediaLibraryController extends Controller
                 $imagens = [];
             }
             
-            // Logs temporários para debug
+            // Logs temporários para debug (reduzidos - paths.php já é logado no service)
             error_log('[MEDIA PICKER DEBUG] quantidade de arquivos encontrados = ' . count($imagens));
             if (count($imagens) > 0) {
                 error_log('[MEDIA PICKER DEBUG] primeiro arquivo = ' . json_encode($imagens[0]));
             }
-            
-            // Log do caminho físico sendo varrido (via service)
-            $paths = require dirname(__DIR__, 4) . '/config/paths.php';
-            $uploadsBasePath = $paths['uploads_produtos_base_path'];
-            error_log('[MEDIA PICKER DEBUG] uploads_produtos_base_path = ' . $uploadsBasePath);
-            error_log('[MEDIA PICKER DEBUG] caminho completo tenant = ' . $uploadsBasePath . '/' . $tenantId);
+            // Removido: logs de caminho físico (já logados no MediaLibraryService)
             
             ob_clean();
             header('Content-Type: application/json; charset=utf-8');

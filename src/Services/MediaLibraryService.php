@@ -63,11 +63,10 @@ class MediaLibraryService
                         }
 
                         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-                        error_log('[MEDIA SERVICE DEBUG] Arquivo encontrado: ' . $file . ' (ext: ' . $ext . ')');
+                        // Log apenas se houver muitos arquivos ou em caso de erro (reduzir verbosidade)
                         
                         if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
-                            error_log('[MEDIA SERVICE DEBUG] Arquivo ignorado (extensão não permitida): ' . $file);
-                            continue;
+                            continue; // Removido log de arquivo ignorado para reduzir verbosidade
                         }
 
                         $arquivos[] = [
