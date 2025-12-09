@@ -18,25 +18,38 @@
      * Deve ser chamado após o DOM estar carregado
      */
     function init() {
+        console.log('[Media Picker] Inicializando...');
+        
         // Criar modal se não existir
         if (!document.getElementById('pg-media-picker-modal')) {
             createModal();
+            console.log('[Media Picker] Modal criado');
         }
         modalElement = document.getElementById('pg-media-picker-modal');
+        
+        if (!modalElement) {
+            console.error('[Media Picker] Erro: Modal não foi criado!');
+            return;
+        }
 
         // Escutar cliques em botões .js-open-media-library
         document.addEventListener('click', function(event) {
             var btn = event.target.closest('.js-open-media-library');
             if (btn) {
+                console.log('[Media Picker] Botão clicado:', btn);
                 event.preventDefault();
                 var targetSelector = btn.getAttribute('data-media-target');
+                var folder = btn.getAttribute('data-folder') || null;
+                console.log('[Media Picker] Target:', targetSelector, 'Folder:', folder);
                 if (targetSelector) {
-                    // Detectar folder do botão
-                    var folder = btn.getAttribute('data-folder') || null;
                     openMediaLibrary(targetSelector, folder);
+                } else {
+                    console.error('[Media Picker] Erro: data-media-target não encontrado no botão');
                 }
             }
         });
+        
+        console.log('[Media Picker] Inicialização concluída');
 
         // Detectar basePath
         var scripts = document.getElementsByTagName('script');
@@ -45,6 +58,7 @@
                 var match = scripts[i].src.match(/(.*)\/admin\/js\/media-picker\.js/);
                 if (match) {
                     basePath = match[1];
+                    console.log('[Media Picker] basePath detectado do script src:', basePath);
                 }
                 break;
             }
@@ -52,7 +66,13 @@
         // Fallback: tentar detectar do body ou window
         if (!basePath && window.basePath) {
             basePath = window.basePath;
+            console.log('[Media Picker] basePath detectado do window.basePath:', basePath);
         }
+        if (!basePath) {
+            console.warn('[Media Picker] basePath não detectado, usando vazio');
+            basePath = '';
+        }
+        console.log('[Media Picker] basePath final:', basePath);
     }
 
     /**
@@ -108,9 +128,15 @@
      * @param {string} folder Pasta opcional para filtrar (ex: 'banners', 'category-pills')
      */
     function openMediaLibrary(targetSelector, folder) {
+        console.log('[Media Picker] openMediaLibrary chamado:', targetSelector, folder);
         var targetInput = document.querySelector(targetSelector);
         if (!targetInput) {
-            console.error('Media Picker: Input não encontrado:', targetSelector);
+            console.error('[Media Picker] Input não encontrado:', targetSelector);
+            return;
+        }
+        
+        if (!modalElement) {
+            console.error('[Media Picker] Modal não está disponível!');
             return;
         }
 

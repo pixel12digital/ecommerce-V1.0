@@ -812,7 +812,17 @@
     
     $mediaPickerPath = admin_asset_path('js/media-picker.js');
     ?>
-    <script src="<?= htmlspecialchars($mediaPickerPath) ?>"></script>
+    <script src="<?= htmlspecialchars($mediaPickerPath) ?>" onerror="console.error('Erro ao carregar media-picker.js:', this.src);"></script>
+    <script>
+        // Debug: verificar se o script foi carregado
+        window.addEventListener('load', function() {
+            if (typeof window.openMediaLibrary === 'function') {
+                console.log('[Layout] media-picker.js carregado com sucesso');
+            } else {
+                console.error('[Layout] media-picker.js NÃO foi carregado ou não está disponível');
+            }
+        });
+    </script>
 </body>
 </html>
 
