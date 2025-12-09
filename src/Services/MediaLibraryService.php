@@ -91,6 +91,10 @@ class MediaLibraryService
             return strcmp($a['filename'], $b['filename']);
         });
 
+        // Log final
+        error_log('[MEDIA SERVICE DEBUG] Total de arquivos encontrados: ' . count($arquivos));
+        error_log('[MEDIA SERVICE DEBUG] ===== FIM listarImagensDoTenant =====');
+
         return $arquivos;
     }
     
