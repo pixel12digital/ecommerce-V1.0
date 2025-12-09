@@ -62,19 +62,36 @@ $uri = $_SERVER['REQUEST_URI'] ?? '/';
 // Remover query string da URI
 $uri = parse_url($uri, PHP_URL_PATH);
 
-// Detectar e remover caminho base automaticamente
-// Funciona tanto localmente quanto em produção
+/**
+ * Detectar e remover caminho base automaticamente
+ * 
+ * Suporta múltiplos cenários:
+ * - Desenvolvimento local: /ecommerce-v1.0/public/...
+ * - Produção com DocumentRoot em public/: /... (sem prefixo)
+ * - Produção com DocumentRoot na raiz + index.php fallback: /... (sem prefixo)
+ * - Produção com DocumentRoot na raiz + .htaccess: /public/... (remove /public)
+ * 
+ * Usa SCRIPT_NAME para detectar o caminho base de forma mais robusta,
+ * evitando dependência de strings hardcoded ou configurações específicas.
+ */
+$scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
+$scriptDir = rtrim($scriptDir, '/');
 
-// Se a URI contém /ecommerce-v1.0/public (desenvolvimento local)
+// Se SCRIPT_NAME indica que estamos em um subdiretório, remover da URI
+if ($scriptDir !== '' && $scriptDir !== '/') {
+    // Se a URI começa com o diretório do script, removê-lo
+    if (strpos($uri, $scriptDir) === 0) {
+        $uri = substr($uri, strlen($scriptDir));
+    }
+}
+
+// Fallback: remover prefixos conhecidos se ainda estiverem presentes
+// (para compatibilidade com instalações antigas ou configurações específicas)
 if (strpos($uri, '/ecommerce-v1.0/public') === 0) {
     $uri = substr($uri, strlen('/ecommerce-v1.0/public'));
-}
-// Se a URI contém /public e não é apenas /public (quando DocumentRoot aponta para raiz)
-elseif (strpos($uri, '/public') === 0 && $uri !== '/public' && $uri !== '/public/') {
+} elseif (strpos($uri, '/public') === 0 && $uri !== '/public' && $uri !== '/public/') {
     $uri = substr($uri, strlen('/public'));
 }
-// Em produção, se o DocumentRoot aponta para public_html/ e há redirecionamento via .htaccess
-// A URI já vem sem o /public, então não precisa remover nada
 
 $uri = rtrim($uri, '/') ?: '/';
 

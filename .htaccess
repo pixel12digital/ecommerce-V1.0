@@ -1,24 +1,37 @@
 # .htaccess na raiz do projeto
-# Redireciona todas as requisições para public/index.php
-# Funciona tanto localmente quanto em produção
-
-# Habilitar RewriteEngine
-RewriteEngine On
+# 
+# IMPORTANTE: Este arquivo é OPCIONAL. A aplicação funciona mesmo sem ele
+# graças ao index.php de fallback na raiz.
+# 
+# Use este arquivo apenas se o provedor de hospedagem respeitar .htaccess
+# e você quiser usar rewrite ao invés do index.php de fallback.
+# 
+# Em hostings compartilhados onde AllowOverride está restrito ou .htaccess
+# não funciona, o index.php na raiz garante que a aplicação funcione.
 
 # Desabilitar listagem de diretórios
 Options -Indexes
 
-# Permitir acesso direto a arquivos existentes na raiz
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^(.*)$ - [L]
+# Bloquear acesso direto a arquivos sensíveis
+<FilesMatch "^(\.env|composer\.(json|lock)|\.git)">
+    Require all denied
+</FilesMatch>
 
-# Permitir acesso direto a diretórios existentes (mas não listar conteúdo)
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteCond %{REQUEST_URI} !^/public/
-RewriteRule ^(.*)$ - [L]
+# ============================================
+# REGRAS DE REWRITE (OPCIONAIS)
+# ============================================
+# Descomente as linhas abaixo apenas se o provedor respeitar .htaccess
+# e você preferir usar rewrite ao invés do index.php de fallback.
+# ============================================
 
-# Redirecionar tudo que não for arquivo ou diretório para public/index.php
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ public/index.php [QSA,L]
+# RewriteEngine On
+# 
+# # Permitir acesso direto a arquivos existentes na raiz
+# RewriteCond %{REQUEST_FILENAME} -f
+# RewriteRule ^(.*)$ - [L]
+# 
+# # Redirecionar tudo que não for arquivo ou diretório para public/index.php
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^(.*)$ public/index.php [QSA,L]
 

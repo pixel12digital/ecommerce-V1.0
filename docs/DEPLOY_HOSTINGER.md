@@ -199,9 +199,24 @@ composer install --no-dev
 
 - O arquivo `.env` NÃO deve ser commitado no Git (já está no `.gitignore`)
 - O arquivo `.env` deve estar na RAIZ do projeto, não em `public/`
-- O DocumentRoot deve apontar para `public/`, não para a raiz
+- O DocumentRoot pode apontar para `public/` OU para a raiz (há `index.php` de fallback)
 - Sempre execute `composer install` após o deploy
 - Verifique as permissões de arquivos e diretórios
+
+## 🔄 Solução para Hostings com Restrições (403 Forbidden)
+
+Se você está recebendo erro 403 mesmo após seguir este guia, a aplicação agora possui um **`index.php` de fallback na raiz** que funciona mesmo quando:
+
+- O `.htaccess` não está sendo processado (AllowOverride restrito)
+- O DocumentRoot aponta para a raiz (`public_html/`) ao invés de `public_html/public/`
+- O provedor não permite configuração de VirtualHost
+
+**Como funciona:**
+- O `index.php` na raiz verifica se `public/index.php` existe
+- Se existir, inclui diretamente (bypass do `.htaccess`)
+- Isso garante que a aplicação funcione mesmo em hostings compartilhados com restrições
+
+**Para mais detalhes:** Veja [Deploy Hostinger - Instalação Independente](DEPLOY_HOSTINGER_PONTODOGOLFE.md)
 
 ## 🔍 Verificação Rápida
 
