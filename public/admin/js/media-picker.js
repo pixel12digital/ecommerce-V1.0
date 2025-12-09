@@ -319,17 +319,49 @@
             url += '?folder=' + encodeURIComponent(folderToUse);
         }
         
-        console.log('[Media Picker] Carregando imagens de:', url);
-        console.log('[Media Picker] basePath:', basePath);
-        console.log('[Media Picker] folder:', folderToUse);
+        // Logs explícitos antes do fetch (conforme solicitado)
+        console.log('[MEDIA PICKER] basePath =', basePath);
+        console.log('[MEDIA PICKER] URL chamada =', url);
+        console.log('[MEDIA PICKER] folderToUse =', folderToUse);
         
         fetch(url)
             .then(function(response) {
-                console.log('[Media Picker] Response status:', response.status);
+                console.log('[MEDIA PICKER] HTTP status =', response.status);
+                
+                if (!response.ok) {
+                    return response.text().then(function(text) {
+                        console.error('[MEDIA PICKER] Erro HTTP ' + response.status + ', resposta:', text.slice(0, 300));
+                        throw new Error('Erro ao carregar imagens: ' + response.status);
+                    });
+                }
+                
+                // Capturar resposta raw antes de parsear JSON
+                return response.text().then(function(text) {
+                    console.log('[MEDIA PICKER] RAW response text =', text.slice(0, 300));
+                    
+                    // Verificar se é HTML (redirect/login)
+                    if (text.trim().startsWith('<')) {
+                        console.error('[MEDIA PICKER] Resposta é HTML, não JSON! Possível redirect de login.');
+                        throw new Error('Resposta do servidor não é JSON. Possível problema de autenticação.');
+                    }
+                    
+                    try {
+                        var data = JSON.parse(text);
+                        console.log('[MEDIA PICKER] JSON parsed =', data);
+                        console.log('[MEDIA PICKER] success =', data && data.success, 'files length =', data && data.files && data.files.length);
+                        return data;
+                    } catch (e) {
+                        console.error('[MEDIA PICKER] Erro ao parsear JSON:', e);
+                        console.error('[MEDIA PICKER] Texto completo da resposta:', text);
+                        throw new Error('Resposta não é JSON válido: ' + e.message);
+                    }
+                });
+            })
+            .then(function(data) {
                 if (!response.ok) {
                     throw new Error('Erro ao carregar imagens: ' + response.status);
                 }
-                return response.json();
+                return data;
             })
             .then(function(data) {
                 console.log('[Media Picker] Dados recebidos:', data);

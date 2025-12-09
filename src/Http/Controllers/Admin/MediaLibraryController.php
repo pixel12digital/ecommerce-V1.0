@@ -51,6 +51,11 @@ class MediaLibraryController extends Controller
             $folder = $_GET['folder'] ?? null;
             $query = $_GET['q'] ?? '';
             
+            // Logs temporários para debug (remover após identificar problema)
+            error_log('[MEDIA PICKER DEBUG] tenant_id = ' . $tenantId);
+            error_log('[MEDIA PICKER DEBUG] folder = ' . ($folder ?? 'null'));
+            error_log('[MEDIA PICKER DEBUG] query = ' . ($query ?: 'empty'));
+            
             if (!empty($query)) {
                 $imagens = MediaLibraryService::buscarImagens($tenantId, $query);
             } else {
@@ -61,6 +66,18 @@ class MediaLibraryController extends Controller
             if (!is_array($imagens)) {
                 $imagens = [];
             }
+            
+            // Logs temporários para debug
+            error_log('[MEDIA PICKER DEBUG] quantidade de arquivos encontrados = ' . count($imagens));
+            if (count($imagens) > 0) {
+                error_log('[MEDIA PICKER DEBUG] primeiro arquivo = ' . json_encode($imagens[0]));
+            }
+            
+            // Log do caminho físico sendo varrido (via service)
+            $paths = require dirname(__DIR__, 4) . '/config/paths.php';
+            $uploadsBasePath = $paths['uploads_produtos_base_path'];
+            error_log('[MEDIA PICKER DEBUG] uploads_produtos_base_path = ' . $uploadsBasePath);
+            error_log('[MEDIA PICKER DEBUG] caminho completo tenant = ' . $uploadsBasePath . '/' . $tenantId);
             
             ob_clean();
             header('Content-Type: application/json; charset=utf-8');
