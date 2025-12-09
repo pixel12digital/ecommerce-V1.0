@@ -57,15 +57,17 @@ function admin_asset_path($relativePath) {
         return '/ecommerce-v1.0/public/admin/' . $relativePath;
     }
     
-    // Em produção, o DocumentRoot aponta para public_html/ (raiz do projeto)
-    // e os arquivos em public/admin/ são acessíveis via /admin/
-    return '/admin/' . $relativePath;
+        // Em produção na Hostinger:
+        // - DocumentRoot aponta para public_html/ (raiz do projeto)
+        // - Arquivos físicos estão em public_html/public/admin/js/...
+        // - Para acessar via URL, precisamos usar /public/admin/...
+        return '/public/admin/' . $relativePath;
 }
 ```
 
 **Comportamento:**
 - **Dev:** `/ecommerce-v1.0/public/admin/js/media-picker.js`
-- **Produção:** `/admin/js/media-picker.js`
+- **Produção:** `/public/admin/js/media-picker.js` (DocumentRoot = `public_html/`, arquivos em `public/admin/js/`)
 
 ### 2. Uso da Função Helper
 
@@ -206,7 +208,7 @@ Após o deploy, testar em `https://pontodogolfeoutlet.com.br/`:
 
 - **Localização física:** `public/admin/js/media-picker.js`
 - **URL em dev:** `http://localhost/ecommerce-v1.0/public/admin/js/media-picker.js`
-- **URL em produção:** `https://pontodogolfeoutlet.com.br/admin/js/media-picker.js`
+- **URL em produção:** `https://pontodogolfeoutlet.com.br/public/admin/js/media-picker.js`
 
 ### Como o Script é Incluído
 
@@ -227,8 +229,8 @@ A função `admin_asset_path()` detecta automaticamente o ambiente baseado em:
 - `$_SERVER['SCRIPT_NAME']` - Caminho do script PHP
 
 **Lógica de detecção:**
-- Se `REQUEST_URI` ou `SCRIPT_NAME` contém `/ecommerce-v1.0/public` → **Dev**
-- Caso contrário → **Produção**
+- Se `REQUEST_URI` ou `SCRIPT_NAME` contém `/ecommerce-v1.0/public` → **Dev** → `/ecommerce-v1.0/public/admin/...`
+- Caso contrário → **Produção** → `/public/admin/...` (porque DocumentRoot = `public_html/` e arquivos estão em `public/`)
 
 ---
 

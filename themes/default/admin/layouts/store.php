@@ -805,9 +805,12 @@
             return '/ecommerce-v1.0/public/admin/' . $relativePath;
         }
         
-        // Em produção, o DocumentRoot aponta para public_html/ (raiz do projeto)
-        // e os arquivos em public/admin/ são acessíveis via /admin/
-        return '/admin/' . $relativePath;
+        // Em produção na Hostinger:
+        // - DocumentRoot aponta para public_html/ (raiz do projeto)
+        // - Arquivos físicos estão em public_html/public/admin/js/...
+        // - Para acessar via URL, precisamos usar /public/admin/...
+        // Isso porque o Apache resolve URLs baseado no DocumentRoot
+        return '/public/admin/' . $relativePath;
     }
     
     $mediaPickerPath = admin_asset_path('js/media-picker.js');
