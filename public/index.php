@@ -63,9 +63,15 @@ $uri = $_SERVER['REQUEST_URI'] ?? '/';
 $uri = parse_url($uri, PHP_URL_PATH);
 
 // Remover o caminho base se estiver presente (ex: /ecommerce-v1.0/public)
+// Em produção, se o DocumentRoot apontar para public/, não há caminho base
 $basePath = '/ecommerce-v1.0/public';
 if (strpos($uri, $basePath) === 0) {
     $uri = substr($uri, strlen($basePath));
+}
+// Se estiver em produção e o DocumentRoot for public_html/public, remover também
+$productionBasePath = '/public';
+if (strpos($uri, $productionBasePath) === 0 && $uri !== $productionBasePath) {
+    $uri = substr($uri, strlen($productionBasePath));
 }
 
 $uri = rtrim($uri, '/') ?: '/';

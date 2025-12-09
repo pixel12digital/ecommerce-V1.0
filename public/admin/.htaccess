@@ -1,12 +1,4 @@
-# Permitir acesso direto a arquivos estáticos (JS, CSS, imagens, etc)
-RewriteEngine On
-
-# Permitir acesso direto a arquivos existentes
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^(.*)$ - [L]
-
-# Redirecionar apenas requisições que não são arquivos para o index.php principal
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ ../index.php [QSA,L]
+# Este diretório contém apenas arquivos estáticos (JS, CSS, etc)
+# O roteamento é feito pelo index.php principal em public/
+# Não há necessidade de regras de rewrite aqui, apenas permitir acesso a arquivos
 

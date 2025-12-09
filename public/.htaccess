@@ -1,11 +1,13 @@
 RewriteEngine On
 
-# Permitir acesso direto a arquivos estáticos e test.php
+# Desabilitar listagem de diretórios
+Options -Indexes
+
+# Permitir acesso direto a arquivos estáticos (JS, CSS, imagens, etc)
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^(.*)$ - [L]
 
-# Redirecionar tudo para index.php exceto arquivos existentes
+# Redirecionar tudo para index.php (incluindo diretórios sem index.html/php)
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]
 
