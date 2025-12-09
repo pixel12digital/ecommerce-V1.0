@@ -1,4 +1,14 @@
 <?php
+// Helper para URLs de mídia (centralizado)
+use App\Support\MediaUrlHelper;
+
+// Função auxiliar para facilitar uso nas views
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
+
 $basePath = '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
@@ -910,7 +920,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                     <div class="main-image-wrapper">
                         <?php if ($imagemPrincipal): ?>
                             <img id="mainImage" 
-                                 src="<?= $basePath ?>/<?= htmlspecialchars($imagemPrincipal['caminho_arquivo']) ?>" 
+                                 src="<?= media_url($imagemPrincipal['caminho_arquivo']) ?>" 
                                  alt="<?= htmlspecialchars($imagemPrincipal['alt_text'] ?? $produto['nome']) ?>"
                                  class="main-image">
                         <?php else: ?>
@@ -932,10 +942,10 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                             foreach ($imagens as $index => $imagem): 
                             ?>
                                 <div class="thumbnail-wrapper" data-type="image">
-                                    <img src="<?= $basePath ?>/<?= htmlspecialchars($imagem['caminho_arquivo']) ?>" 
+                                    <img src="<?= media_url($imagem['caminho_arquivo']) ?>" 
                                          alt="<?= htmlspecialchars($imagem['alt_text'] ?? '') ?>"
                                          class="thumbnail <?= $index === 0 && empty($videos) ? 'active' : '' ?>"
-                                         onclick="changeImage('<?= htmlspecialchars($imagem['caminho_arquivo']) ?>', this)">
+                                         onclick="changeImage('<?= htmlspecialchars(media_url($imagem['caminho_arquivo'])) ?>', this)">
                                 </div>
                             <?php endforeach; ?>
                             
@@ -1356,7 +1366,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                         <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($prodRel['slug']) ?>" class="related-link">
                             <div class="related-card">
                                 <?php if ($prodRel['imagem_principal']): ?>
-                                    <img src="<?= $basePath ?>/<?= htmlspecialchars($prodRel['imagem_principal']['caminho_arquivo']) ?>" 
+                                    <img src="<?= media_url($prodRel['imagem_principal']['caminho_arquivo']) ?>" 
                                          alt="<?= htmlspecialchars($prodRel['imagem_principal']['alt_text'] ?? $prodRel['nome']) ?>"
                                          class="related-image">
                                 <?php else: ?>
@@ -1388,10 +1398,10 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
     
     <script>
         function changeImage(imagePath, thumbnail) {
-            var basePath = '<?= $basePath ?>';
+            // imagePath já vem normalizado do PHP (via media_url), então é uma URL completa
             var mainImage = document.getElementById('mainImage');
             if (mainImage) {
-                mainImage.src = basePath + '/' + imagePath;
+                mainImage.src = imagePath; // imagePath já é a URL completa
             }
             // Remover active de todos os thumbnails
             document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));

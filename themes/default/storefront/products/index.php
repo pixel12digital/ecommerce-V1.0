@@ -1,3 +1,14 @@
+<?php
+// Helper para URLs de mídia (centralizado)
+use App\Support\MediaUrlHelper;
+
+// Função auxiliar para facilitar uso nas views
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -666,8 +677,8 @@
                     <?php foreach ($produtos as $produto): ?>
                         <div class="product-card">
                             <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($produto['slug']) ?>" class="product-image-wrapper">
-                                <?php if ($produto['imagem_principal']): ?>
-                                    <img src="<?= $basePath ?>/<?= htmlspecialchars($produto['imagem_principal']['caminho_arquivo']) ?>" 
+                                <?php if ($produto['imagem_principal'] && !empty($produto['imagem_principal']['caminho_arquivo'])): ?>
+                                    <img src="<?= media_url($produto['imagem_principal']['caminho_arquivo']) ?>" 
                                          alt="<?= htmlspecialchars($produto['imagem_principal']['alt_text'] ?? $produto['nome']) ?>"
                                          class="product-image">
                                 <?php else: ?>

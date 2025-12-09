@@ -1,4 +1,14 @@
 <?php
+// Helper para URLs de mídia (centralizado)
+use App\Support\MediaUrlHelper;
+
+// Função auxiliar para facilitar uso nas views
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
+
 $basePath = '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
@@ -773,7 +783,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                                     <td>
                                         <div class="product-cell">
                                             <?php if ($item['imagem']): ?>
-                                                <img src="<?= $basePath ?>/<?= htmlspecialchars($item['imagem']) ?>" 
+                                                <img src="<?= media_url($item['imagem']) ?>" 
                                                      alt="<?= htmlspecialchars($item['nome']) ?>"
                                                      class="product-image">
                                             <?php else: ?>

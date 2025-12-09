@@ -1,3 +1,14 @@
+<?php
+// Helper para URLs de mídia (centralizado)
+use App\Support\MediaUrlHelper;
+
+// Função auxiliar para facilitar uso nas views
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1214,7 +1225,7 @@
             <!-- Logo - Esquerda -->
             <a href="<?= $basePath ?>/" class="header-logo">
                 <?php if (!empty($theme['logo_url'])): ?>
-                    <img src="<?= $basePath . htmlspecialchars($theme['logo_url']) ?>" alt="<?= htmlspecialchars($loja['nome']) ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                    <img src="<?= media_url($theme['logo_url']) ?>" alt="<?= htmlspecialchars($loja['nome']) ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
                     <span style="display: none;"><?= htmlspecialchars($loja['nome']) ?></span>
                 <?php else: ?>
                     <?= htmlspecialchars($loja['nome']) ?>
@@ -1317,7 +1328,7 @@
                                aria-label="<?= htmlspecialchars($pill['label'] ?: $pill['categoria_nome']) ?>">
                                 <div class="pg-category-pill-circle">
                                     <?php if ($pill['icone_path']): ?>
-                                        <img src="<?= $basePath ?>/<?= htmlspecialchars($pill['icone_path']) ?>" 
+                                        <img src="<?= media_url($pill['icone_path']) ?>" 
                                              alt="<?= htmlspecialchars($pill['label'] ?: $pill['categoria_nome']) ?>">
                                     <?php else: ?>
                                         <div class="pg-category-pill-placeholder">
@@ -1374,13 +1385,13 @@
                         <?php if (!empty($banner['imagem_desktop']) || !empty($banner['imagem_mobile'])): ?>
                             <picture>
                                 <?php if (!empty($banner['imagem_mobile'])): ?>
-                                    <source media="(max-width: 768px)" srcset="<?= $basePath ?>/<?= htmlspecialchars($banner['imagem_mobile']) ?>">
+                                    <source media="(max-width: 768px)" srcset="<?= media_url($banner['imagem_mobile']) ?>">
                                 <?php endif; ?>
                                 <?php 
                                 // Fallback: se não houver imagem_desktop, usar imagem_mobile também no desktop
                                 $imagemDesktop = !empty($banner['imagem_desktop']) ? $banner['imagem_desktop'] : ($banner['imagem_mobile'] ?? '');
                                 ?>
-                                <img src="<?= $basePath ?>/<?= htmlspecialchars($imagemDesktop) ?>"
+                                <img src="<?= media_url($imagemDesktop) ?>"
                                      alt="<?= htmlspecialchars($banner['titulo'] ?: 'Banner') ?>"
                                      class="home-hero-image"
                                      loading="eager"
@@ -1455,8 +1466,8 @@
                             <?php foreach ($section['produtos'] as $produto): ?>
                                 <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($produto['slug']) ?>" class="product-link">
                                     <div class="product-card">
-                                        <?php if ($produto['imagem_principal']): ?>
-                                            <img src="<?= $basePath ?>/<?= htmlspecialchars($produto['imagem_principal']['caminho_arquivo']) ?>" 
+                                        <?php if ($produto['imagem_principal'] && !empty($produto['imagem_principal']['caminho_arquivo'])): ?>
+                                            <img src="<?= media_url($produto['imagem_principal']['caminho_arquivo']) ?>" 
                                                  alt="<?= htmlspecialchars($produto['imagem_principal']['alt_text'] ?? $produto['nome']) ?>"
                                                  class="product-image">
                                         <?php else: ?>
@@ -1503,7 +1514,7 @@
                     // Fallback: usar imagem_mobile se imagem_desktop não existir
                     $imagemBanner = !empty($banner['imagem_desktop']) ? $banner['imagem_desktop'] : ($banner['imagem_mobile'] ?? '');
                     ?>
-                    <div class="banner-portrait" style="<?= !empty($imagemBanner) ? "background-image: url('{$basePath}/" . htmlspecialchars($imagemBanner) . "'); background-size: cover; background-position: center;" : 'background: #f0f0f0;' ?>">
+                    <div class="banner-portrait" style="<?= !empty($imagemBanner) ? "background-image: url('" . media_url($imagemBanner) . "'); background-size: cover; background-position: center;" : 'background: #f0f0f0;' ?>">
                         <?php if ($banner['titulo']): ?>
                             <h3 style="color: white; margin-bottom: 1rem;"><?= htmlspecialchars($banner['titulo']) ?></h3>
                         <?php endif; ?>
