@@ -67,19 +67,64 @@
         <a href="<?= $basePath ?>/admin/logout">Sair</a>
     </div>
     <div class="container">
+        <?php
+        // Preparar dados do tenant com fallbacks seguros
+        $tenantName = $tenant->name ?? 'Loja';
+        $tenantSlug = $tenant->slug ?? '-';
+        $tenantStatus = $tenant->status ?? 'active';
+        $tenantPlan = $tenant->plan ?? null;
+
+        // Tradução de status para PT-BR
+        switch ($tenantStatus) {
+            case 'active':
+                $tenantStatusLabel = 'Ativa';
+                break;
+            case 'inactive':
+                $tenantStatusLabel = 'Inativa';
+                break;
+            case 'pending':
+                $tenantStatusLabel = 'Pendente';
+                break;
+            case 'suspended':
+                $tenantStatusLabel = 'Suspensa';
+                break;
+            default:
+                $tenantStatusLabel = ucfirst($tenantStatus);
+                break;
+        }
+
+        // Tradução do plano para PT-BR
+        switch ($tenantPlan) {
+            case 'basic':
+                $tenantPlanLabel = 'Básico';
+                break;
+            case 'pro':
+                $tenantPlanLabel = 'Profissional';
+                break;
+            case 'premium':
+                $tenantPlanLabel = 'Premium';
+                break;
+            case 'enterprise':
+                $tenantPlanLabel = 'Enterprise';
+                break;
+            default:
+                $tenantPlanLabel = $tenantPlan ? ucfirst($tenantPlan) : '—';
+                break;
+        }
+        ?>
         <div class="card">
             <h1>Bem-vindo</h1>
             <div class="info-item">
-                <span class="info-label">Loja:</span> <?= htmlspecialchars($tenant->name) ?>
+                <span class="info-label">Loja:</span> <?= htmlspecialchars($tenantName) ?>
             </div>
             <div class="info-item">
-                <span class="info-label">Slug:</span> <?= htmlspecialchars($tenant->slug) ?>
+                <span class="info-label">Slug:</span> <?= htmlspecialchars($tenantSlug) ?>
             </div>
             <div class="info-item">
-                <span class="info-label">Status:</span> <?= htmlspecialchars($tenant->status) ?>
+                <span class="info-label">Status:</span> <?= htmlspecialchars($tenantStatusLabel) ?>
             </div>
             <div class="info-item">
-                <span class="info-label">Plano:</span> <?= htmlspecialchars($tenant->plan) ?>
+                <span class="info-label">Plano:</span> <?= htmlspecialchars($tenantPlanLabel) ?>
             </div>
             <a href="<?= $basePath ?>/admin/system/updates" class="link-button">Atualizações do Sistema</a>
             <a href="<?= $basePath ?>/admin/produtos" class="link-button">Produtos</a>

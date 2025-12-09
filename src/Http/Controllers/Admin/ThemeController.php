@@ -29,6 +29,10 @@ class ThemeController extends Controller
             'theme_color_footer_bg' => ThemeConfig::get('theme_color_footer_bg', '#1a1a1a'),
             'theme_color_footer_text' => ThemeConfig::get('theme_color_footer_text', '#ffffff'),
             
+            // Informações da loja (painel admin)
+            'admin_store_name' => ThemeConfig::get('admin_store_name', ''),
+            'admin_title_base' => ThemeConfig::get('admin_title_base', ''),
+            
             // Textos e identidade
             'topbar_text' => ThemeConfig::get('topbar_text', 'Frete grátis acima de R$ 299 | Troca garantida em até 7 dias | Outlet de golfe'),
             'newsletter_title' => ThemeConfig::get('newsletter_title', 'Receba nossas ofertas'),
@@ -70,6 +74,21 @@ class ThemeController extends Controller
         ];
 
         $tenant = \App\Tenant\TenantContext::tenant();
+        
+        // Preencher admin_store_name com tenant->name se não estiver configurado
+        if (empty($config['admin_store_name']) && !empty($tenant->name)) {
+            $config['admin_store_name'] = $tenant->name;
+        }
+        
+        // Sugerir admin_title_base baseado no nome da loja se não estiver configurado
+        if (empty($config['admin_title_base'])) {
+            $suggestedTitle = !empty($config['admin_store_name']) 
+                ? $config['admin_store_name'] . ' - Admin'
+                : (!empty($tenant->name) ? $tenant->name . ' - Admin' : '');
+            // Não salvar, apenas sugerir como placeholder/value default
+            $config['admin_title_base'] = $suggestedTitle;
+        }
+        
         $this->viewWithLayout('admin/layouts/store', 'admin/theme/edit-content', [
             'tenant' => $tenant,
             'pageTitle' => 'Tema da Loja',
@@ -96,6 +115,38 @@ class ThemeController extends Controller
             if (!empty($value)) {
                 ThemeConfig::set($key, $value);
             }
+        }
+
+        // Salvar informações da loja (painel admin)
+        $adminStoreName = trim($_POST['admin_store_name'] ?? '');
+        $adminTitleBase = trim($_POST['admin_title_base'] ?? '');
+        
+        // Salvar admin_title_base em tenant_settings
+        ThemeConfig::set('admin_title_base', $adminTitleBase);
+        
+        // Atualizar tenants.name se admin_store_name foi preenchido
+        if (!empty($adminStoreName)) {
+            $tenantId = \App\Tenant\TenantContext::id();
+            $db = \App\Core\Database::getConnection();
+            
+            // Sanitizar e limitar tamanho
+            $adminStoreName = substr(trim($adminStoreName), 0, 150);
+            
+            $stmt = $db->prepare("
+                UPDATE tenants 
+                SET name = :name 
+                WHERE id = :tenant_id
+            ");
+            $stmt->execute([
+                'name' => $adminStoreName,
+                'tenant_id' => $tenantId
+            ]);
+            
+            // Também salvar em tenant_settings para manter sincronizado
+            ThemeConfig::set('admin_store_name', $adminStoreName);
+        } else {
+            // Se veio vazio, limpar o setting (mas não alterar tenants.name para manter compatibilidade)
+            ThemeConfig::set('admin_store_name', '');
         }
 
         // Salvar textos

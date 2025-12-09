@@ -166,6 +166,25 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             </div>
         </div>
 
+        <!-- Seção Informações da Loja -->
+        <div class="admin-form-section">
+            <h3 class="admin-form-section-title">Informações da Loja</h3>
+            <div class="admin-form-group">
+                <label for="admin_store_name">Nome da loja (painel/admin)</label>
+                <input type="text" id="admin_store_name" name="admin_store_name" value="<?= htmlspecialchars($config['admin_store_name'] ?? '') ?>" placeholder="Ex: Ponto do Golfe Outlet" maxlength="150">
+                <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.5rem;">
+                    Este nome aparece na lateral esquerda do painel admin, abaixo do logotipo.
+                </small>
+            </div>
+            <div class="admin-form-group">
+                <label for="admin_title_base">Título base do painel (aba do navegador)</label>
+                <input type="text" id="admin_title_base" name="admin_title_base" value="<?= htmlspecialchars($config['admin_title_base'] ?? '') ?>" placeholder="Ex: Ponto do Golfe - Admin" maxlength="150">
+                <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.5rem;">
+                    Usado como título padrão da aba do navegador quando a página não define um título específico.
+                </small>
+            </div>
+        </div>
+
         <!-- Seção Contato e Endereço - Fase 10 -->
         <div class="admin-form-section">
             <h3 class="admin-form-section-title">Contato e Endereço</h3>

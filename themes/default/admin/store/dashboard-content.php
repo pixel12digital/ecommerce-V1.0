@@ -7,25 +7,71 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 }
 ?>
 
+<?php
+// Preparar dados do tenant com fallbacks seguros
+$tenantName = $tenant->name ?? 'Loja';
+$tenantSlug = $tenant->slug ?? '-';
+$tenantStatus = $tenant->status ?? 'active';
+$tenantPlan = $tenant->plan ?? null;
+
+// Tradução de status para PT-BR
+switch ($tenantStatus) {
+    case 'active':
+        $tenantStatusLabel = 'Ativa';
+        break;
+    case 'inactive':
+        $tenantStatusLabel = 'Inativa';
+        break;
+    case 'pending':
+        $tenantStatusLabel = 'Pendente';
+        break;
+    case 'suspended':
+        $tenantStatusLabel = 'Suspensa';
+        break;
+    default:
+        $tenantStatusLabel = ucfirst($tenantStatus);
+        break;
+}
+
+// Tradução do plano para PT-BR
+switch ($tenantPlan) {
+    case 'basic':
+        $tenantPlanLabel = 'Básico';
+        break;
+    case 'pro':
+        $tenantPlanLabel = 'Profissional';
+        break;
+    case 'premium':
+        $tenantPlanLabel = 'Premium';
+        break;
+    case 'enterprise':
+        $tenantPlanLabel = 'Enterprise';
+        break;
+    default:
+        $tenantPlanLabel = $tenantPlan ? ucfirst($tenantPlan) : '—';
+        break;
+}
+?>
+
 <div class="dashboard-welcome">
     <div class="welcome-card">
         <h2>Bem-vindo</h2>
         <div class="info-grid">
             <div class="info-item">
                 <span class="info-label">Loja:</span>
-                <span class="info-value"><?= htmlspecialchars($tenant->name) ?></span>
+                <span class="info-value"><?= htmlspecialchars($tenantName) ?></span>
             </div>
             <div class="info-item">
                 <span class="info-label">Slug:</span>
-                <span class="info-value"><?= htmlspecialchars($tenant->slug) ?></span>
+                <span class="info-value"><?= htmlspecialchars($tenantSlug) ?></span>
             </div>
             <div class="info-item">
                 <span class="info-label">Status:</span>
-                <span class="info-value"><?= htmlspecialchars($tenant->status) ?></span>
+                <span class="info-value"><?= htmlspecialchars($tenantStatusLabel) ?></span>
             </div>
             <div class="info-item">
                 <span class="info-label">Plano:</span>
-                <span class="info-value"><?= htmlspecialchars($tenant->plan) ?></span>
+                <span class="info-value"><?= htmlspecialchars($tenantPlanLabel) ?></span>
             </div>
         </div>
     </div>

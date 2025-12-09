@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?? 'Store Admin' ?></title>
+    <?php
+    // Recuperar título base do painel a partir dos settings
+    $adminTitleBase = \App\Services\ThemeConfig::get('admin_title_base', 'Store Admin');
+    ?>
+    <title><?= $pageTitle ?? $adminTitleBase ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         /* Fase 12 – Paleta do Ponto do Golfe no Admin */
@@ -600,12 +604,14 @@
             <?php
             // Obter logo da loja
             $logoUrl = \App\Services\ThemeConfig::get('logo_url', '');
-            $storeName = htmlspecialchars($tenant->name ?? 'Loja');
-            $basePath = '';
-            $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-            if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
-                $basePath = '/ecommerce-v1.0/public';
-            }
+            
+            // Obter nome da loja: priorizar admin_store_name (settings), depois tenant->name, depois 'Loja'
+            $adminStoreName = \App\Services\ThemeConfig::get('admin_store_name', '');
+            $storeName = !empty($adminStoreName) 
+                ? htmlspecialchars($adminStoreName)
+                : htmlspecialchars($tenant->name ?? 'Loja');
+            
+            // basePath já foi definido acima (linhas 558-578)
             ?>
             <div class="pg-admin-brand">
                 <?php if (!empty($logoUrl)): ?>
