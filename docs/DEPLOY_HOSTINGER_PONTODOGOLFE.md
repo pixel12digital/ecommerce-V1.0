@@ -43,6 +43,13 @@ public_html/
 ├── index.php              ← NOVO: Fallback para hostings sem .htaccess
 ├── .htaccess              ← Opcional (comentado por padrão)
 ├── .env                   ← Criar manualmente (veja passo 3)
+├── uploads/               ← ⚠️ IMPORTANTE: Pasta de mídias (veja seção 2.1)
+│   └── tenants/
+│       └── 1/
+│           ├── produtos/
+│           ├── logo/
+│           ├── banners/
+│           └── category-pills/
 ├── .gitignore
 ├── composer.json
 ├── composer.lock
@@ -56,6 +63,36 @@ public_html/
 ├── storage/
 ├── themes/
 └── vendor/               ← Criado após composer install
+```
+
+#### 2.1. ⚠️ ESTRUTURA DE MÍDIAS (CRÍTICO)
+
+**IMPORTANTE:** Os arquivos de mídia (imagens de produtos, logos, banners, etc.) devem estar em:
+
+```
+public_html/uploads/tenants/{tenant_id}/...
+```
+
+**NÃO** devem estar em:
+```
+public_html/public/uploads/tenants/...  ← ERRADO!
+```
+
+**Por quê?**
+- O código sempre gera URLs como `/uploads/tenants/1/produtos/arquivo.jpg` (sem `/public`)
+- O Apache resolve essas URLs baseado no DocumentRoot (`public_html/`)
+- Então `/uploads/...` é resolvido como `public_html/uploads/...`
+- Se os arquivos estiverem em `public_html/public/uploads/...`, o Apache não os encontra (404)
+
+**Como corrigir se já enviou para o lugar errado:**
+1. No File Manager da Hostinger, crie a pasta `public_html/uploads` se não existir
+2. Mova toda a pasta `tenants` de `public_html/public/uploads/tenants` para `public_html/uploads/tenants`
+3. Mantenha toda a estrutura interna (`tenants/1/produtos/`, `tenants/1/logo/`, etc.)
+4. Teste acessando diretamente uma imagem: `https://pontodogolfeoutlet.com.br/uploads/tenants/1/logo/arquivo.png`
+
+**Permissões:**
+```bash
+chmod -R 755 public_html/uploads/
 ```
 
 ### 3. Criar Arquivo .env
@@ -110,7 +147,7 @@ chmod 644 public/index.php
 chmod 644 index.php
 chmod 644 .env
 chmod 644 .htaccess
-chmod -R 755 public/uploads/
+chmod -R 755 uploads/              ← Pasta de mídias (na raiz public_html/, não em public/)
 chmod -R 755 storage/
 ```
 
@@ -280,6 +317,39 @@ APP_MODE=multi
 **Causa:** Composer não foi executado
 
 **Solução:**
+1. Execute `composer install --no-dev` (Seção 4)
+2. Execute `php database/run_migrations.php` (Seção 6)
+
+### Imagens não aparecem no site (404)
+
+**Sintoma:** Imagens de produtos, logos, banners não aparecem no site, mas existem no File Manager
+
+**Causa:** Arquivos de mídia estão no lugar errado
+
+**Solução:**
+1. **Verificar localização atual:**
+   - No File Manager, verifique se os arquivos estão em `public_html/public/uploads/tenants/...` (ERRADO)
+   - Ou em `public_html/uploads/tenants/...` (CORRETO)
+
+2. **Se estiverem no lugar errado:**
+   - Crie a pasta `public_html/uploads` se não existir
+   - Mova toda a pasta `tenants` de `public_html/public/uploads/tenants` para `public_html/uploads/tenants`
+   - Mantenha toda a estrutura interna (`tenants/1/produtos/`, `tenants/1/logo/`, etc.)
+
+3. **Testar:**
+   - Acesse diretamente uma imagem: `https://pontodogolfeoutlet.com.br/uploads/tenants/1/logo/arquivo.png`
+   - Se a imagem abrir, o caminho está correto
+   - Recarregue a página do site e verifique se as imagens aparecem
+
+**Por quê isso acontece?**
+- O código sempre gera URLs como `/uploads/tenants/...` (sem `/public`)
+- O Apache resolve essas URLs baseado no DocumentRoot (`public_html/`)
+- Então `/uploads/...` é resolvido como `public_html/uploads/...`
+- Se os arquivos estiverem em `public_html/public/uploads/...`, o Apache não os encontra (404)
+
+**Prevenção:**
+- Sempre faça upload de mídias diretamente em `public_html/uploads/tenants/...`
+- Nunca use `public_html/public/uploads/...` em produção na Hostinger
 ```bash
 cd public_html
 composer install --no-dev --optimize-autoloader

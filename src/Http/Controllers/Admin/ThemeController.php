@@ -182,7 +182,8 @@ class ThemeController extends Controller
                     
                     // Remover logo antigo se existir e for diferente do novo
                     if (!empty($oldLogo) && $oldLogo !== $relativePath) {
-                        $oldPath = dirname(__DIR__, 3) . '/public' . $oldLogo;
+                        // Usar o mesmo caminho base configurado em paths.php
+                        $oldPath = $uploadsBasePath . '/' . $tenantId . '/logo/' . basename($oldLogo);
                         if (file_exists($oldPath)) {
                             @unlink($oldPath);
                         }

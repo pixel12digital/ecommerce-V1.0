@@ -207,6 +207,11 @@ composer install --no-dev
 - O DocumentRoot pode apontar para `public/` OU para a raiz (há `index.php` de fallback)
 - Sempre execute `composer install` após o deploy
 - Verifique as permissões de arquivos e diretórios
+- **IMPORTANTE - Caminhos de Mídia:**
+  - Em **desenvolvimento** (DocumentRoot = `public/`): arquivos em `public/uploads/tenants/...`
+  - Em **produção Hostinger** (DocumentRoot = `public_html/`): arquivos em `public_html/uploads/tenants/...` (NÃO em `public_html/public/uploads/...`)
+  - O código sempre gera URLs como `/uploads/tenants/...` (sem `/public`)
+  - Se as imagens não aparecerem, verifique se estão no lugar correto conforme o DocumentRoot
 
 ## 🔄 Solução para Hostings com Restrições (403/404 Forbidden)
 
