@@ -307,7 +307,14 @@
         // Usar folder atual se não foi especificado
         var folderToUse = folder || currentFolder || null;
 
-        var url = basePath + '/admin/midias/listar';
+        // Construir URL corretamente: garantir que não tenha barras duplicadas
+        var url = '/admin/midias/listar';
+        if (basePath && basePath !== '') {
+            // Remover barra final do basePath se existir
+            var cleanBasePath = basePath.replace(/\/$/, '');
+            url = cleanBasePath + url;
+        }
+        
         if (folderToUse) {
             url += '?folder=' + encodeURIComponent(folderToUse);
         }
@@ -326,7 +333,20 @@
             })
             .then(function(data) {
                 console.log('[Media Picker] Dados recebidos:', data);
+                console.log('[Media Picker] Tipo de dados:', typeof data);
+                console.log('[Media Picker] data.success:', data.success);
+                console.log('[Media Picker] data.files:', data.files);
+                console.log('[Media Picker] data.count:', data.count);
+                console.log('[Media Picker] Quantidade de arquivos:', data.files ? data.files.length : 0);
+                
                 loading.style.display = 'none';
+
+                if (!data || typeof data !== 'object') {
+                    console.error('[Media Picker] Resposta inválida:', data);
+                    erro.textContent = 'Resposta inválida do servidor.';
+                    erro.style.display = 'block';
+                    return;
+                }
 
                 if (!data.success) {
                     erro.textContent = data.message || 'Não foi possível carregar as imagens.';
@@ -335,8 +355,10 @@
                 }
 
                 grid.innerHTML = '';
-                if (!data.files || !data.files.length) {
-                    console.log('[Media Picker] Nenhuma imagem encontrada');
+                if (!data.files || !Array.isArray(data.files) || data.files.length === 0) {
+                    console.log('[Media Picker] Nenhuma imagem encontrada (array vazio ou não é array)');
+                    console.log('[Media Picker] data.files é array?', Array.isArray(data.files));
+                    console.log('[Media Picker] data.files.length:', data.files ? data.files.length : 'undefined');
                     grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #666;">Nenhuma imagem encontrada ainda. Use o campo acima para fazer upload.</div>';
                     grid.style.display = 'grid';
                     return;

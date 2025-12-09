@@ -36,22 +36,59 @@ class MediaLibraryController extends Controller
     
     public function listar(): void
     {
-        $tenantId = TenantContext::id();
-        $folder = $_GET['folder'] ?? null;
-        $query = $_GET['q'] ?? '';
-        
-        if (!empty($query)) {
-            $imagens = MediaLibraryService::buscarImagens($tenantId, $query);
-        } else {
-            $imagens = MediaLibraryService::listarImagensDoTenant($tenantId, $folder);
+        // Limpar qualquer saída anterior
+        if (ob_get_level() > 0) {
+            ob_clean();
         }
+        ob_start();
         
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-            'success' => true,
-            'files' => $imagens,
-        ]);
-        exit;
+        // Desabilitar exibição de erros para retornar JSON limpo
+        $oldErrorReporting = error_reporting(0);
+        $oldDisplayErrors = ini_set('display_errors', 0);
+        
+        try {
+            $tenantId = TenantContext::id();
+            $folder = $_GET['folder'] ?? null;
+            $query = $_GET['q'] ?? '';
+            
+            if (!empty($query)) {
+                $imagens = MediaLibraryService::buscarImagens($tenantId, $query);
+            } else {
+                $imagens = MediaLibraryService::listarImagensDoTenant($tenantId, $folder);
+            }
+            
+            // Garantir que $imagens é sempre um array
+            if (!is_array($imagens)) {
+                $imagens = [];
+            }
+            
+            ob_clean();
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => true,
+                'files' => $imagens,
+                'count' => count($imagens),
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            exit;
+        } catch (\Throwable $e) {
+            ob_clean();
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erro ao listar imagens: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'),
+                'files' => [],
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            exit;
+        } finally {
+            // Restaurar configurações de erro
+            if (isset($oldErrorReporting)) {
+                error_reporting($oldErrorReporting);
+            }
+            if (isset($oldDisplayErrors)) {
+                ini_set('display_errors', $oldDisplayErrors);
+            }
+        }
     }
     
     public function upload(): void
