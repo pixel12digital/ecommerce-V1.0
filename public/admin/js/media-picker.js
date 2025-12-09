@@ -381,6 +381,15 @@
                 }
 
                 grid.innerHTML = '';
+                
+                // Debug detalhado antes de verificar array
+                console.log('[MEDIA PICKER] Verificando data.files...');
+                console.log('[MEDIA PICKER] data.files existe?', typeof data.files !== 'undefined');
+                console.log('[MEDIA PICKER] data.files é array?', Array.isArray(data.files));
+                console.log('[MEDIA PICKER] data.files.length:', data.files ? data.files.length : 'undefined');
+                console.log('[MEDIA PICKER] data.files tipo:', typeof data.files);
+                console.log('[MEDIA PICKER] data.files valor completo:', data.files);
+                
                 if (!data.files || !Array.isArray(data.files) || data.files.length === 0) {
                     console.log('[Media Picker] Nenhuma imagem encontrada (array vazio ou não é array)');
                     console.log('[Media Picker] data.files é array?', Array.isArray(data.files));
