@@ -1,0 +1,15 @@
+# .htaccess na raiz do projeto
+# Redireciona todas as requisições para public/index.php
+# Funciona tanto localmente quanto em produção
+
+RewriteEngine On
+
+# Redirecionar tudo para public/index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ public/index.php [QSA,L]
+
+# Permitir acesso direto a arquivos na raiz (se necessário)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(.*)$ - [L]
+

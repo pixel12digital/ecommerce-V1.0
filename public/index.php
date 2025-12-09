@@ -62,17 +62,19 @@ $uri = $_SERVER['REQUEST_URI'] ?? '/';
 // Remover query string da URI
 $uri = parse_url($uri, PHP_URL_PATH);
 
-// Remover o caminho base se estiver presente (ex: /ecommerce-v1.0/public)
-// Em produção, se o DocumentRoot apontar para public/, não há caminho base
-$basePath = '/ecommerce-v1.0/public';
-if (strpos($uri, $basePath) === 0) {
-    $uri = substr($uri, strlen($basePath));
+// Detectar e remover caminho base automaticamente
+// Funciona tanto localmente quanto em produção
+
+// Se a URI contém /ecommerce-v1.0/public (desenvolvimento local)
+if (strpos($uri, '/ecommerce-v1.0/public') === 0) {
+    $uri = substr($uri, strlen('/ecommerce-v1.0/public'));
 }
-// Se estiver em produção e o DocumentRoot for public_html/public, remover também
-$productionBasePath = '/public';
-if (strpos($uri, $productionBasePath) === 0 && $uri !== $productionBasePath) {
-    $uri = substr($uri, strlen($productionBasePath));
+// Se a URI contém /public e não é apenas /public (quando DocumentRoot aponta para raiz)
+elseif (strpos($uri, '/public') === 0 && $uri !== '/public' && $uri !== '/public/') {
+    $uri = substr($uri, strlen('/public'));
 }
+// Em produção, se o DocumentRoot aponta para public_html/ e há redirecionamento via .htaccess
+// A URI já vem sem o /public, então não precisa remover nada
 
 $uri = rtrim($uri, '/') ?: '/';
 
