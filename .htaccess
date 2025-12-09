@@ -2,14 +2,23 @@
 # Redireciona todas as requisições para public/index.php
 # Funciona tanto localmente quanto em produção
 
+# Habilitar RewriteEngine
 RewriteEngine On
 
-# Redirecionar tudo para public/index.php
+# Desabilitar listagem de diretórios
+Options -Indexes
+
+# Permitir acesso direto a arquivos existentes na raiz
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(.*)$ - [L]
+
+# Permitir acesso direto a diretórios existentes (mas não listar conteúdo)
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ - [L]
+
+# Redirecionar tudo que não for arquivo ou diretório para public/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]
-
-# Permitir acesso direto a arquivos na raiz (se necessário)
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^(.*)$ - [L]
 
