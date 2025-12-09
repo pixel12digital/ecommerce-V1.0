@@ -515,6 +515,11 @@
             align-items: center;
             justify-content: center;
         }
+        /* Fallback: primeiro slide sempre visível (mesmo sem JS) */
+        .home-hero-slide:first-child {
+            opacity: 1;
+            z-index: 1;
+        }
         .home-hero-slide.active {
             opacity: 1;
             z-index: 1;
@@ -1364,8 +1369,8 @@
     <?php if (!empty($heroBanners)): ?>
         <section class="home-hero">
             <div class="home-hero-slider" id="home-hero-slider">
-                <?php foreach ($heroBanners as $banner): ?>
-                    <div class="home-hero-slide <?= empty($banner['imagem_desktop']) && empty($banner['imagem_mobile']) ? 'home-hero-slide-text-only' : '' ?>">
+                <?php foreach ($heroBanners as $index => $banner): ?>
+                    <div class="home-hero-slide <?= $index === 0 ? 'active' : '' ?> <?= empty($banner['imagem_desktop']) && empty($banner['imagem_mobile']) ? 'home-hero-slide-text-only' : '' ?>">
                         <?php if (!empty($banner['imagem_desktop']) || !empty($banner['imagem_mobile'])): ?>
                             <picture>
                                 <?php if (!empty($banner['imagem_mobile'])): ?>
@@ -1377,7 +1382,9 @@
                                 ?>
                                 <img src="<?= $basePath ?>/<?= htmlspecialchars($imagemDesktop) ?>"
                                      alt="<?= htmlspecialchars($banner['titulo'] ?: 'Banner') ?>"
-                                     class="home-hero-image">
+                                     class="home-hero-image"
+                                     loading="eager"
+                                     onerror="this.style.display='none'; console.error('Erro ao carregar banner:', this.src);">
                             </picture>
                         <?php endif; ?>
                         <div class="home-hero-content">
@@ -1748,43 +1755,102 @@
     
     <!-- Script do Carrossel Hero -->
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const slider = document.querySelector('#home-hero-slider');
-        if (!slider) return;
-
-        const slides = Array.from(slider.querySelectorAll('.home-hero-slide'));
-        if (slides.length === 0) return;
-
-        // Se só tiver um banner, mostrar estático
-        if (slides.length === 1) {
-            slides[0].classList.add('active');
-            return;
-        }
-
-        // Inicializar: mostrar primeiro slide
-        let currentIndex = 0;
-        slides.forEach((slide, index) => {
-            if (index === 0) {
-                slide.classList.add('active');
-            }
-        });
-
-        function showSlide(index) {
-            slides.forEach((slide, i) => {
-                if (i === index) {
-                    slide.classList.add('active');
-                } else {
-                    slide.classList.remove('active');
+    (function() {
+        'use strict';
+        
+        // Aguardar DOM estar pronto
+        function initHeroSlider() {
+            try {
+                const slider = document.querySelector('#home-hero-slider');
+                if (!slider) {
+                    console.warn('[Hero Slider] Elemento #home-hero-slider não encontrado');
+                    return;
                 }
-            });
-        }
 
-        // Trocar slide automaticamente a cada 5 segundos
-        setInterval(function() {
-            currentIndex = (currentIndex + 1) % slides.length;
-            showSlide(currentIndex);
-        }, 5000);
-    });
+                const slides = Array.from(slider.querySelectorAll('.home-hero-slide'));
+                if (slides.length === 0) {
+                    console.warn('[Hero Slider] Nenhum slide encontrado');
+                    return;
+                }
+
+                // Se só tiver um banner, garantir que está visível e sair
+                if (slides.length === 1) {
+                    slides[0].classList.add('active');
+                    return;
+                }
+
+                // Inicializar: garantir que primeiro slide está ativo
+                let currentIndex = 0;
+                slides.forEach((slide, index) => {
+                    if (index === 0) {
+                        slide.classList.add('active');
+                    } else {
+                        slide.classList.remove('active');
+                    }
+                });
+
+                function showSlide(index) {
+                    if (index < 0 || index >= slides.length) return;
+                    
+                    slides.forEach((slide, i) => {
+                        if (i === index) {
+                            slide.classList.add('active');
+                        } else {
+                            slide.classList.remove('active');
+                        }
+                    });
+                    currentIndex = index;
+                }
+
+                // Trocar slide automaticamente a cada 5 segundos
+                let intervalId = setInterval(function() {
+                    try {
+                        currentIndex = (currentIndex + 1) % slides.length;
+                        showSlide(currentIndex);
+                    } catch (e) {
+                        console.error('[Hero Slider] Erro ao trocar slide:', e);
+                        clearInterval(intervalId);
+                    }
+                }, 5000);
+                
+                // Limpar intervalo quando a página sair de foco (opcional, economiza recursos)
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden) {
+                        clearInterval(intervalId);
+                    } else {
+                        intervalId = setInterval(function() {
+                            try {
+                                currentIndex = (currentIndex + 1) % slides.length;
+                                showSlide(currentIndex);
+                            } catch (e) {
+                                console.error('[Hero Slider] Erro ao trocar slide:', e);
+                                clearInterval(intervalId);
+                            }
+                        }, 5000);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('[Hero Slider] Erro ao inicializar carrossel:', error);
+                // Fallback: garantir que pelo menos o primeiro slide está visível
+                const slider = document.querySelector('#home-hero-slider');
+                if (slider) {
+                    const firstSlide = slider.querySelector('.home-hero-slide');
+                    if (firstSlide) {
+                        firstSlide.classList.add('active');
+                    }
+                }
+            }
+        }
+        
+        // Executar quando DOM estiver pronto
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initHeroSlider);
+        } else {
+            // DOM já está pronto
+            initHeroSlider();
+        }
+    })();
     </script>
 </body>
 </html>

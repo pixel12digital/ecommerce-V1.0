@@ -6,6 +6,8 @@
 !/storage/cache/.gitkeep
 /storage/tenants/*
 !/storage/tenants/.gitkeep
+/uploads/
+/public/uploads/
 .idea/
 .vscode/
 *.log
