@@ -51,13 +51,21 @@
         
         console.log('[Media Picker] Inicialização concluída');
 
-        // Detectar basePath
+        // Detectar basePath (apenas para requisições AJAX, NÃO para URLs de imagens)
         var scripts = document.getElementsByTagName('script');
         for (var i = 0; i < scripts.length; i++) {
             if (scripts[i].src && scripts[i].src.includes('/admin/js/media-picker.js')) {
                 var match = scripts[i].src.match(/(.*)\/admin\/js\/media-picker\.js/);
                 if (match) {
-                    basePath = match[1];
+                    // Extrair apenas o caminho (sem protocolo/domínio)
+                    var detectedPath = match[1];
+                    // Se contém protocolo (http/https), extrair apenas o caminho
+                    if (detectedPath.indexOf('://') !== -1) {
+                        var urlObj = new URL(scripts[i].src);
+                        basePath = urlObj.pathname.replace('/admin/js/media-picker.js', '');
+                    } else {
+                        basePath = detectedPath;
+                    }
                     console.log('[Media Picker] basePath detectado do script src:', basePath);
                 }
                 break;
@@ -71,6 +79,20 @@
         if (!basePath || basePath === 'undefined' || basePath === 'null') {
             console.warn('[Media Picker] basePath não detectado ou inválido, usando vazio');
             basePath = '';
+        }
+        // Limpar basePath se contiver protocolo/domínio (não deve ser usado para imagens)
+        if (basePath && (basePath.indexOf('://') !== -1 || basePath.indexOf('pontodogolfeoutlet.com.br') !== -1)) {
+            console.warn('[Media Picker] basePath contém URL completa, extraindo apenas caminho');
+            // Tentar extrair apenas o caminho
+            if (basePath.indexOf('/public') !== -1) {
+                // Em produção, se basePath contém /public, remover (DocumentRoot já é public_html/)
+                basePath = basePath.replace(/^https?:\/\/[^\/]+/, ''); // Remove protocolo e domínio
+                if (basePath.startsWith('/public')) {
+                    basePath = basePath.replace('/public', '');
+                }
+            } else {
+                basePath = basePath.replace(/^https?:\/\/[^\/]+/, ''); // Remove protocolo e domínio
+            }
         }
         console.log('[Media Picker] basePath final:', basePath, '(tipo:', typeof basePath, ')');
     }
@@ -393,21 +415,15 @@
                 console.log('[Media Picker] Renderizando', data.files.length, 'imagens');
                 data.files.forEach(function(file) {
                     // Construir URL da imagem corretamente
-                    // file.url já vem como /uploads/tenants/1/... do backend
+                    // file.url já vem como /uploads/tenants/1/... do backend (relativa à raiz do domínio)
+                    // NÃO usar basePath para imagens, pois as URLs já são relativas à raiz
+                    // basePath só é usado para requisições AJAX (ex: /admin/midias/listar)
                     var imageUrl = file.url || '';
                     if (!imageUrl.startsWith('/')) {
                         imageUrl = '/' + imageUrl;
                     }
-                    // Em produção, basePath pode estar vazio (string vazia), então usar apenas a URL
-                    // Em dev, basePath é /ecommerce-v1.0/public, então concatenar
-                    // Mas se basePath for vazio ou undefined, a URL já está correta (começa com /)
-                    var fullImageUrl = (basePath && basePath !== '') ? (basePath + imageUrl) : imageUrl;
-                    console.log('[Media Picker] Imagem:', {
-                        'file.url': file.url,
-                        'imageUrl': imageUrl,
-                        'basePath': basePath,
-                        'fullImageUrl': fullImageUrl
-                    });
+                    // Usar apenas a URL relativa (sem basePath) - funciona tanto em dev quanto em produção
+                    var fullImageUrl = imageUrl;
                     
                     var item = document.createElement('div');
                     item.className = 'pg-midia-item';
