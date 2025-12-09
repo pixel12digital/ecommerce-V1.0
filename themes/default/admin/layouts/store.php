@@ -571,9 +571,10 @@
     elseif (isset($_SERVER['PHP_SELF']) && strpos($_SERVER['PHP_SELF'], '/ecommerce-v1.0/public') !== false) {
         $basePath = '/ecommerce-v1.0/public';
     }
-    // Se nenhum contiver, assumir que estamos em /ecommerce-v1.0/public (padrão do projeto)
+    // Em produção (Hostinger), basePath deve ser vazio (DocumentRoot = public_html/)
+    // Se nenhum contiver /ecommerce-v1.0/public, assumir produção (basePath vazio)
     else {
-        $basePath = '/ecommerce-v1.0/public';
+        $basePath = ''; // Produção: DocumentRoot aponta para raiz
     }
     
     // Determinar rota atual para highlight do menu

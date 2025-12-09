@@ -63,16 +63,16 @@
                 break;
             }
         }
-        // Fallback: tentar detectar do body ou window
-        if (!basePath && window.basePath) {
-            basePath = window.basePath;
+        // Fallback: tentar detectar do window.basePath (definido no layout)
+        if (!basePath && typeof window.basePath !== 'undefined') {
+            basePath = window.basePath || '';
             console.log('[Media Picker] basePath detectado do window.basePath:', basePath);
         }
-        if (!basePath) {
-            console.warn('[Media Picker] basePath não detectado, usando vazio');
+        if (!basePath || basePath === 'undefined' || basePath === 'null') {
+            console.warn('[Media Picker] basePath não detectado ou inválido, usando vazio');
             basePath = '';
         }
-        console.log('[Media Picker] basePath final:', basePath);
+        console.log('[Media Picker] basePath final:', basePath, '(tipo:', typeof basePath, ')');
     }
 
     /**
@@ -312,14 +312,20 @@
             url += '?folder=' + encodeURIComponent(folderToUse);
         }
         
+        console.log('[Media Picker] Carregando imagens de:', url);
+        console.log('[Media Picker] basePath:', basePath);
+        console.log('[Media Picker] folder:', folderToUse);
+        
         fetch(url)
             .then(function(response) {
+                console.log('[Media Picker] Response status:', response.status);
                 if (!response.ok) {
-                    throw new Error('Erro ao carregar imagens');
+                    throw new Error('Erro ao carregar imagens: ' + response.status);
                 }
                 return response.json();
             })
             .then(function(data) {
+                console.log('[Media Picker] Dados recebidos:', data);
                 loading.style.display = 'none';
 
                 if (!data.success) {
@@ -330,36 +336,57 @@
 
                 grid.innerHTML = '';
                 if (!data.files || !data.files.length) {
+                    console.log('[Media Picker] Nenhuma imagem encontrada');
                     grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: #666;">Nenhuma imagem encontrada ainda. Use o campo acima para fazer upload.</div>';
                     grid.style.display = 'grid';
                     return;
                 }
 
+                console.log('[Media Picker] Renderizando', data.files.length, 'imagens');
                 data.files.forEach(function(file) {
+                    // Construir URL da imagem corretamente
+                    // file.url já vem como /uploads/tenants/1/... do backend
+                    var imageUrl = file.url || '';
+                    if (!imageUrl.startsWith('/')) {
+                        imageUrl = '/' + imageUrl;
+                    }
+                    // Em produção, basePath pode estar vazio (string vazia), então usar apenas a URL
+                    // Em dev, basePath é /ecommerce-v1.0/public, então concatenar
+                    // Mas se basePath for vazio ou undefined, a URL já está correta (começa com /)
+                    var fullImageUrl = (basePath && basePath !== '') ? (basePath + imageUrl) : imageUrl;
+                    console.log('[Media Picker] Imagem:', {
+                        'file.url': file.url,
+                        'imageUrl': imageUrl,
+                        'basePath': basePath,
+                        'fullImageUrl': fullImageUrl
+                    });
+                    
                     var item = document.createElement('div');
                     item.className = 'pg-midia-item';
-                    item.dataset.url = file.url;
+                    item.dataset.url = file.url; // Guardar URL relativa original
                     item.style.cssText = 'border: 2px solid #ddd; border-radius: 8px; padding: 0.5rem; background: white; cursor: pointer; transition: all 0.2s; text-align: center;';
                     
                     var folderBadge = file.folderLabel ? '<span style="font-size: 0.7rem; color: #666; display: block; margin-top: 0.25rem;">' + escapeHtml(file.folderLabel) + '</span>' : '';
+                    var fileName = file.filename || file.name || 'Sem nome';
 
                     item.innerHTML =
                         '<div style="width: 100%; padding-top: 100%; position: relative; overflow: hidden; border-radius: 4px; background: #f5f5f5; margin-bottom: 0.5rem;">' +
-                            '<img src="' + basePath + file.url + '" alt="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">' +
+                            '<img src="' + fullImageUrl + '" alt="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" onerror="console.error(\'[Media Picker] Erro ao carregar imagem:\', this.src); this.parentElement.parentElement.style.display=\'none\';">' +
                         '</div>' +
-                        '<div class="pg-midia-item-name" style="margin-top: 0.5rem; font-size: 0.75rem; color: #666; word-break: break-word; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.filename) + '</div>' +
+                        '<div class="pg-midia-item-name" style="margin-top: 0.5rem; font-size: 0.75rem; color: #666; word-break: break-word; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;" title="' + escapeHtml(fileName) + '">' + escapeHtml(fileName) + '</div>' +
                         folderBadge;
 
                     grid.appendChild(item);
                 });
 
                 grid.style.display = 'grid';
+                console.log('[Media Picker] Grid renderizado com', data.files.length, 'itens');
             })
             .catch(function(err) {
+                console.error('[Media Picker] Erro ao carregar imagens:', err);
                 loading.style.display = 'none';
-                erro.textContent = 'Erro ao carregar as imagens. Tente novamente.';
+                erro.textContent = 'Erro ao carregar as imagens: ' + (err.message || 'Erro desconhecido');
                 erro.style.display = 'block';
-                console.error('Erro ao carregar imagens:', err);
             });
     }
 
