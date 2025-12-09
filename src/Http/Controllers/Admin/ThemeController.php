@@ -7,6 +7,14 @@ use App\Services\ThemeConfig;
 
 class ThemeController extends Controller
 {
+    private function sanitizeFileName($fileName): string
+    {
+        // Remove caracteres especiais e espaços
+        $fileName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $fileName);
+        // Remove múltiplos underscores
+        $fileName = preg_replace('/_+/', '_', $fileName);
+        return $fileName;
+    }
     public function edit(): void
     {
         // Carregar todas as configurações atuais
@@ -31,6 +39,7 @@ class ThemeController extends Controller
             'footer_whatsapp' => ThemeConfig::get('footer_whatsapp', ''),
             'footer_email' => ThemeConfig::get('footer_email', ''),
             'footer_address' => ThemeConfig::get('footer_address', ''),
+            'contact_email' => ThemeConfig::get('contact_email', ''), // E-mail específico para contato (fallback para footer_email)
             
             // Redes sociais
             'footer_social_instagram' => ThemeConfig::get('footer_social_instagram', ''),
@@ -42,10 +51,22 @@ class ThemeController extends Controller
                 ['label' => 'Home', 'url' => '/', 'enabled' => true],
                 ['label' => 'Sobre', 'url' => '/sobre', 'enabled' => true],
                 ['label' => 'Loja', 'url' => '/produtos', 'enabled' => true],
+                ['label' => 'Contato', 'url' => '/contato', 'enabled' => true],
                 ['label' => 'Minha conta', 'url' => '/minha-conta', 'enabled' => true],
                 ['label' => 'Carrinho', 'url' => '/carrinho', 'enabled' => true],
-                ['label' => 'Frete/Prazos', 'url' => '/frete-prazos', 'enabled' => false],
             ]),
+            
+            // Configurações do catálogo
+            'catalogo_ocultar_estoque_zero' => ThemeConfig::get('catalogo_ocultar_estoque_zero', '0'),
+            
+            // Logo
+            'logo_url' => ThemeConfig::get('logo_url', ''),
+            
+            // Páginas institucionais
+            'pages' => ThemeConfig::getPages(),
+            
+            // Footer
+            'footer' => ThemeConfig::getFooterConfig(),
         ];
 
         $tenant = \App\Tenant\TenantContext::tenant();
@@ -86,6 +107,7 @@ class ThemeController extends Controller
             'footer_whatsapp',
             'footer_email',
             'footer_address',
+            'contact_email',
             'footer_social_instagram',
             'footer_social_facebook',
             'footer_social_youtube',
@@ -120,6 +142,169 @@ class ThemeController extends Controller
         }
 
         ThemeConfig::set('theme_menu_main', $menuItems);
+        
+        // Salvar configuração do catálogo
+        $catalogoOcultarEstoqueZero = isset($_POST['catalogo_ocultar_estoque_zero']) ? '1' : '0';
+        ThemeConfig::set('catalogo_ocultar_estoque_zero', $catalogoOcultarEstoqueZero);
+        
+        // Processar upload de logo
+        if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['logo'];
+            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+            
+            if (in_array($file['type'], $allowedTypes)) {
+                $tenantId = \App\Tenant\TenantContext::id();
+                
+                $paths = require __DIR__ . '/../../../../config/paths.php';
+                $uploadsBasePath = $paths['uploads_produtos_base_path'];
+                $uploadsPath = $uploadsBasePath . '/' . $tenantId . '/logo';
+                
+                if (!is_dir($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = $this->sanitizeFileName($file['name']);
+                $destFile = $uploadsPath . '/' . $fileName;
+                
+                // Se arquivo já existe, adicionar timestamp
+                if (file_exists($destFile)) {
+                    $info = pathinfo($fileName);
+                    $fileName = $info['filename'] . '_' . time() . '.' . $info['extension'];
+                    $destFile = $uploadsPath . '/' . $fileName;
+                }
+                
+                if (move_uploaded_file($file['tmp_name'], $destFile)) {
+                    // Buscar logo antigo antes de salvar o novo
+                    $oldLogo = ThemeConfig::get('logo_url', '');
+                    
+                    $relativePath = "/uploads/tenants/{$tenantId}/logo/{$fileName}";
+                    ThemeConfig::set('logo_url', $relativePath);
+                    
+                    // Remover logo antigo se existir e for diferente do novo
+                    if (!empty($oldLogo) && $oldLogo !== $relativePath) {
+                        $oldPath = dirname(__DIR__, 3) . '/public' . $oldLogo;
+                        if (file_exists($oldPath)) {
+                            @unlink($oldPath);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Remover logo se solicitado
+        if (isset($_POST['remove_logo']) && $_POST['remove_logo'] === '1') {
+            $oldLogo = ThemeConfig::get('logo_url', '');
+            if (!empty($oldLogo)) {
+                $oldPath = dirname(__DIR__, 3) . '/public' . $oldLogo;
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+                ThemeConfig::set('logo_url', '');
+            }
+        }
+        
+        // Salvar páginas institucionais
+        if (isset($_POST['pages']) && is_array($_POST['pages'])) {
+            // Whitelist de tags HTML permitidas para prevenir XSS, mantendo formatação básica
+            $allowedTags = '<p><h1><h2><h3><h4><h5><h6><strong><b><em><i><u><ul><ol><li><a><br><hr><div><span>';
+            
+            // Obter páginas atuais para fazer merge
+            $currentPages = ThemeConfig::getPages();
+            
+            $pages = [];
+            foreach ($_POST['pages'] as $slug => $pageData) {
+                if (isset($pageData['title'])) {
+                    $page = [
+                        'title' => trim($pageData['title'] ?? ''),
+                    ];
+                    
+                    // Tratamento especial para FAQ (com items)
+                    if ($slug === 'faq') {
+                        $page['intro'] = !empty($pageData['intro']) ? strip_tags(trim($pageData['intro']), $allowedTags) : '';
+                        
+                        // Processar items do FAQ
+                        $itemsInput = $pageData['items'] ?? [];
+                        $normalizedItems = [];
+                        
+                        if (is_array($itemsInput)) {
+                            foreach ($itemsInput as $item) {
+                                $question = trim($item['question'] ?? '');
+                                $answer = trim($item['answer'] ?? '');
+                                
+                                // Ignorar linhas totalmente vazias
+                                if ($question === '' && $answer === '') {
+                                    continue;
+                                }
+                                
+                                $normalizedItems[] = [
+                                    'question' => $question,
+                                    'answer' => !empty($answer) ? strip_tags($answer, $allowedTags) : '',
+                                ];
+                            }
+                        }
+                        
+                        $page['items'] = array_values($normalizedItems);
+                    } else {
+                        // Outras páginas (content ou intro)
+                        $page['content'] = !empty($pageData['content']) ? strip_tags(trim($pageData['content']), $allowedTags) : '';
+                        $page['intro'] = !empty($pageData['intro']) ? strip_tags(trim($pageData['intro']), $allowedTags) : '';
+                    }
+                    
+                    $pages[$slug] = $page;
+                }
+            }
+            
+            // Fazer merge com páginas existentes para não perder dados de outras páginas
+            $mergedPages = array_merge($currentPages, $pages);
+            
+            if (!empty($pages)) {
+                ThemeConfig::setPages($mergedPages);
+            }
+        }
+        
+        // Salvar configuração do footer
+        if (isset($_POST['footer_sections']) && is_array($_POST['footer_sections'])) {
+            // Obter defaults para preservar rotas
+            $defaultFooter = ThemeConfig::getFooterConfig();
+            $footer = ['sections' => []];
+            
+            foreach ($_POST['footer_sections'] as $sectionKey => $sectionData) {
+                if (!isset($sectionData['enabled'])) {
+                    continue;
+                }
+                
+                $section = [
+                    'title' => trim($sectionData['title'] ?? ''),
+                    'enabled' => isset($sectionData['enabled']) ? true : false,
+                ];
+                
+                // Seção de categorias tem limit
+                if ($sectionKey === 'categorias' && isset($sectionData['limit'])) {
+                    $section['limit'] = (int)$sectionData['limit'];
+                }
+                
+                // Outras seções têm links
+                if (in_array($sectionKey, ['ajuda', 'minha_conta', 'institucional']) && isset($sectionData['links'])) {
+                    $section['links'] = [];
+                    $defaultLinks = $defaultFooter['sections'][$sectionKey]['links'] ?? [];
+                    
+                    foreach ($sectionData['links'] as $linkKey => $linkData) {
+                        if (isset($linkData['enabled'])) {
+                            $section['links'][$linkKey] = [
+                                'label' => trim($linkData['label'] ?? ''),
+                                'enabled' => isset($linkData['enabled']) ? true : false,
+                                'route' => $defaultLinks[$linkKey]['route'] ?? '', // Preservar route dos defaults
+                            ];
+                        }
+                    }
+                }
+                
+                $footer['sections'][$sectionKey] = $section;
+            }
+            
+            ThemeConfig::setFooterConfig($footer);
+        }
+        
         ThemeConfig::clearCache();
 
         $this->redirect('/admin/tema?success=1');

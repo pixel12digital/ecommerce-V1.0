@@ -6,9 +6,11 @@
     <title><?= $categoriaAtual ? htmlspecialchars($categoriaAtual['nome']) : 'Todos os Produtos' ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
+        <?= \App\Support\ThemeCssHelper::generateCssVariables() ?>
+        /* Compatibilidade com variáveis antigas */
         :root {
-            --cor-primaria: <?= htmlspecialchars($theme['color_primary'] ?? '#2E7D32') ?>;
-            --cor-secundaria: <?= htmlspecialchars($theme['color_secondary'] ?? '#F7931E') ?>;
+            --cor-primaria: var(--pg-color-primary);
+            --cor-secundaria: var(--pg-color-secondary);
         }
         .icon {
             display: inline-flex;
@@ -56,6 +58,14 @@
             font-weight: 700;
             text-decoration: none;
             color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .header-logo img {
+            max-height: 50px;
+            max-width: 200px;
+            object-fit: contain;
         }
         .header-search {
             flex: 1;
@@ -508,7 +518,14 @@
     <!-- Header simplificado -->
     <header class="header">
         <div class="header-container">
-            <a href="<?= $basePath ?>/" class="header-logo">Loja</a>
+            <a href="<?= $basePath ?>/" class="header-logo">
+                <?php if (!empty($theme['logo_url'])): ?>
+                    <img src="<?= $basePath . htmlspecialchars($theme['logo_url']) ?>" alt="Loja" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                    <span style="display: none;">Loja</span>
+                <?php else: ?>
+                    Loja
+                <?php endif; ?>
+            </a>
             <div class="header-search">
                 <form method="GET" action="<?= $urlBase ?>">
                     <input type="text" name="q" value="<?= htmlspecialchars($filtrosAtuais['q']) ?>" placeholder="Buscar produtos...">

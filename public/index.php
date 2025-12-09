@@ -26,6 +26,7 @@ if (file_exists($envFile)) {
 use App\Core\Router;
 use App\Http\Middleware\TenantResolverMiddleware;
 use App\Http\Middleware\AuthMiddleware;
+use App\Http\Middleware\CustomerAuthMiddleware;
 use App\Http\Controllers\PlatformAuthController;
 use App\Http\Controllers\StoreAuthController;
 use App\Http\Controllers\PlatformDashboardController;
@@ -47,10 +48,12 @@ use App\Http\Controllers\Admin\HomeSectionsController;
 use App\Http\Controllers\Admin\HomeBannersController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Controllers\Admin\GatewayConfigController;
 use App\Http\Controllers\Storefront\NewsletterController as StorefrontNewsletterController;
+use App\Http\Controllers\Storefront\StaticPageController;
 
 // Obter URI e método
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -144,7 +147,7 @@ $router->get('/admin/home', HomeConfigController::class . '@index', [
     AuthMiddleware::class => [false, true]
 ]);
 
-// Rotas Admin - Home (Bolotas de Categorias)
+// Rotas Admin - Home (Categorias em Destaque)
 $router->get('/admin/home/categorias-pills', HomeCategoriesController::class . '@index', [
     AuthMiddleware::class => [false, true]
 ]);
@@ -160,6 +163,20 @@ $router->post('/admin/home/categorias-pills/{id}', HomeCategoriesController::cla
 $router->post('/admin/home/categorias-pills/{id}/excluir', HomeCategoriesController::class . '@destroy', [
     AuthMiddleware::class => [false, true]
 ]);
+$router->get('/admin/home/categorias-pills/midia', HomeCategoriesController::class . '@listarImagensExistentes', [
+    AuthMiddleware::class => [false, true]
+]);
+
+// Rotas Admin - Biblioteca de Mídia
+$router->get('/admin/midias', MediaLibraryController::class . '@index', [
+    AuthMiddleware::class => [false, true]
+]);
+$router->get('/admin/midias/listar', MediaLibraryController::class . '@listar', [
+    AuthMiddleware::class => [false, true]
+]);
+$router->post('/admin/midias/upload', MediaLibraryController::class . '@upload', [
+    AuthMiddleware::class => [false, true]
+]);
 
 // Rotas Admin - Home (Seções de Categorias)
 $router->get('/admin/home/secoes-categorias', HomeSectionsController::class . '@index', [
@@ -170,6 +187,7 @@ $router->post('/admin/home/secoes-categorias', HomeSectionsController::class . '
 ]);
 
 // Rotas Admin - Home (Banners)
+// IMPORTANTE: Rotas específicas devem vir ANTES de rotas com parâmetros dinâmicos
 $router->get('/admin/home/banners', HomeBannersController::class . '@index', [
     AuthMiddleware::class => [false, true]
 ]);
@@ -177,6 +195,10 @@ $router->get('/admin/home/banners/novo', HomeBannersController::class . '@create
     AuthMiddleware::class => [false, true]
 ]);
 $router->post('/admin/home/banners/novo', HomeBannersController::class . '@store', [
+    AuthMiddleware::class => [false, true]
+]);
+// Rota específica ANTES da rota com {id}
+$router->post('/admin/home/banners/reordenar', HomeBannersController::class . '@reordenar', [
     AuthMiddleware::class => [false, true]
 ]);
 $router->get('/admin/home/banners/{id}/editar', HomeBannersController::class . '@edit', [
@@ -244,6 +266,19 @@ $router->get('/produtos', ProductController::class . '@index');
 $router->get('/categoria/{slug}', ProductController::class . '@category');
 $router->get('/produto/{slug}', ProductController::class . '@show');
 $router->post('/produto/{slug}/avaliar', ProductReviewController::class . '@store');
+
+// Rotas públicas - Páginas Institucionais
+$router->get('/sobre', StaticPageController::class . '@sobre');
+$router->get('/contato', StaticPageController::class . '@contato');
+$router->post('/contato', StaticPageController::class . '@enviarContato');
+$router->get('/trocas-e-devolucoes', StaticPageController::class . '@trocasDevolucoes');
+$router->get('/frete-prazos', StaticPageController::class . '@fretePrazos');
+$router->get('/formas-de-pagamento', StaticPageController::class . '@formasPagamento');
+$router->get('/faq', StaticPageController::class . '@faq');
+$router->get('/politica-de-privacidade', StaticPageController::class . '@politicaPrivacidade');
+$router->get('/termos-de-uso', StaticPageController::class . '@termosUso');
+$router->get('/politica-de-cookies', StaticPageController::class . '@politicaCookies');
+$router->get('/seja-parceiro', StaticPageController::class . '@sejaParceiro');
 
 // Rotas públicas - Carrinho
 $router->get('/carrinho', CartController::class . '@index');

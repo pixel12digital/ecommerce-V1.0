@@ -17,6 +17,7 @@ class ProductController extends Controller
         // Parâmetros de filtro
         $q = $_GET['q'] ?? '';
         $status = $_GET['status'] ?? '';
+        $somenteComImagem = isset($_GET['somente_com_imagem']) && $_GET['somente_com_imagem'] == '1';
         $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $perPage = 20;
         $offset = ($currentPage - 1) * $perPage;
@@ -44,6 +45,11 @@ class ProductController extends Controller
         if (!empty($status) && $status !== 'todos') {
             $where[] = 'status = :status';
             $params['status'] = $status;
+        }
+
+        // Filtro "Somente produtos com imagem"
+        if ($somenteComImagem) {
+            $where[] = 'imagem_principal IS NOT NULL AND imagem_principal != \'\'';
         }
 
         $whereClause = implode(' AND ', $where);
@@ -129,7 +135,8 @@ class ProductController extends Controller
             ],
             'filtros' => [
                 'q' => $q,
-                'status' => $status
+                'status' => $status,
+                'somente_com_imagem' => $somenteComImagem
             ]
         ]);
     }
@@ -312,6 +319,7 @@ class ProductController extends Controller
             $statusEstoque = $_POST['status_estoque'] ?? 'outofstock';
             $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
             $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
+            $exibirNoCatalogo = isset($_POST['exibir_no_catalogo']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
 
@@ -321,6 +329,7 @@ class ProductController extends Controller
                     slug = :slug,
                     sku = :sku,
                     status = :status,
+                    exibir_no_catalogo = :exibir_no_catalogo,
                     preco_regular = :preco_regular,
                     preco_promocional = :preco_promocional,
                     data_promocao_inicio = :data_promocao_inicio,
@@ -339,6 +348,7 @@ class ProductController extends Controller
                 'slug' => $slug,
                 'sku' => $sku,
                 'status' => $status,
+                'exibir_no_catalogo' => $exibirNoCatalogo,
                 'preco_regular' => $precoRegular,
                 'preco_promocional' => $precoPromocional,
                 'data_promocao_inicio' => $dataPromocaoInicio,

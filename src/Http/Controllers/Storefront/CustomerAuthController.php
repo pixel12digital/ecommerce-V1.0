@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Tenant\TenantContext;
+use App\Services\ThemeConfig;
 
 class CustomerAuthController extends Controller
 {
@@ -24,7 +25,15 @@ class CustomerAuthController extends Controller
         $messageType = $_SESSION['customer_auth_message_type'] ?? 'error';
         unset($_SESSION['customer_auth_message'], $_SESSION['customer_auth_message_type']);
 
+        $theme = ThemeConfig::getFullThemeConfig();
+        $tenant = TenantContext::tenant();
+        
         $this->view('storefront/customers/login', [
+            'loja' => [
+                'nome' => $tenant->name,
+                'slug' => $tenant->slug
+            ],
+            'theme' => $theme,
             'message' => $message,
             'messageType' => $messageType,
             'redirectUrl' => $_SESSION['customer_auth_redirect'] ?? '/minha-conta',

@@ -1,3 +1,18 @@
+<?php
+use App\Support\StoreBranding;
+
+// Obter branding da loja
+$branding = StoreBranding::getBranding();
+$logoUrl = $branding['logo_url'] ?? null;
+$storeName = $branding['store_name'] ?? 'Loja';
+
+// Obter caminho base se necessário
+$basePath = '';
+$requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
+    $basePath = '/ecommerce-v1.0/public';
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -22,7 +37,58 @@
             width: 100%;
             max-width: 400px;
         }
-        h1 { margin-bottom: 1.5rem; color: #333; }
+        
+        /* Bloco de branding no login admin */
+        .pg-admin-login-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .pg-admin-login-logo {
+            background-color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+            margin-bottom: 12px;
+        }
+        .pg-admin-login-logo img {
+            display: block;
+            max-height: 40px;
+            max-width: 180px;
+            object-fit: contain;
+        }
+        .pg-admin-login-logo-placeholder {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #333333;
+            font-size: 16px;
+        }
+        .pg-admin-login-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .pg-admin-login-store {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333333;
+        }
+        .pg-admin-login-subtitle {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #888888;
+        }
+        
+        h1 { margin-bottom: 1.5rem; color: #333; display: none; }
         .form-group { margin-bottom: 1rem; }
         label { display: block; margin-bottom: 0.5rem; color: #555; }
         input[type="email"], input[type="password"] {
@@ -35,14 +101,16 @@
         button {
             width: 100%;
             padding: 0.75rem;
-            background: #023A8D;
+            background: #2E7D32;
             color: white;
             border: none;
             border-radius: 4px;
             font-size: 1rem;
             cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
         }
-        button:hover { background: #022a6b; }
+        button:hover { background: #1B5E20; }
         .error {
             background: #fee;
             color: #c33;
@@ -53,16 +121,30 @@
     </style>
 </head>
 <body>
-    <?php
-    // Obter caminho base se necessário
-    $basePath = '';
-    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-    if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
-        $basePath = '/ecommerce-v1.0/public';
-    }
-    ?>
     <div class="login-container">
-        <h1>Store Admin</h1>
+        <div class="pg-admin-login-brand">
+            <?php if ($logoUrl): ?>
+                <div class="pg-admin-login-logo">
+                    <img src="<?= $basePath . htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($storeName) ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="pg-admin-login-logo-placeholder" style="display: none;">
+                        <span><?= strtoupper(substr($storeName, 0, 2)) ?></span>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="pg-admin-login-logo pg-admin-login-logo-placeholder">
+                    <span><?= strtoupper(substr($storeName, 0, 2)) ?></span>
+                </div>
+            <?php endif; ?>
+            
+            <div class="pg-admin-login-text">
+                <div class="pg-admin-login-store">
+                    <?= htmlspecialchars($storeName) ?>
+                </div>
+                <div class="pg-admin-login-subtitle">
+                    Store Admin
+                </div>
+            </div>
+        </div>
         <?php if (isset($error)): ?>
             <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>

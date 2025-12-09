@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolotas de Categorias - Store Admin</title>
+    <title>Categorias em Destaque - Store Admin</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -127,7 +127,7 @@
     }
     ?>
     <div class="header">
-        <h2>Bolotas de Categorias</h2>
+        <h2>Categorias em Destaque</h2>
         <div>
             <a href="<?= $basePath ?>/admin/home">Home da Loja</a> | 
             <a href="<?= $basePath ?>/admin">Dashboard</a> | 
@@ -144,7 +144,7 @@
 
         <!-- Formulário de Adicionar -->
         <div class="card">
-            <h3>Adicionar Nova Bolota</h3>
+            <h3>Adicionar Categoria em Destaque</h3>
             <form method="POST" action="<?= $basePath ?>/admin/home/categorias-pills">
                 <div class="form-group">
                     <label>Categoria *</label>
@@ -178,11 +178,11 @@
             </form>
         </div>
 
-        <!-- Lista de Bolotas -->
+        <!-- Lista de Categorias em Destaque -->
         <div class="card">
-            <h3>Bolotas Configuradas</h3>
+            <h3>Categorias em Destaque Configuradas</h3>
             <?php if (empty($pills)): ?>
-                <p>Nenhuma bolota configurada ainda.</p>
+                <p>Nenhuma categoria em destaque configurada ainda.</p>
             <?php else: ?>
                 <table class="table">
                     <thead>

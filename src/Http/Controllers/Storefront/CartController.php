@@ -6,17 +6,60 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Tenant\TenantContext;
 use App\Services\CartService;
+use App\Services\ThemeConfig;
 
 class CartController extends Controller
 {
     public function index(): void
     {
+        $tenantId = TenantContext::id();
+        $tenant = TenantContext::tenant();
+        
+        // Carregar configurações do tema
+        $theme = [
+            // Cores
+            'color_primary' => ThemeConfig::getColor('theme_color_primary', '#2E7D32'),
+            'color_secondary' => ThemeConfig::getColor('theme_color_secondary', '#F7931E'),
+            'color_topbar_bg' => ThemeConfig::getColor('theme_color_topbar_bg', '#1a1a1a'),
+            'color_topbar_text' => ThemeConfig::getColor('theme_color_topbar_text', '#ffffff'),
+            'color_header_bg' => ThemeConfig::getColor('theme_color_header_bg', '#ffffff'),
+            'color_header_text' => ThemeConfig::getColor('theme_color_header_text', '#333333'),
+            'color_footer_bg' => ThemeConfig::getColor('theme_color_footer_bg', '#1a1a1a'),
+            'color_footer_text' => ThemeConfig::getColor('theme_color_footer_text', '#ffffff'),
+            
+            // Textos
+            'topbar_text' => ThemeConfig::get('topbar_text', 'Frete grátis acima de R$ 299 | Troca garantida em até 7 dias | Outlet de golfe'),
+            
+            // Menu
+            'menu_main' => ThemeConfig::getMainMenu(),
+            
+            // Logo
+            'logo_url' => ThemeConfig::get('logo_url', ''),
+            
+            // Footer
+            'footer_phone' => ThemeConfig::get('footer_phone', ''),
+            'footer_whatsapp' => ThemeConfig::get('footer_whatsapp', ''),
+            'footer_email' => ThemeConfig::get('footer_email', ''),
+            'footer_address' => ThemeConfig::get('footer_address', ''),
+            'footer_social_instagram' => ThemeConfig::get('footer_social_instagram', ''),
+            'footer_social_facebook' => ThemeConfig::get('footer_social_facebook', ''),
+            'footer_social_youtube' => ThemeConfig::get('footer_social_youtube', ''),
+        ];
+
         $cart = CartService::get();
         $subtotal = CartService::getSubtotal();
+        $cartTotalItems = CartService::getTotalItems();
 
         $this->view('storefront/cart/index', [
+            'loja' => [
+                'nome' => $tenant->name,
+                'slug' => $tenant->slug
+            ],
+            'theme' => $theme,
             'cart' => $cart,
             'subtotal' => $subtotal,
+            'cartTotalItems' => $cartTotalItems,
+            'cartSubtotal' => $subtotal,
         ]);
     }
 

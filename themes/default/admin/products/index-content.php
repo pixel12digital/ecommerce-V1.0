@@ -22,6 +22,13 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                     <option value="draft" <?= $filtros['status'] === 'draft' ? 'selected' : '' ?>><?= \App\Support\LangHelper::productStatusLabel('draft') ?></option>
                 </select>
             </div>
+            <div class="admin-filter-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="somente_com_imagem" value="1" 
+                           <?= !empty($filtros['somente_com_imagem']) ? 'checked' : '' ?>>
+                    <span>Mostrar apenas produtos com imagem</span>
+                </label>
+            </div>
             <button type="submit" class="admin-btn admin-btn-primary">
                 <i class="bi bi-funnel icon"></i>
                 Filtrar
@@ -101,8 +108,15 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         
         <?php if ($paginacao['totalPages'] > 1): ?>
             <div class="admin-pagination">
+                <?php 
+                $queryParams = [];
+                if (!empty($filtros['q'])) $queryParams[] = 'q=' . urlencode($filtros['q']);
+                if (!empty($filtros['status'])) $queryParams[] = 'status=' . urlencode($filtros['status']);
+                if (!empty($filtros['somente_com_imagem'])) $queryParams[] = 'somente_com_imagem=1';
+                $queryString = !empty($queryParams) ? '&' . implode('&', $queryParams) : '';
+                ?>
                 <?php if ($paginacao['hasPrev']): ?>
-                    <a href="?page=<?= $paginacao['currentPage'] - 1 ?>&q=<?= urlencode($filtros['q']) ?>&status=<?= urlencode($filtros['status']) ?>">
+                    <a href="?page=<?= $paginacao['currentPage'] - 1 ?><?= $queryString ?>">
                         <i class="bi bi-chevron-left icon"></i>
                         Anterior
                     </a>
@@ -116,7 +130,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 </span>
                 
                 <?php if ($paginacao['hasNext']): ?>
-                    <a href="?page=<?= $paginacao['currentPage'] + 1 ?>&q=<?= urlencode($filtros['q']) ?>&status=<?= urlencode($filtros['status']) ?>">
+                    <a href="?page=<?= $paginacao['currentPage'] + 1 ?><?= $queryString ?>">
                         Próxima
                         <i class="bi bi-chevron-right icon"></i>
                     </a>
@@ -146,7 +160,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 }
 .btn-view {
     padding: 0.5rem 1rem;
-    background: #023A8D;
+    background: var(--pg-admin-primary);
     color: white;
     text-decoration: none;
     border-radius: 6px;
@@ -158,7 +172,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
     transition: background 0.2s, transform 0.2s;
 }
 .btn-view:hover {
-    background: #022a6b;
+    background: var(--pg-admin-primary-hover);
     transform: translateY(-1px);
 }
 .btn-view .icon {

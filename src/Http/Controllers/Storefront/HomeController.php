@@ -46,14 +46,26 @@ class HomeController extends Controller
             
             // Menu
             'menu_main' => ThemeConfig::getMainMenu(),
+            
+            // Logo
+            'logo_url' => ThemeConfig::get('logo_url', ''),
         ];
 
+        // Verificar configuração de ocultar produtos com estoque zero
+        $ocultarEstoqueZero = ThemeConfig::get('catalogo_ocultar_estoque_zero', '0');
+        $estoqueCondition = '';
+        if ($ocultarEstoqueZero === '1') {
+            $estoqueCondition = " AND (gerencia_estoque = 0 OR (gerencia_estoque = 1 AND quantidade_estoque > 0))";
+        }
+        
         // Primeiro, tentar buscar produtos em destaque
         $stmt = $db->prepare("
             SELECT * FROM produtos 
             WHERE tenant_id = :tenant_id 
             AND status = 'publish'
+            AND exibir_no_catalogo = 1
             AND destaque = 1
+            {$estoqueCondition}
             ORDER BY data_criacao DESC 
             LIMIT 8
         ");
@@ -66,6 +78,8 @@ class HomeController extends Controller
                 SELECT * FROM produtos 
                 WHERE tenant_id = :tenant_id 
                 AND status = 'publish'
+                AND exibir_no_catalogo = 1
+                {$estoqueCondition}
                 ORDER BY data_criacao DESC 
                 LIMIT 8
             ");
@@ -106,6 +120,9 @@ class HomeController extends Controller
         $stmt->execute();
         $categoryPills = $stmt->fetchAll();
 
+        // Buscar todas as categorias para o menu (usando as mesmas pills por enquanto)
+        $allCategories = $categoryPills;
+
         // Buscar seções de categorias
         $stmt = $db->prepare("
             SELECT hcs.*, c.nome as categoria_nome, c.slug as categoria_slug
@@ -124,17 +141,25 @@ class HomeController extends Controller
         foreach ($sections as $section) {
             if ($section['categoria_id'] > 0) {
                 // Buscar produtos da categoria
+                $estoqueConditionSection = '';
+                if ($ocultarEstoqueZero === '1') {
+                    $estoqueConditionSection = " AND (p.gerencia_estoque = 0 OR (p.gerencia_estoque = 1 AND p.quantidade_estoque > 0))";
+                }
+                
                 $stmt = $db->prepare("
                     SELECT p.*
                     FROM produtos p
-                    INNER JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id
-                    WHERE p.tenant_id = :tenant_id
+                    INNER JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id_join
+                    WHERE p.tenant_id = :tenant_id_where
                     AND p.status = 'publish'
+                    AND p.exibir_no_catalogo = 1
                     AND pc.categoria_id = :categoria_id
+                    {$estoqueConditionSection}
                     ORDER BY p.data_criacao DESC
                     LIMIT :limit
                 ");
-                $stmt->bindValue(':tenant_id', $tenantId, \PDO::PARAM_INT);
+                $stmt->bindValue(':tenant_id_join', $tenantId, \PDO::PARAM_INT);
+                $stmt->bindValue(':tenant_id_where', $tenantId, \PDO::PARAM_INT);
                 $stmt->bindValue(':categoria_id', $section['categoria_id'], \PDO::PARAM_INT);
                 $stmt->bindValue(':limit', $section['quantidade_produtos'], \PDO::PARAM_INT);
                 $stmt->execute();
@@ -194,6 +219,7 @@ class HomeController extends Controller
             'theme' => $theme,
             'produtosDestaque' => $produtosDestaque,
             'categoryPills' => $categoryPills,
+            'allCategories' => $allCategories,
             'sections' => $sectionsComProdutos,
             'heroBanners' => $heroBanners,
             'portraitBanners' => $portraitBanners,

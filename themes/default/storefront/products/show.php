@@ -13,9 +13,11 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
     <title><?= htmlspecialchars($produto['nome']) ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
+        <?= \App\Support\ThemeCssHelper::generateCssVariables() ?>
+        /* Compatibilidade com variáveis antigas */
         :root {
-            --cor-primaria: <?= htmlspecialchars($theme['color_primary'] ?? '#2E7D32') ?>;
-            --cor-secundaria: <?= htmlspecialchars($theme['color_secondary'] ?? '#F7931E') ?>;
+            --cor-primaria: var(--pg-color-primary);
+            --cor-secundaria: var(--pg-color-secondary);
         }
         .icon {
             display: inline-flex;
@@ -55,6 +57,14 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             font-weight: 700;
             text-decoration: none;
             color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .header-logo img {
+            max-height: 50px;
+            max-width: 200px;
+            object-fit: contain;
         }
         .header-cart {
             display: flex;
@@ -670,6 +680,138 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 flex-shrink: 0;
             }
         }
+        
+        /* Fase 10 - Seção de Avaliações */
+        .product-reviews {
+            margin-top: 4rem;
+            padding: 3rem 0;
+            border-top: 2px solid #eee;
+            background: #f8f8f8;
+        }
+        .product-reviews__header {
+            margin-bottom: 2rem;
+        }
+        .product-reviews__summary {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .product-reviews__average {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+        }
+        .product-reviews__stars {
+            display: flex;
+            gap: 0.25rem;
+        }
+        .product-reviews__count {
+            color: #666;
+            font-size: 1rem;
+        }
+        .product-reviews__list {
+            margin-bottom: 2rem;
+        }
+        .product-review {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .product-review__header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .product-review__author {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 600;
+        }
+        .product-review__rating {
+            display: flex;
+            gap: 0.125rem;
+        }
+        .product-review__date {
+            color: #999;
+            font-size: 0.875rem;
+            margin-left: auto;
+        }
+        .product-review__title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.75rem;
+        }
+        .product-review__comment {
+            color: #666;
+            line-height: 1.6;
+            margin: 0;
+        }
+        .product-review__form-wrapper {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .product-review__not-allowed {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .product-review-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .product-review-form label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .product-review-form input[type="text"],
+        .product-review-form textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .product-review-form textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        .star-rating {
+            display: flex;
+            gap: 0.5rem;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
+        .star-rating input[type="radio"] {
+            display: none;
+        }
+        .star-rating label {
+            cursor: pointer;
+            font-size: 2rem;
+            color: #ddd;
+            transition: color 0.2s;
+        }
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #FFC107;
+        }
+        .star-rating input[type="radio"]:checked ~ label {
+            color: #FFC107;
+        }
     </style>
 </head>
 <body>
@@ -686,7 +828,14 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
     <!-- Header -->
     <header class="header">
         <div class="header-container">
-            <a href="<?= $basePath ?>/" class="header-logo">Loja</a>
+            <a href="<?= $basePath ?>/" class="header-logo">
+                <?php if (!empty($theme['logo_url'])): ?>
+                    <img src="<?= $basePath . htmlspecialchars($theme['logo_url']) ?>" alt="<?= htmlspecialchars($loja['nome'] ?? 'Loja') ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                    <span style="display: none;"><?= htmlspecialchars($loja['nome'] ?? 'Loja') ?></span>
+                <?php else: ?>
+                    <?= htmlspecialchars($loja['nome'] ?? 'Loja') ?>
+                <?php endif; ?>
+            </a>
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <?php 
                 // Fase 10 - Verificar se sessão já está ativa antes de iniciar
@@ -910,7 +1059,12 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             <div id="tab-descricao" class="tab-content active">
                 <div class="description">
                     <?php if ($produto['descricao']): ?>
-                        <?= nl2br(htmlspecialchars($produto['descricao'])) ?>
+                        <?php
+                        // Permitir tags HTML básicas de formatação
+                        $allowedTags = '<p><h1><h2><h3><h4><h5><h6><strong><b><em><i><u><ul><ol><li><a><br><hr><div><span><img>';
+                        $descricao = strip_tags($produto['descricao'], $allowedTags);
+                        echo $descricao;
+                        ?>
                     <?php else: ?>
                         <p>Sem descrição disponível.</p>
                     <?php endif; ?>
@@ -1054,138 +1208,6 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 </div>
             </div>
         <?php endif; ?>
-        
-        /* Fase 10 - Seção de Avaliações */
-        .product-reviews {
-            margin-top: 4rem;
-            padding: 3rem 0;
-            border-top: 2px solid #eee;
-            background: #f8f8f8;
-        }
-        .product-reviews__header {
-            margin-bottom: 2rem;
-        }
-        .product-reviews__summary {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
-        .product-reviews__average {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--cor-primaria);
-        }
-        .product-reviews__stars {
-            display: flex;
-            gap: 0.25rem;
-        }
-        .product-reviews__count {
-            color: #666;
-            font-size: 1rem;
-        }
-        .product-reviews__list {
-            margin-bottom: 2rem;
-        }
-        .product-review {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .product-review__header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-        .product-review__author {
-            font-size: 1rem;
-            color: #333;
-            font-weight: 600;
-        }
-        .product-review__rating {
-            display: flex;
-            gap: 0.125rem;
-        }
-        .product-review__date {
-            color: #999;
-            font-size: 0.875rem;
-            margin-left: auto;
-        }
-        .product-review__title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.75rem;
-        }
-        .product-review__comment {
-            color: #666;
-            line-height: 1.6;
-            margin: 0;
-        }
-        .product-review__form-wrapper {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .product-review__not-allowed {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .product-review-form .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .product-review-form label {
-            display: block;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-        .product-review-form input[type="text"],
-        .product-review-form textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-        .product-review-form textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
-        .star-rating {
-            display: flex;
-            gap: 0.5rem;
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-        }
-        .star-rating input[type="radio"] {
-            display: none;
-        }
-        .star-rating label {
-            cursor: pointer;
-            font-size: 2rem;
-            color: #ddd;
-            transition: color 0.2s;
-        }
-        .star-rating label:hover,
-        .star-rating label:hover ~ label {
-            color: #FFC107;
-        }
-        .star-rating input[type="radio"]:checked ~ label {
-            color: #FFC107;
-        }
         
         <!-- Avaliações - Fase 10 -->
         <section class="product-reviews">

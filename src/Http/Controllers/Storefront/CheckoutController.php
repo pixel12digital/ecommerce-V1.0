@@ -9,6 +9,7 @@ use App\Services\CartService;
 use App\Services\Shipping\ShippingService;
 use App\Services\Payment\PaymentService;
 use App\Services\OrderService;
+use App\Services\ThemeConfig;
 
 class CheckoutController extends Controller
 {
@@ -71,13 +72,26 @@ class CheckoutController extends Controller
             }
         }
 
+        // Carregar configurações do tema
+        $theme = ThemeConfig::getFullThemeConfig();
+        $cartTotalItems = CartService::getTotalItems();
+        $cartSubtotal = CartService::getSubtotal();
+        $tenant = TenantContext::tenant();
+
         $this->view('storefront/checkout/index', [
+            'loja' => [
+                'nome' => $tenant->name,
+                'slug' => $tenant->slug
+            ],
+            'theme' => $theme,
             'cart' => $cart,
             'subtotal' => $subtotal,
             'opcoesFrete' => $opcoesFrete,
             'metodosPagamento' => $metodosPagamento,
             'customer' => $customer,
             'customerAddresses' => $customerAddresses,
+            'cartTotalItems' => $cartTotalItems,
+            'cartSubtotal' => $cartSubtotal,
         ]);
     }
 

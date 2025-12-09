@@ -6,10 +6,26 @@
     <title><?= $pageTitle ?? 'Store Admin' ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
+        /* Fase 12 – Paleta do Ponto do Golfe no Admin */
+        :root {
+            /* Cores base do painel admin, alinhadas com o front Ponto do Golfe */
+            --pg-admin-sidebar-bg:   #2E7D32;  /* verde principal do front */
+            --pg-admin-sidebar-hover:#3A9A42;  /* variação para hover/ativo */
+            --pg-admin-sidebar-text: #F5F5F5;  /* textos na sidebar */
+            --pg-admin-sidebar-muted:#C0C0C0;  /* textos menos importantes/labels */
+            --pg-admin-topbar-bg:    #FFFFFF;
+            --pg-admin-topbar-text:  #222222;
+            --pg-admin-primary:      #F7931E;  /* laranja de destaque da marca */
+            --pg-admin-primary-hover:#d67f1a;
+            --pg-admin-border-subtle:#E4E4E4;
+            --pg-admin-bg-main:      #F5F5F7;
+            --pg-admin-card-bg:      #FFFFFF;
+        }
+        
         /* Fase 10 – Ajustes layout Admin */
         /* CSS comum do Admin - Fase 10 */
         .admin-table {
-            background: white;
+            background: var(--pg-admin-card-bg);
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -42,7 +58,7 @@
             background: #f9f9f9;
         }
         .admin-filters {
-            background: white;
+            background: var(--pg-admin-card-bg);
             padding: 1.5rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
@@ -77,8 +93,8 @@
         .admin-filter-group input:focus,
         .admin-filter-group select:focus {
             outline: none;
-            border-color: #023A8D;
-            box-shadow: 0 0 0 3px rgba(2, 58, 141, 0.1);
+            border-color: var(--pg-admin-sidebar-bg);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
         }
         .admin-btn {
             padding: 0.75rem 1.5rem;
@@ -94,11 +110,11 @@
             transition: all 0.2s;
         }
         .admin-btn-primary {
-            background: #F7931E;
+            background: var(--pg-admin-primary);
             color: white;
         }
         .admin-btn-primary:hover {
-            background: #e6851a;
+            background: var(--pg-admin-primary-hover);
             transform: translateY(-1px);
         }
         .admin-status-badge {
@@ -136,29 +152,29 @@
             gap: 0.5rem;
             margin-top: 1.5rem;
             padding: 1rem;
-            background: white;
+            background: var(--pg-admin-card-bg);
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .admin-pagination a,
         .admin-pagination span {
             padding: 0.5rem 1rem;
-            background: white;
-            border: 1px solid #ddd;
+            background: var(--pg-admin-card-bg);
+            border: 1px solid var(--pg-admin-border-subtle);
             border-radius: 6px;
             text-decoration: none;
             color: #333;
             transition: all 0.2s;
         }
         .admin-pagination a:hover {
-            background: #023A8D;
+            background: var(--pg-admin-sidebar-bg);
             color: white;
-            border-color: #023A8D;
+            border-color: var(--pg-admin-sidebar-bg);
         }
         .admin-pagination .current {
-            background: #023A8D;
+            background: var(--pg-admin-sidebar-bg);
             color: white;
-            border-color: #023A8D;
+            border-color: var(--pg-admin-sidebar-bg);
             font-weight: 600;
         }
         .admin-pagination .disabled {
@@ -189,7 +205,7 @@
             margin-bottom: 0.25rem;
         }
         .admin-empty-message {
-            background: white;
+            background: var(--pg-admin-card-bg);
             padding: 3rem;
             text-align: center;
             border-radius: 8px;
@@ -232,25 +248,26 @@
         }
         /* Formulários padronizados */
         .admin-form {
-            background: white;
+            background: var(--pg-admin-card-bg);
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .admin-form-section {
-            background: white;
+            background: var(--pg-admin-card-bg);
             padding: 2rem;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--pg-admin-border-subtle);
             margin-bottom: 2rem;
         }
         .admin-form-section-title {
             font-size: 1.375rem;
             font-weight: 700;
-            color: #333;
-            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--pg-admin-border-subtle);
             padding-bottom: 0.75rem;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 1.5rem;
+            color: #333;
         }
         .admin-form-group {
             margin-bottom: 1.5rem;
@@ -282,8 +299,8 @@
         .admin-form-group select:focus,
         .admin-form-group textarea:focus {
             outline: none;
-            border-color: #023A8D;
-            box-shadow: 0 0 0 3px rgba(2, 58, 141, 0.1);
+            border-color: var(--pg-admin-sidebar-bg);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
         }
         .admin-form-group input::placeholder,
         .admin-form-group textarea::placeholder {
@@ -301,7 +318,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
+            background: var(--pg-admin-bg-main);
             overflow-x: hidden;
         }
         .admin-wrapper {
@@ -311,8 +328,8 @@
         /* Sidebar */
         .admin-sidebar {
             width: 240px;
-            background: #023A8D;
-            color: white;
+            background: var(--pg-admin-sidebar-bg);
+            color: var(--pg-admin-sidebar-text);
             position: fixed;
             height: 100vh;
             overflow-y: auto;
@@ -322,6 +339,68 @@
         .admin-sidebar.collapsed {
             transform: translateX(-100%);
         }
+        
+        /* Brand/Logo na Sidebar */
+        .pg-admin-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Container do logo na sidebar (cartão branco sobre o fundo verde) */
+        .pg-admin-brand-logo {
+            flex-shrink: 0;
+            background-color: #ffffff;
+            padding: 6px 10px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            max-width: 160px;
+        }
+        .pg-admin-brand-logo img {
+            display: block;
+            max-height: 32px;
+            max-width: 140px;
+            object-fit: contain;
+        }
+        .pg-admin-brand-logo-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #333333;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+        .pg-admin-brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .pg-admin-brand-store {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--pg-admin-sidebar-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pg-admin-brand-subtitle {
+            font-size: 11px;
+            color: var(--pg-admin-sidebar-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        
         .sidebar-header {
             padding: 1.5rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -346,19 +425,23 @@
             display: flex;
             align-items: center;
             padding: 0.875rem 1.5rem;
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--pg-admin-sidebar-text);
             text-decoration: none;
             transition: background 0.2s, color 0.2s;
+            border-left: 3px solid transparent;
+            opacity: 0.85;
         }
         .sidebar-menu a:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--pg-admin-sidebar-hover);
             color: white;
+            opacity: 1;
         }
         .sidebar-menu a.active {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--pg-admin-sidebar-hover);
             color: white;
             font-weight: 600;
-            border-left: 3px solid #F7931E;
+            border-left-color: var(--pg-admin-primary);
+            opacity: 1;
         }
         .sidebar-menu a .icon {
             width: 20px;
@@ -389,9 +472,10 @@
         }
         /* Topbar */
         .admin-topbar {
-            background: white;
+            background: var(--pg-admin-topbar-bg);
+            color: var(--pg-admin-topbar-text);
             padding: 1rem 2rem;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--pg-admin-border-subtle);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -473,7 +557,22 @@
     // Obter caminho base se necessário
     $basePath = '';
     $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-    if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
+    
+    // Detectar basePath de forma mais robusta
+    // Verificar REQUEST_URI primeiro
+    if (strpos($requestUri, '/ecommerce-v1.0/public') !== false) {
+        $basePath = '/ecommerce-v1.0/public';
+    } 
+    // Verificar SCRIPT_NAME
+    elseif (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/ecommerce-v1.0/public') !== false) {
+        $basePath = '/ecommerce-v1.0/public';
+    }
+    // Verificar PHP_SELF
+    elseif (isset($_SERVER['PHP_SELF']) && strpos($_SERVER['PHP_SELF'], '/ecommerce-v1.0/public') !== false) {
+        $basePath = '/ecommerce-v1.0/public';
+    }
+    // Se nenhum contiver, assumir que estamos em /ecommerce-v1.0/public (padrão do projeto)
+    else {
         $basePath = '/ecommerce-v1.0/public';
     }
     
@@ -497,9 +596,33 @@
     ?>
     <div class="admin-wrapper">
         <aside class="admin-sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>Store Admin</h2>
-                <div class="store-name"><?= htmlspecialchars($tenant->name ?? 'Loja') ?></div>
+            <?php
+            // Obter logo da loja
+            $logoUrl = \App\Services\ThemeConfig::get('logo_url', '');
+            $storeName = htmlspecialchars($tenant->name ?? 'Loja');
+            $basePath = '';
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+            if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
+                $basePath = '/ecommerce-v1.0/public';
+            }
+            ?>
+            <div class="pg-admin-brand">
+                <?php if (!empty($logoUrl)): ?>
+                    <div class="pg-admin-brand-logo">
+                        <img src="<?= $basePath . htmlspecialchars($logoUrl) ?>" alt="<?= $storeName ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="pg-admin-brand-logo-placeholder" style="display: none;">
+                            <span><?= strtoupper(substr($storeName, 0, 2)) ?></span>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="pg-admin-brand-logo pg-admin-brand-logo-placeholder">
+                        <span><?= strtoupper(substr($storeName, 0, 2)) ?></span>
+                    </div>
+                <?php endif; ?>
+                <div class="pg-admin-brand-text">
+                    <span class="pg-admin-brand-store"><?= $storeName ?></span>
+                    <span class="pg-admin-brand-subtitle">Store Admin</span>
+                </div>
             </div>
             <ul class="sidebar-menu">
                 <li>
@@ -556,6 +679,18 @@
                         <span>Newsletter</span>
                     </a>
                 </li>
+                <li>
+                    <a href="<?= $basePath ?>/admin/midias" class="<?= $isActive('/admin/midias') ? 'active' : '' ?>">
+                        <i class="bi bi-images icon"></i>
+                        <span>Biblioteca de Mídia</span>
+                    </a>
+                </li>
+                <li style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <a href="<?= $basePath ?>/" target="_blank" style="color: var(--pg-admin-primary); font-weight: 600;">
+                        <i class="bi bi-eye icon"></i>
+                        <span>Ver Site</span>
+                    </a>
+                </li>
             </ul>
         </aside>
         
@@ -594,6 +729,65 @@
             }
         });
     </script>
+    
+    <!-- Editor de texto rico (CKEditor 5 Classic) para campos de conteúdo - Fase 11.2 -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof ClassicEditor === 'undefined') {
+                console.warn('CKEditor 5 não foi carregado. Verifique o CDN.');
+                return;
+            }
+
+            const textareas = document.querySelectorAll('textarea.pg-richtext:not([data-ckeditor-initialized])');
+
+            textareas.forEach(function (textarea) {
+                // Marcar como inicializado antes de criar para evitar duplicação
+                textarea.setAttribute('data-ckeditor-initialized', 'true');
+                
+                ClassicEditor.create(textarea, {
+                    toolbar: [
+                        'undo', 'redo',
+                        '|', 'bold', 'italic', 'underline',
+                        '|', 'heading',
+                        '|', 'bulletedList', 'numberedList',
+                        '|', 'alignment',
+                        '|', 'link'
+                    ],
+                    heading: {
+                        options: [
+                            { model: 'paragraph', title: 'Parágrafo', class: 'ck-heading_paragraph' },
+                            { model: 'heading2', title: 'Título Médio', class: 'ck-heading_heading2' },
+                            { model: 'heading3', title: 'Subtítulo', class: 'ck-heading_heading3' }
+                        ]
+                    }
+                }).catch(function (error) {
+                    console.error('Erro ao inicializar CKEditor 5 para um campo .pg-richtext', error);
+                    // Remover marcação em caso de erro para permitir nova tentativa
+                    textarea.removeAttribute('data-ckeditor-initialized');
+                });
+            });
+        });
+    </script>
+    <style>
+        /* Ajustes de CSS para CKEditor 5 */
+        .pg-richtext + .ck-editor {
+            margin-top: 4px;
+        }
+        .ck-editor__editable_inline {
+            min-height: 220px;
+        }
+    </style>
+    <!-- Media Picker - Componente genérico para escolha de mídia -->
+    <script>
+        // Definir basePath globalmente para o Media Picker
+        window.basePath = '<?= htmlspecialchars($basePath) ?>';
+    </script>
+    <?php
+    // Garantir que o caminho do script seja sempre correto
+    $mediaPickerPath = $basePath ? $basePath . '/admin/js/media-picker.js' : '/ecommerce-v1.0/public/admin/js/media-picker.js';
+    ?>
+    <script src="<?= htmlspecialchars($mediaPickerPath) ?>"></script>
 </body>
 </html>
 

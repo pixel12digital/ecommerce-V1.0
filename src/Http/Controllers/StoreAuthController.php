@@ -14,6 +14,22 @@ class StoreAuthController extends Controller
             $this->redirect('/admin');
         }
 
+        // Resolver tenant para exibir logo/nome da loja na tela de login
+        try {
+            $config = require __DIR__ . '/../../../config/app.php';
+            $mode = $config['mode'] ?? 'single';
+            
+            if ($mode === 'single') {
+                $defaultTenantId = $config['default_tenant_id'] ?? 1;
+                \App\Tenant\TenantContext::setFixedTenant($defaultTenantId);
+            } else {
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                \App\Tenant\TenantContext::resolveFromHost($host);
+            }
+        } catch (\Exception $e) {
+            // Se houver erro ao resolver tenant, continuar mesmo assim (fallback será usado)
+        }
+
         $this->view('admin/store/login');
     }
 

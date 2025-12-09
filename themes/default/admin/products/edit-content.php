@@ -64,6 +64,17 @@ $messageType = $messageType ?? 'success';
                         </option>
                     </select>
                 </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="exibir_no_catalogo" value="1" 
+                               <?= (!isset($produto['exibir_no_catalogo']) || $produto['exibir_no_catalogo'] == 1) ? 'checked' : '' ?>>
+                        <span>Exibir este produto no catálogo da loja</span>
+                    </label>
+                    <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                        Quando desmarcado, o produto não aparecerá nas listagens da loja, mas ainda poderá ser acessado diretamente pela URL.
+                    </small>
+                </div>
             </div>
         </div>
 

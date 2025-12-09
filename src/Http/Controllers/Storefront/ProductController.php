@@ -59,9 +59,17 @@ class ProductController extends Controller
         }
 
         // Montar query base
-        $where = ['p.tenant_id = :tenant_id', "p.status = 'publish'"];
+        $where = ['p.tenant_id = :tenant_id', "p.status = 'publish'", "p.exibir_no_catalogo = 1"];
         $params = ['tenant_id' => $tenantId];
         $joins = [];
+        
+        // Verificar configuração de ocultar produtos com estoque zero
+        $ocultarEstoqueZero = \App\Services\ThemeConfig::get('catalogo_ocultar_estoque_zero', '0');
+        if ($ocultarEstoqueZero === '1') {
+            // Ocultar produtos que gerenciam estoque e estão com quantidade 0
+            // Produtos que não gerenciam estoque continuam aparecendo
+            $where[] = "(p.gerencia_estoque = 0 OR (p.gerencia_estoque = 1 AND p.quantidade_estoque > 0))";
+        }
 
         // Filtro por categoria
         if ($categoriaId !== null) {
@@ -181,6 +189,7 @@ class ProductController extends Controller
             'color_topbar_text' => ThemeConfig::getColor('theme_color_topbar_text', '#ffffff'),
             'color_header_bg' => ThemeConfig::getColor('theme_color_header_bg', '#ffffff'),
             'color_header_text' => ThemeConfig::getColor('theme_color_header_text', '#333333'),
+            'logo_url' => ThemeConfig::get('logo_url', ''),
         ];
 
         $totalPages = ceil($total / $perPage);
@@ -294,6 +303,7 @@ class ProductController extends Controller
                 JOIN produto_categorias pc ON pc.produto_id = p.id
                 WHERE p.tenant_id = :tenant_id
                 AND p.status = 'publish'
+                AND p.exibir_no_catalogo = 1
                 AND pc.categoria_id = :categoria_id
                 AND pc.tenant_id = :tenant_id_pc
                 AND p.id <> :produto_id
@@ -327,9 +337,13 @@ class ProductController extends Controller
         }
 
         // Carregar tema
+        $tenant = TenantContext::tenant();
         $theme = [
             'color_primary' => ThemeConfig::getColor('theme_color_primary', '#2E7D32'),
             'color_secondary' => ThemeConfig::getColor('theme_color_secondary', '#F7931E'),
+            'color_header_bg' => ThemeConfig::getColor('theme_color_header_bg', '#ffffff'),
+            'color_header_text' => ThemeConfig::getColor('theme_color_header_text', '#333333'),
+            'logo_url' => ThemeConfig::get('logo_url', ''),
         ];
 
         // Buscar avaliações aprovadas do produto
@@ -472,6 +486,10 @@ class ProductController extends Controller
             'reviewMessage' => $reviewMessage,
             'reviewMessageType' => $reviewMessageType,
             'theme' => $theme,
+            'loja' => [
+                'nome' => $tenant->name,
+                'slug' => $tenant->slug
+            ],
             'cartTotalItems' => $cartTotalItems,
             'cartSubtotal' => $cartSubtotal,
         ]);

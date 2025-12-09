@@ -126,10 +126,10 @@
         
         <div class="cards-grid">
             <a href="<?= $basePath ?>/admin/home/categorias-pills" class="card">
-                <h3 class="card-title">Faixa de Categorias (Bolotas)</h3>
+                <h3 class="card-title">Categorias em Destaque</h3>
                 <p class="card-description">
-                    Configure as categorias em destaque logo abaixo do header. Essas são as "bolotas" de categorias 
-                    que aparecem na home da loja.
+                    Configure as categorias em destaque logo abaixo do header. Essas categorias aparecem em formato de círculo 
+                    na home da loja.
                 </p>
                 <span class="card-link">Gerenciar <i class="bi bi-arrow-right icon"></i></span>
             </a>

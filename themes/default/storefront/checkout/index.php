@@ -6,6 +6,7 @@
     <title>Checkout</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
+        <?= \App\Support\ThemeCssHelper::generateCssVariables() ?>
         .icon {
             display: inline-flex;
             align-items: center;
@@ -19,7 +20,7 @@
             color: #333;
         }
         .header {
-            background: #023A8D;
+            background: var(--pg-color-primary);
             color: white;
             padding: 1rem 2rem;
             display: flex;
@@ -47,7 +48,7 @@
             font-weight: 700;
             margin-bottom: 1.5rem;
             color: #333;
-            border-bottom: 2px solid #023A8D;
+            border-bottom: 2px solid var(--pg-color-primary);
             padding-bottom: 0.75rem;
         }
         .form-group {
@@ -75,7 +76,7 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #023A8D;
+            border-color: var(--pg-color-primary);
             box-shadow: 0 0 0 3px rgba(2, 58, 141, 0.1);
         }
         .form-group input::placeholder,
@@ -106,10 +107,10 @@
             transition: border-color 0.2s;
         }
         .option-card:hover {
-            border-color: #023A8D;
+            border-color: var(--pg-color-primary);
         }
         .option-card.selected {
-            border-color: #023A8D;
+            border-color: var(--pg-color-primary);
             background: #f0f7ff;
         }
         .option-card input[type="radio"] {
@@ -140,14 +141,14 @@
         .summary-item.total {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #023A8D;
+            color: var(--pg-color-primary);
             border-bottom: none;
             margin-top: 0.5rem;
         }
         .btn-submit {
             width: 100%;
             padding: 1.125rem;
-            background: #F7931E;
+            background: var(--pg-color-secondary);
             color: white;
             border: none;
             border-radius: 6px;
@@ -244,11 +245,11 @@
                         <h3 class="section-title" style="margin: 0;">Dados do Cliente</h3>
                         <?php if (!$customer): ?>
                             <a href="<?= $basePath ?>/minha-conta/login?redirect=<?= urlencode($basePath . '/checkout') ?>" 
-                               style="color: #023A8D; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                               style="color: var(--pg-color-primary); text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
                                 <i class="bi bi-person icon"></i> Já tem cadastro? Faça login
                             </a>
                         <?php else: ?>
-                            <span style="color: #2e7d32; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                            <span style="color: var(--pg-color-primary); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
                                 <i class="bi bi-check-circle icon"></i> Logado como <?= htmlspecialchars($customer['name']) ?>
                             </span>
                         <?php endif; ?>
@@ -274,8 +275,8 @@
                         </div>
                     </div>
                     <?php if (!$customer): ?>
-                        <div class="form-group" style="margin-top: 1rem; padding: 1rem; background: #f0f7ff; border-radius: 6px; border: 1px solid #023A8D;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: #023A8D;">
+                        <div class="form-group" style="margin-top: 1rem; padding: 1rem; background: #f0f7ff; border-radius: 6px; border: 1px solid var(--pg-color-primary);">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: var(--pg-color-primary);">
                                 <input type="checkbox" name="criar_conta" id="criar_conta" value="1" 
                                        <?= !empty($formData['criar_conta']) ? 'checked' : '' ?> 
                                        onchange="togglePasswordField()">

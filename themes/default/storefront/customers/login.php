@@ -1,4 +1,11 @@
 <?php
+use App\Support\StoreBranding;
+
+// Obter branding da loja
+$branding = StoreBranding::getBranding();
+$logoUrl = $branding['logo_url'] ?? null;
+$storeName = $branding['store_name'] ?? 'Loja';
+
 $basePath = $basePath ?? '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
@@ -36,9 +43,51 @@ $redirectUrl = $redirectUrl ?? '/minha-conta';
             width: 100%;
             max-width: 400px;
         }
+        
+        /* Bloco de branding no login da loja */
+        .pg-store-login-brand {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .pg-store-login-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            margin-bottom: 12px;
+        }
+        .pg-store-login-logo img {
+            display: block;
+            max-height: 48px;
+            max-width: 210px;
+            object-fit: contain;
+        }
+        .pg-store-login-logo-placeholder {
+            width: 56px;
+            height: 56px;
+            background: #f4f4f4;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #333333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pg-store-login-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            color: #333333;
+        }
+        
         .login-header {
             text-align: center;
             margin-bottom: 2rem;
+            display: none;
         }
         .login-header h1 {
             font-size: 1.5rem;
@@ -116,6 +165,25 @@ $redirectUrl = $redirectUrl ?? '/minha-conta';
 </head>
 <body>
     <div class="login-container">
+        <div class="pg-store-login-brand">
+            <?php if ($logoUrl): ?>
+                <div class="pg-store-login-logo">
+                    <img src="<?= $basePath . htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($storeName) ?>" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="pg-store-login-logo-placeholder" style="display: none;">
+                        <span><?= strtoupper(substr($storeName, 0, 2)) ?></span>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="pg-store-login-logo pg-store-login-logo-placeholder">
+                    <span><?= strtoupper(substr($storeName, 0, 2)) ?></span>
+                </div>
+            <?php endif; ?>
+            
+            <h1 class="pg-store-login-title">
+                <?= htmlspecialchars($storeName) ?>
+            </h1>
+        </div>
+        
         <div class="login-header">
             <h1><i class="bi bi-person-circle"></i> Login</h1>
             <p>Entre na sua conta</p>

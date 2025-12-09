@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Bolota - Store Admin</title>
+    <title>Editar Categoria em Destaque - Store Admin</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -80,10 +80,10 @@
     }
     ?>
     <div class="header">
-        <h2>Editar Bolota</h2>
+        <h2>Editar Categoria em Destaque</h2>
         <div>
             <a href="<?= $basePath ?>/admin/home">Home da Loja</a> | 
-            <a href="<?= $basePath ?>/admin/home/categorias-pills">Bolotas</a> | 
+            <a href="<?= $basePath ?>/admin/home/categorias-pills">Categorias em Destaque</a> | 
             <a href="<?= $basePath ?>/admin">Dashboard</a> | 
             <a href="<?= $basePath ?>/admin/logout">Sair</a>
         </div>
