@@ -358,12 +358,6 @@
                 });
             })
             .then(function(data) {
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar imagens: ' + response.status);
-                }
-                return data;
-            })
-            .then(function(data) {
                 console.log('[Media Picker] Dados recebidos:', data);
                 console.log('[Media Picker] Tipo de dados:', typeof data);
                 console.log('[Media Picker] data.success:', data.success);
