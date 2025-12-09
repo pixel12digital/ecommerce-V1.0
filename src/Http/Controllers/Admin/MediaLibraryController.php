@@ -13,8 +13,13 @@ class MediaLibraryController extends Controller
      */
     private function isDebugMode(): bool
     {
-        $config = require __DIR__ . '/../../../config/app.php';
-        return ($config['debug'] ?? false) === true || ($config['env'] ?? 'production') === 'development';
+        try {
+            $config = require __DIR__ . '/../../../config/app.php';
+            return ($config['debug'] ?? false) === true || ($config['env'] ?? 'production') === 'development';
+        } catch (\Throwable $e) {
+            // Em caso de erro ao carregar config, assumir produção (não logar)
+            return false;
+        }
     }
     
     /**
@@ -22,8 +27,12 @@ class MediaLibraryController extends Controller
      */
     private function debugLog(string $message): void
     {
-        if ($this->isDebugMode()) {
-            error_log($message);
+        try {
+            if ($this->isDebugMode()) {
+                error_log($message);
+            }
+        } catch (\Throwable $e) {
+            // Ignorar erros de log para não quebrar a aplicação
         }
     }
     

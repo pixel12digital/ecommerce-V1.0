@@ -10,8 +10,13 @@ class MediaLibraryService
      */
     private static function isDebugMode(): bool
     {
-        $config = require __DIR__ . '/../../config/app.php';
-        return ($config['debug'] ?? false) === true || ($config['env'] ?? 'production') === 'development';
+        try {
+            $config = require __DIR__ . '/../../config/app.php';
+            return ($config['debug'] ?? false) === true || ($config['env'] ?? 'production') === 'development';
+        } catch (\Throwable $e) {
+            // Em caso de erro ao carregar config, assumir produção (não logar)
+            return false;
+        }
     }
     
     /**
@@ -19,8 +24,12 @@ class MediaLibraryService
      */
     private static function debugLog(string $message): void
     {
-        if (self::isDebugMode()) {
-            error_log($message);
+        try {
+            if (self::isDebugMode()) {
+                error_log($message);
+            }
+        } catch (\Throwable $e) {
+            // Ignorar erros de log para não quebrar a aplicação
         }
     }
     /**
