@@ -120,33 +120,62 @@ class ThemeController extends Controller
         // Salvar informações da loja (painel admin)
         $adminStoreName = trim($_POST['admin_store_name'] ?? '');
         $adminTitleBase = trim($_POST['admin_title_base'] ?? '');
+        $storeSlug = trim($_POST['store_slug'] ?? '');
         
         // Salvar admin_title_base em tenant_settings
         ThemeConfig::set('admin_title_base', $adminTitleBase);
         
-        // Atualizar tenants.name se admin_store_name foi preenchido
+        // Atualizar tenants.name e tenants.slug se os campos foram preenchidos
+        $tenantId = \App\Tenant\TenantContext::id();
+        $db = \App\Core\Database::getConnection();
+        
+        // Preparar dados para atualização
+        $updateFields = [];
+        $updateParams = ['tenant_id' => $tenantId];
+        
+        // Atualizar nome se foi preenchido
         if (!empty($adminStoreName)) {
-            $tenantId = \App\Tenant\TenantContext::id();
-            $db = \App\Core\Database::getConnection();
-            
             // Sanitizar e limitar tamanho
             $adminStoreName = substr(trim($adminStoreName), 0, 150);
-            
-            $stmt = $db->prepare("
-                UPDATE tenants 
-                SET name = :name 
-                WHERE id = :tenant_id
-            ");
-            $stmt->execute([
-                'name' => $adminStoreName,
-                'tenant_id' => $tenantId
-            ]);
+            $updateFields[] = 'name = :name';
+            $updateParams['name'] = $adminStoreName;
             
             // Também salvar em tenant_settings para manter sincronizado
             ThemeConfig::set('admin_store_name', $adminStoreName);
         } else {
             // Se veio vazio, limpar o setting (mas não alterar tenants.name para manter compatibilidade)
             ThemeConfig::set('admin_store_name', '');
+        }
+        
+        // Atualizar slug se foi preenchido
+        if (!empty($storeSlug)) {
+            // Validar formato do slug: apenas letras minúsculas, números e hífens
+            $storeSlug = strtolower(trim($storeSlug));
+            // Remover caracteres inválidos
+            $storeSlug = preg_replace('/[^a-z0-9-]/', '', $storeSlug);
+            // Remover hífens múltiplos
+            $storeSlug = preg_replace('/-+/', '-', $storeSlug);
+            // Remover hífens no início e fim
+            $storeSlug = trim($storeSlug, '-');
+            // Limitar tamanho
+            $storeSlug = substr($storeSlug, 0, 255);
+            
+            // Se após sanitização ainda tiver conteúdo válido, atualizar
+            if (!empty($storeSlug)) {
+                $updateFields[] = 'slug = :slug';
+                $updateParams['slug'] = $storeSlug;
+            }
+        }
+        
+        // Executar UPDATE apenas se houver campos para atualizar
+        if (!empty($updateFields)) {
+            $updateClause = implode(', ', $updateFields);
+            $stmt = $db->prepare("
+                UPDATE tenants 
+                SET {$updateClause}
+                WHERE id = :tenant_id
+            ");
+            $stmt->execute($updateParams);
         }
 
         // Salvar textos
