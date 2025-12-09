@@ -1,4 +1,14 @@
 <?php
+// Helper para URLs de mídia (centralizado)
+use App\Support\MediaUrlHelper;
+
+// Função auxiliar para facilitar uso nas views
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
+
 $basePath = '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
@@ -38,13 +48,12 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                             <div class="banner-drag-handle" title="Arrastar para reordenar">
                                 <i class="bi bi-grip-vertical" style="font-size: 1.5rem; color: #999; cursor: move;"></i>
                             </div>
-                            <?php if (!empty($banner['imagem_desktop'])): ?>
-                                <img src="<?= $basePath ?>/<?= htmlspecialchars($banner['imagem_desktop']) ?>" 
-                                     alt="<?= htmlspecialchars($banner['titulo'] ?: 'Banner') ?>" 
-                                     class="banner-image"
-                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <?php elseif (!empty($banner['imagem_mobile'])): ?>
-                                <img src="<?= $basePath ?>/<?= htmlspecialchars($banner['imagem_mobile']) ?>" 
+                            <?php 
+                            // Prioridade: imagem_desktop > imagem_mobile
+                            $imagemBanner = !empty($banner['imagem_desktop']) ? $banner['imagem_desktop'] : ($banner['imagem_mobile'] ?? '');
+                            if (!empty($imagemBanner)): 
+                            ?>
+                                <img src="<?= media_url($imagemBanner) ?>" 
                                      alt="<?= htmlspecialchars($banner['titulo'] ?: 'Banner') ?>" 
                                      class="banner-image"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">

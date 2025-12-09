@@ -1,4 +1,14 @@
 <?php
+// Helper para URLs de mídia (centralizado)
+use App\Support\MediaUrlHelper;
+
+// Função auxiliar para facilitar uso nas views
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
+
 $basePath = '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
@@ -53,10 +63,11 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                     </div>
                     <div>
                         <button type="button"
-                                class="btn btn-outline-secondary"
-                                id="btn-abrir-biblioteca-midia"
-                                style="padding: 0.75rem 1.5rem; border: 1px solid #6c757d; border-radius: 4px; background: white; color: #6c757d; cursor: pointer; font-size: 1rem; white-space: nowrap;">
-                            Escolher da biblioteca
+                                class="js-open-media-library admin-btn admin-btn-primary"
+                                data-media-target="#icone_path"
+                                data-folder="category-pills"
+                                style="padding: 0.75rem 1.5rem; background: var(--pg-admin-primary, #F7931E); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; white-space: nowrap;">
+                            <i class="bi bi-image icon"></i> Escolher da biblioteca
                         </button>
                     </div>
                 </div>
@@ -114,9 +125,11 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                         <tr>
                             <td><?= $pill['ordem'] ?></td>
                             <td>
-                                <?php if ($pill['icone_path']): ?>
-                                    <img src="<?= $basePath ?>/<?= htmlspecialchars($pill['icone_path']) ?>" 
-                                         alt="Ícone" class="icon-preview">
+                                <?php if (!empty($pill['icone_path'])): ?>
+                                    <img src="<?= media_url($pill['icone_path']) ?>" 
+                                         alt="Ícone" class="icon-preview"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                    <span style="display: none; color: #999;">-</span>
                                 <?php else: ?>
                                     <span style="color: #999;">-</span>
                                 <?php endif; ?>

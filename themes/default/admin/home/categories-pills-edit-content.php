@@ -1,4 +1,14 @@
 <?php
+// Helper para URLs de mídia (centralizado)
+use App\Support\MediaUrlHelper;
+
+// Função auxiliar para facilitar uso nas views
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
+
 $basePath = '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
@@ -29,7 +39,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 <?php if (!empty($pill['icone_path'])): ?>
                     <div style="margin-bottom: 0.75rem;">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">Imagem Atual</label>
-                        <img src="<?= $basePath . htmlspecialchars($pill['icone_path']) ?>" 
+                        <img src="<?= media_url($pill['icone_path']) ?>" 
                              alt="Ícone atual" 
                              style="max-width: 80px; max-height: 80px; object-fit: contain; border: 1px solid #ddd; border-radius: 8px; padding: 4px; background: #f9f9f9;">
                     </div>
@@ -48,6 +58,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                         <button type="button"
                                 class="js-open-media-library admin-btn admin-btn-primary"
                                 data-media-target="#icone_path"
+                                data-folder="category-pills"
                                 style="padding: 0.75rem 1.5rem; background: var(--pg-admin-primary, #F7931E); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; white-space: nowrap;">
                             <i class="bi bi-image icon"></i> Escolher da biblioteca
                         </button>

@@ -785,7 +785,12 @@
     </script>
     <?php
     // Garantir que o caminho do script seja sempre correto
-    $mediaPickerPath = $basePath ? $basePath . '/admin/js/media-picker.js' : '/ecommerce-v1.0/public/admin/js/media-picker.js';
+    // Em produção, basePath pode ser vazio, então usar caminho relativo
+    if (empty($basePath)) {
+        $mediaPickerPath = '/admin/js/media-picker.js';
+    } else {
+        $mediaPickerPath = $basePath . '/admin/js/media-picker.js';
+    }
     ?>
     <script src="<?= htmlspecialchars($mediaPickerPath) ?>"></script>
 </body>

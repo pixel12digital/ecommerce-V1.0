@@ -216,6 +216,140 @@ if (!function_exists('media_url')) {
 
 ---
 
+---
+
+## 🔧 Correções Adicionais - Painel Admin (2025-12-09)
+
+### Problema Identificado
+
+Após a correção inicial do storefront, foram identificados problemas no painel admin:
+
+1. **Listagem de Categorias em Destaque:** Coluna "Ícone" mostrava imagem quebrada
+2. **Listagem de Banners da Home:** Cards apareciam com "Sem imagem"
+3. **Botão "Escolher da biblioteca":** Não abria o modal em algumas telas
+
+### Correções Aplicadas
+
+#### 1. Listagem de Categorias em Destaque
+
+**Arquivo:** `themes/default/admin/home/categories-pills-content.php`
+
+**Mudanças:**
+- ✅ Adicionado helper `media_url()` no início do arquivo
+- ✅ Corrigida renderização da coluna "Ícone" para usar `media_url($pill['icone_path'])`
+- ✅ Adicionado tratamento de erro (`onerror`) para fallback visual
+
+**Antes:**
+```php
+<img src="<?= $basePath ?>/<?= htmlspecialchars($pill['icone_path']) ?>" 
+     alt="Ícone" class="icon-preview">
+```
+
+**Depois:**
+```php
+<img src="<?= media_url($pill['icone_path']) ?>" 
+     alt="Ícone" class="icon-preview"
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+```
+
+#### 2. Listagem de Banners da Home
+
+**Arquivo:** `themes/default/admin/home/banners-content.php`
+
+**Mudanças:**
+- ✅ Adicionado helper `media_url()` no início do arquivo
+- ✅ Corrigida lógica de prioridade: `imagem_desktop` > `imagem_mobile`
+- ✅ Corrigida renderização das miniaturas para usar `media_url()`
+
+**Antes:**
+```php
+<?php if (!empty($banner['imagem_desktop'])): ?>
+    <img src="<?= $basePath ?>/<?= htmlspecialchars($banner['imagem_desktop']) ?>" ...>
+<?php elseif (!empty($banner['imagem_mobile'])): ?>
+    <img src="<?= $basePath ?>/<?= htmlspecialchars($banner['imagem_mobile']) ?>" ...>
+<?php endif; ?>
+```
+
+**Depois:**
+```php
+<?php 
+$imagemBanner = !empty($banner['imagem_desktop']) ? $banner['imagem_desktop'] : ($banner['imagem_mobile'] ?? '');
+if (!empty($imagemBanner)): 
+?>
+    <img src="<?= media_url($imagemBanner) ?>" ...>
+<?php endif; ?>
+```
+
+#### 3. Formulário de Edição de Categorias
+
+**Arquivo:** `themes/default/admin/home/categories-pills-edit-content.php`
+
+**Mudanças:**
+- ✅ Adicionado helper `media_url()` no início do arquivo
+- ✅ Corrigida pré-visualização "Imagem Atual" para usar `media_url()`
+- ✅ Adicionado atributo `data-folder="category-pills"` no botão "Escolher da biblioteca"
+
+#### 4. Caminho do JS do Modal de Mídia
+
+**Arquivo:** `themes/default/admin/layouts/store.php`
+
+**Mudanças:**
+- ✅ Corrigido caminho do `media-picker.js` para funcionar em produção (quando `$basePath` é vazio)
+
+**Antes:**
+```php
+$mediaPickerPath = $basePath ? $basePath . '/admin/js/media-picker.js' : '/ecommerce-v1.0/public/admin/js/media-picker.js';
+```
+
+**Depois:**
+```php
+if (empty($basePath)) {
+    $mediaPickerPath = '/admin/js/media-picker.js';
+} else {
+    $mediaPickerPath = $basePath . '/admin/js/media-picker.js';
+}
+```
+
+### Arquivos Modificados
+
+1. **`themes/default/admin/home/categories-pills-content.php`**
+   - Helper `media_url()` adicionado
+   - Coluna "Ícone" corrigida
+
+2. **`themes/default/admin/home/categories-pills-edit-content.php`**
+   - Helper `media_url()` adicionado
+   - Pré-visualização "Imagem Atual" corrigida
+   - Atributo `data-folder` adicionado ao botão
+
+3. **`themes/default/admin/home/banners-content.php`**
+   - Helper `media_url()` adicionado
+   - Lógica de miniaturas corrigida
+
+4. **`themes/default/admin/layouts/store.php`**
+   - Caminho do `media-picker.js` corrigido para produção
+
+### Padrão de Uso do Botão "Escolher da biblioteca"
+
+Para que o botão "Escolher da biblioteca" funcione corretamente, ele deve ter:
+
+```html
+<button type="button"
+        class="js-open-media-library admin-btn admin-btn-primary"
+        data-media-target="#campo_input_id"
+        data-folder="nome_da_pasta">
+    <i class="bi bi-image icon"></i> Escolher da biblioteca
+</button>
+```
+
+**Atributos obrigatórios:**
+- `class="js-open-media-library"` - Classe que o JS escuta
+- `data-media-target="#campo_input_id"` - ID do input que será preenchido
+- `data-folder="nome_da_pasta"` - Pasta para filtrar imagens (ex: `"banners"`, `"category-pills"`, `"produtos"`)
+
+**O JS `media-picker.js` já está incluído no layout admin (`themes/default/admin/layouts/store.php`), então está disponível em todas as telas.**
+
+---
+
 **Status:** ✅ Implementação Concluída  
 **Última atualização:** 2025-12-09
 
