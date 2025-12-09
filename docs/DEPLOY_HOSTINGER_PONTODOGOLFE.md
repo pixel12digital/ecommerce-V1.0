@@ -135,34 +135,87 @@ php database/run_seed.php
 
 ---
 
-## 🔍 Como Funciona: index.php da Raiz vs public/index.php
+## 🔍 Como Funciona: Fluxo de Roteamento na Hostinger
+
+### Estrutura de Arquivos
+
+```
+public_html/                    ← DocumentRoot do Apache
+├── .htaccess                  ← Reescreve rotas para index.php (raiz)
+├── index.php                  ← Fallback que inclui public/index.php
+└── public/
+    ├── .htaccess             ← Reescreve rotas DENTRO de public/ (se necessário)
+    └── index.php             ← Front Controller real
+```
+
+### Fluxo de Requisição
+
+**Exemplo: Requisição `GET /admin/login`**
+
+1. **Apache recebe requisição** para `/admin/login`
+2. **Apache verifica** se existe arquivo/pasta física `public_html/admin/login`
+3. **Como não existe**, Apache processa `.htaccess` da raiz (`public_html/.htaccess`)
+4. **`.htaccess` reescreve** a requisição para `index.php` (raiz)
+5. **`index.php` (raiz)** verifica se `public/index.php` existe e inclui
+6. **`public/index.php`** processa:
+   - Carrega autoloader e `.env`
+   - Detecta caminho base (remove prefixos se necessário)
+   - Resolve tenant (single ou multi)
+   - Roteia para `StoreAuthController@showLogin`
+   - Renderiza view de login
 
 ### index.php na Raiz (`public_html/index.php`)
 
-**Função:** Fallback para hostings que apontam DocumentRoot para a raiz
+**Função:** Ponte entre Apache e Front Controller
 
 **Quando é usado:**
-- Quando o DocumentRoot aponta para `public_html/` (não para `public_html/public/`)
-- Quando o `.htaccess` não está sendo processado (AllowOverride restrito)
-- Quando o provedor não permite configuração de VirtualHost
+- Quando o DocumentRoot aponta para `public_html/` (raiz)
+- Quando `.htaccess` reescreve rotas para `index.php` (raiz)
+- Funciona em conjunto com `.htaccess` para roteamento
 
 **Comportamento:**
 - Verifica se `public/index.php` existe
-- Se existir, inclui diretamente (bypass do `.htaccess`)
+- Se existir, inclui diretamente usando caminho relativo `__DIR__ . '/public/index.php'`
 - Se não existir, mostra erro de configuração
 
-**Vantagem:** Funciona mesmo sem `.htaccess` ou configuração especial do Apache
+**Vantagem:** Permite que rotas amigáveis funcionem mesmo com DocumentRoot na raiz
+
+### .htaccess na Raiz (`public_html/.htaccess`)
+
+**Função:** Reescrever rotas amigáveis para `index.php` (raiz)
+
+**Regras principais:**
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Se NÃO for arquivo físico E NÃO for pasta física
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # Manda para index.php da raiz
+    RewriteRule ^ index.php [L]
+</IfModule>
+```
+
+**O que faz:**
+- Permite acesso direto a arquivos estáticos (se existirem fisicamente)
+- Permite acesso direto a pastas (se existirem fisicamente)
+- Reescreve tudo mais para `index.php` (raiz)
+
+**Importante:** Sem este `.htaccess`, rotas como `/admin/login` retornariam 404 da Hostinger
 
 ### public/index.php (`public_html/public/index.php`)
 
 **Função:** Front Controller real da aplicação
 
 **Quando é usado:**
-- Sempre (seja chamado pelo `index.php` da raiz ou diretamente)
+- Sempre (chamado pelo `index.php` da raiz)
 - Contém toda a lógica de roteamento, middleware, controllers
 
 **Comportamento:**
 - Carrega autoloader e variáveis de ambiente
+- Detecta e remove caminho base automaticamente
 - Resolve tenant (single ou multi)
 - Processa rotas e renderiza views
 

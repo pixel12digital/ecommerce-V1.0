@@ -1,15 +1,20 @@
 # .htaccess na raiz do projeto
 # 
-# IMPORTANTE: Este arquivo é OPCIONAL. A aplicação funciona mesmo sem ele
-# graças ao index.php de fallback na raiz.
+# Este arquivo é usado quando o DocumentRoot aponta para a raiz (public_html/).
+# Ele reescreve todas as rotas amigáveis para o index.php da raiz, que então
+# inclui o front controller real em public/index.php.
 # 
-# Use este arquivo apenas se o provedor de hospedagem respeitar .htaccess
-# e você quiser usar rewrite ao invés do index.php de fallback.
+# Fluxo:
+# 1. Requisição /admin/login → .htaccess reescreve para index.php
+# 2. index.php (raiz) → inclui public/index.php
+# 3. public/index.php → processa rota e renderiza view
 # 
-# Em hostings compartilhados onde AllowOverride está restrito ou .htaccess
-# não funciona, o index.php na raiz garante que a aplicação funcione.
+# Compatível com:
+# - Hostings compartilhados (Hostinger, etc.)
+# - Desenvolvimento local (via index.php de fallback)
+# - Modo single e multi-tenant
 
-# Desabilitar listagem de diretórios
+# Opcional: se der problema de permissão na Hostinger, essa linha pode ser comentada
 Options -Indexes
 
 # Bloquear acesso direto a arquivos sensíveis
@@ -18,20 +23,20 @@ Options -Indexes
 </FilesMatch>
 
 # ============================================
-# REGRAS DE REWRITE (OPCIONAIS)
+# REGRAS DE REWRITE (PRINCIPAIS)
 # ============================================
-# Descomente as linhas abaixo apenas se o provedor respeitar .htaccess
-# e você preferir usar rewrite ao invés do index.php de fallback.
+# Essas regras garantem que todas as rotas amigáveis sejam processadas pelo index.php
 # ============================================
 
-# RewriteEngine On
-# 
-# # Permitir acesso direto a arquivos existentes na raiz
-# RewriteCond %{REQUEST_FILENAME} -f
-# RewriteRule ^(.*)$ - [L]
-# 
-# # Redirecionar tudo que não for arquivo ou diretório para public/index.php
-# RewriteCond %{REQUEST_FILENAME} !-f
-# RewriteCond %{REQUEST_FILENAME} !-d
-# RewriteRule ^(.*)$ public/index.php [QSA,L]
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Se NÃO for um arquivo físico existente...
+    RewriteCond %{REQUEST_FILENAME} !-f
+    # ...e NÃO for uma pasta física existente...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # ...manda tudo para o index.php da raiz (que inclui public/index.php)
+    RewriteRule ^ index.php [L]
+</IfModule>
 

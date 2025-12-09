@@ -107,15 +107,20 @@ php database/run_seed.php
 **Sintoma:** Erro 403 ao acessar qualquer URL
 
 **Solução:**
-- Verifique se o DocumentRoot aponta para `public_html/public/`
-- Ou crie um `.htaccess` na raiz (`public_html/.htaccess`) com:
+- Verifique se o DocumentRoot aponta para `public_html/` (raiz) ou `public_html/public/`
+- Se apontar para raiz, certifique-se de que `public_html/.htaccess` existe e contém:
 
 ```apache
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ public/index.php [QSA,L]
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
 ```
+
+**Nota:** O `index.php` na raiz então inclui `public/index.php`, completando o fluxo.
 
 ### Causa 2: .htaccess Não Funcionando
 
@@ -203,18 +208,43 @@ composer install --no-dev
 - Sempre execute `composer install` após o deploy
 - Verifique as permissões de arquivos e diretórios
 
-## 🔄 Solução para Hostings com Restrições (403 Forbidden)
+## 🔄 Solução para Hostings com Restrições (403/404 Forbidden)
 
-Se você está recebendo erro 403 mesmo após seguir este guia, a aplicação agora possui um **`index.php` de fallback na raiz** que funciona mesmo quando:
+### Problema: Rotas Amigáveis Retornam 404 da Hostinger
 
-- O `.htaccess` não está sendo processado (AllowOverride restrito)
-- O DocumentRoot aponta para a raiz (`public_html/`) ao invés de `public_html/public/`
-- O provedor não permite configuração de VirtualHost
+**Sintoma:** 
+- `/` funciona (loja abre)
+- `/admin/login` retorna 404 da Hostinger (não passa pelo sistema)
 
-**Como funciona:**
-- O `index.php` na raiz verifica se `public/index.php` existe
-- Se existir, inclui diretamente (bypass do `.htaccess`)
-- Isso garante que a aplicação funcione mesmo em hostings compartilhados com restrições
+**Causa:** `.htaccess` não está reescrevendo rotas para `index.php`
+
+**Solução:**
+
+O projeto possui um **`index.php` de fallback na raiz** que funciona em conjunto com `.htaccess`:
+
+**Fluxo correto:**
+1. `.htaccess` na raiz reescreve `/admin/login` → `index.php` (raiz)
+2. `index.php` (raiz) inclui `public/index.php`
+3. `public/index.php` processa a rota e renderiza a view
+
+**Configuração necessária:**
+
+O `.htaccess` na raiz (`public_html/.htaccess`) deve conter:
+
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+```
+
+**Importante:**
+- Sem este `.htaccess`, apenas `/` funciona (porque Apache encontra `index.php` diretamente)
+- Rotas amigáveis como `/admin/login` retornam 404 da Hostinger
+- O `index.php` na raiz garante que, quando o rewrite funcionar, tudo seja processado corretamente
 
 **Para mais detalhes:** Veja [Deploy Hostinger - Instalação Independente](DEPLOY_HOSTINGER_PONTODOGOLFE.md)
 

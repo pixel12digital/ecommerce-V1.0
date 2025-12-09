@@ -554,3 +554,54 @@ echo "Rewrite funcionou!";
 **Última atualização:** 2025-12-09  
 **Status:** ✅ Implementação concluída - Aguardando testes em produção
 
+---
+
+### Versão 1.1 (2025-12-09 - Reativação de .htaccess para rotas amigáveis)
+
+**Problema identificado:** Rotas amigáveis como `/admin/login` retornavam 404 da Hostinger (não passavam pelo sistema).
+
+**Causa raiz:** `.htaccess` na raiz estava com regras de rewrite comentadas, então apenas `/` funcionava (porque Apache encontrava `index.php` diretamente).
+
+**Solução implementada:**
+
+- [x] **Reativado `.htaccess` na raiz com regras minimalistas de rewrite**
+    - Arquivo: `.htaccess` (raiz do projeto)
+    - Regras ativadas:
+      ```apache
+      <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteBase /
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule ^ index.php [L]
+      </IfModule>
+      ```
+    - **Fluxo:** Requisição `/admin/login` → `.htaccess` reescreve para `index.php` (raiz) → `index.php` inclui `public/index.php` → sistema processa rota.
+
+- [x] **Documentado fluxo completo de roteamento**
+    - Atualizado `docs/DEPLOY_HOSTINGER_PONTODOGOLFE.md` com seção "Como Funciona: Fluxo de Roteamento na Hostinger".
+    - Explicado papel de cada arquivo: `.htaccess` (raiz) → `index.php` (raiz) → `public/index.php`.
+
+- [x] **Adicionado comentários no `.htaccess` de `public/`**
+    - Arquivo: `public/.htaccess`
+    - Comentários explicam que este arquivo é usado quando DocumentRoot aponta diretamente para `public/`.
+    - Quando DocumentRoot aponta para raiz, o rewrite principal fica no `.htaccess` da raiz.
+
+- [x] **Atualizado documentação de troubleshooting**
+    - `docs/DEPLOY_HOSTINGER.md`: Seção "Solução para Hostings com Restrições" atualizada com explicação do problema 404 e solução.
+    - `docs/DEPLOY_HOSTINGER_PONTODOGOLFE.md`: Adicionado checklist completo de testes pós-deploy.
+
+- [x] **Garantido compatibilidade com desenvolvimento local**
+    - O `.htaccess` da raiz não interfere no ambiente local (`http://localhost/ecommerce-v1.0/public/`).
+    - O `index.php` da raiz continua funcionando como fallback se necessário.
+
+**Resultado esperado:**
+- ✅ `/` → Loja abre normalmente
+- ✅ `/admin/login` → Tela de login do sistema (não mais 404 da Hostinger)
+- ✅ `/carrinho` → Página do carrinho (não mais 404 da Hostinger)
+- ✅ Rotas inexistentes → 404 do sistema (não mais 404 da Hostinger)
+- ✅ Carrossel da home → Carrega banners corretamente (requisições AJAX passam pelo sistema)
+
+**Última atualização:** 2025-12-09 (v1.1)  
+**Status:** ✅ Reativação de .htaccess concluída - Aguardando testes em produção
+

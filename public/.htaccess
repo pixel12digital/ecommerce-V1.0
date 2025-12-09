@@ -1,3 +1,12 @@
+# .htaccess dentro de public/
+# 
+# IMPORTANTE: Este arquivo é usado quando o DocumentRoot aponta diretamente
+# para public/ (public_html/public/). Se o DocumentRoot apontar para a raiz
+# (public_html/), o rewrite principal fica no .htaccess da raiz.
+# 
+# Este arquivo apenas garante que rotas dentro de public/ sejam processadas
+# pelo index.php local (public/index.php).
+
 RewriteEngine On
 
 # Desabilitar listagem de diretórios
@@ -8,6 +17,7 @@ RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^(.*)$ - [L]
 
 # Redirecionar tudo para index.php (incluindo diretórios sem index.html/php)
+# Nota: Este rewrite é para rotas DENTRO de public/, não para rotas da raiz
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ index.php [QSA,L]
 
