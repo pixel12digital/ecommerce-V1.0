@@ -719,12 +719,17 @@ class ProductController extends Controller
             
             // Se o caminho está vazio OU se remove_featured está marcado, remover imagem existente
             if (empty($imagePath) || $removeFeatured) {
+                // IMPORTANTE: Remover apenas a associação do produto com a imagem de destaque
+                // NÃO apagar o arquivo físico da biblioteca de mídia
+                // O arquivo continua disponível na biblioteca e pode ser reutilizado
+                
                 // Remover registro da imagem principal da tabela produto_imagens
                 $stmt = $db->prepare("
                     DELETE FROM produto_imagens 
                     WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'main'
                 ");
                 $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+                error_log("ProductController::processMainImage - ✅ Associação de imagem de destaque removida (desvinculada do produto)");
 
                 // Atualizar produtos.imagem_principal para NULL
                 $stmt = $db->prepare("
@@ -736,6 +741,8 @@ class ProductController extends Controller
                     'id' => $produtoId,
                     'tenant_id' => $tenantId
                 ]);
+                error_log("ProductController::processMainImage - ✅ Campo imagem_principal limpo no produto {$produtoId}");
+                error_log("ProductController::processMainImage - ℹ️ Arquivo físico preservado na biblioteca de mídia");
                 
                 // Retornar após remover imagem
                 return;
@@ -1058,28 +1065,18 @@ class ProductController extends Controller
                 
                 if ($img) {
                     if ($img['tipo'] !== 'main') {
-                        // Deletar arquivo físico (usar mesma lógica de caminho)
-                        $paths = require __DIR__ . '/../../../../config/paths.php';
-                        $root = $paths['root'];
-                        $devPath = $root . '/public' . $img['caminho_arquivo'];
-                        $prodPath = $root . $img['caminho_arquivo'];
-                        
-                        $filePath = file_exists($devPath) ? $devPath : (file_exists($prodPath) ? $prodPath : $devPath);
-                        
-                        if (file_exists($filePath)) {
-                            @unlink($filePath);
-                            error_log("ProductController::processGallery - Arquivo físico removido: {$filePath}");
-                        }
-                        
-                        // Deletar registro
+                        // IMPORTANTE: Remover apenas a associação do produto com a imagem (tabela produto_imagens)
+                        // NÃO apagar o arquivo físico da biblioteca de mídia
+                        // O arquivo continua disponível na biblioteca e pode ser reutilizado em outros produtos
                         $stmt = $db->prepare("
                             DELETE FROM produto_imagens 
                             WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
                         ");
                         $stmt->execute(['id' => $imgId, 'tenant_id' => $tenantId, 'produto_id' => $produtoId]);
-                        error_log("ProductController::processGallery - Registro removido do banco: ID {$imgId}");
+                        error_log("ProductController::processGallery - ✅ Associação removida (imagem desvinculada do produto): ID {$imgId}, caminho: {$img['caminho_arquivo']}");
+                        error_log("ProductController::processGallery - ℹ️ Arquivo físico preservado na biblioteca de mídia: {$img['caminho_arquivo']}");
                     } else {
-                        error_log("ProductController::processGallery - Tentativa de remover imagem principal (ID {$imgId}) - ignorado");
+                        error_log("ProductController::processGallery - Tentativa de remover imagem principal (ID {$imgId}) - ignorado (use remove_featured para remover destaque)");
                     }
                 } else {
                     error_log("ProductController::processGallery - Imagem ID {$imgId} não encontrada no banco");

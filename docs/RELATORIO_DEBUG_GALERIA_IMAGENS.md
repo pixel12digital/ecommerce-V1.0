@@ -2516,6 +2516,151 @@ php scripts/check_product_images.php 929
 
 ---
 
+---
+
+## ✅ CORREÇÃO CRÍTICA - Preservação de Arquivos da Biblioteca (11 de Dezembro de 2025)
+
+### Problema Identificado
+
+**Comportamento Anterior (INCORRETO):**
+- Ao remover uma imagem da galeria do produto, o sistema estava:
+  1. Removendo a associação do produto com a imagem (correto)
+  2. **Apagando o arquivo físico da biblioteca de mídia (INCORRETO)**
+
+**Comportamento Desejado (WordPress-like):**
+- Remover da galeria do produto → apenas desfaz a associação produto ↔ mídia
+- O arquivo continua existindo na biblioteca e pode ser reutilizado em outros produtos
+- A biblioteca é a "fonte única" de arquivos
+
+### Correção Implementada
+
+**Arquivo:** `src/Http/Controllers/Admin/ProductController.php`
+
+#### 1. Método `processGallery()` - Remoção de Imagens da Galeria
+
+**Antes (INCORRETO):**
+```php
+// Deletar arquivo físico
+$filePath = file_exists($devPath) ? $devPath : (file_exists($prodPath) ? $prodPath : $devPath);
+if (file_exists($filePath)) {
+    @unlink($filePath);  // ❌ Apagava o arquivo da biblioteca
+    error_log("ProductController::processGallery - Arquivo físico removido: {$filePath}");
+}
+
+// Deletar registro
+DELETE FROM produto_imagens WHERE ...
+```
+
+**Depois (CORRETO):**
+```php
+// IMPORTANTE: Remover apenas a associação do produto com a imagem
+// NÃO apagar o arquivo físico da biblioteca de mídia
+// O arquivo continua disponível na biblioteca e pode ser reutilizado
+
+DELETE FROM produto_imagens WHERE ...
+error_log("ProductController::processGallery - ✅ Associação removida (imagem desvinculada do produto)");
+error_log("ProductController::processGallery - ℹ️ Arquivo físico preservado na biblioteca de mídia");
+```
+
+**Mudanças:**
+- ✅ Removido `@unlink($filePath)` - não apaga mais o arquivo físico
+- ✅ Removida lógica de busca do caminho do arquivo para exclusão
+- ✅ Logs atualizados para indicar que arquivo foi preservado
+- ✅ Apenas a associação na tabela `produto_imagens` é removida
+
+#### 2. Método `processMainImage()` - Remoção de Imagem de Destaque
+
+**Status:** ✅ Já estava correto (não apagava arquivos)
+
+**Comportamento:**
+- Remove apenas o registro da tabela `produto_imagens` (tipo='main')
+- Limpa o campo `produtos.imagem_principal`
+- **NÃO apaga o arquivo físico**
+
+**Melhorias Aplicadas:**
+- Comentários adicionados para deixar claro que arquivo é preservado
+- Logs melhorados para indicar preservação do arquivo
+
+### Comportamento Final
+
+#### ✅ Remover Imagem da Galeria
+1. Usuário clica na lixeira da galeria
+2. Checkbox `remove_imagens[]` é marcado
+3. Visual mostra "Será removida"
+4. Ao salvar:
+   - Associação removida de `produto_imagens`
+   - **Arquivo físico preservado na biblioteca**
+   - Imagem continua disponível para outros produtos
+
+#### ✅ Remover Imagem de Destaque
+1. Usuário clica em "Remover imagem"
+2. Campo `remove_featured` é marcado
+3. Visual mostra placeholder com "Será removida"
+4. Ao salvar:
+   - Registro removido de `produto_imagens` (tipo='main')
+   - Campo `produtos.imagem_principal` limpo
+   - **Arquivo físico preservado na biblioteca**
+
+#### ✅ Exclusão de Produto
+**Status:** Não implementado ainda (não há método `destroy()` no `ProductController`)
+
+**Quando implementado, deve:**
+- Remover apenas vínculos do produto com mídias
+- **NÃO apagar arquivos físicos**
+- **NÃO apagar registros da biblioteca de mídia**
+
+### Testes de Validação
+
+#### Teste 1: Remover Imagem da Galeria
+1. Adicionar 3 imagens à galeria de um produto
+2. Salvar produto
+3. Verificar que todas aparecem na galeria
+4. Clicar na lixeira de UMA imagem
+5. Salvar produto
+6. **Resultado Esperado:**
+   - ✅ Imagem removida da galeria do produto
+   - ✅ Imagem ainda aparece na Biblioteca de Mídia
+   - ✅ Imagem pode ser reutilizada em outro produto
+
+#### Teste 2: Remover Imagem de Destaque
+1. Definir imagem de destaque para um produto
+2. Clicar em "Remover imagem"
+3. Salvar produto
+4. **Resultado Esperado:**
+   - ✅ Placeholder aparece no lugar da imagem
+   - ✅ Imagem ainda aparece na Biblioteca de Mídia
+   - ✅ Imagem pode ser reutilizada
+
+#### Teste 3: Múltiplos Produtos Usando Mesma Imagem
+1. Adicionar mesma imagem à galeria de 2 produtos diferentes
+2. Remover imagem da galeria do Produto A
+3. **Resultado Esperado:**
+   - ✅ Imagem removida da galeria do Produto A
+   - ✅ Imagem ainda aparece na galeria do Produto B
+   - ✅ Imagem ainda aparece na Biblioteca de Mídia
+
+### Arquivos Modificados
+
+1. **`src/Http/Controllers/Admin/ProductController.php`**
+   - Método `processGallery()`: Removido `@unlink()` e lógica de exclusão física
+   - Método `processMainImage()`: Comentários e logs melhorados
+
+### Observações Importantes
+
+1. **Biblioteca de Mídia é Fonte Única:**
+   - Arquivos só devem ser apagados pela tela própria da Biblioteca de Mídia
+   - Produtos apenas associam/desassociam imagens
+
+2. **Reutilização de Imagens:**
+   - Múltiplos produtos podem usar a mesma imagem
+   - Remover de um produto não afeta outros produtos
+
+3. **Logs Preservados:**
+   - Todos os logs de debug foram mantidos
+   - Logs agora indicam claramente que arquivos são preservados
+
+---
+
 **Última Atualização:** 11 de dezembro de 2025
-**Status:** ✅ Correções implementadas - Aguardando validação em produção
+**Status:** ✅ Correções implementadas - Arquivos da biblioteca preservados ao remover da galeria/destaque
 
