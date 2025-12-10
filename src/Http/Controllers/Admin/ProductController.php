@@ -699,7 +699,7 @@ class ProductController extends Controller
             // Validar que o caminho é válido e pertence ao tenant
             // Aceita caminhos da pasta produtos ou outras pastas do tenant
             $tenantPath = "/uploads/tenants/{$tenantId}/";
-            if (strpos($imagePath, $tenantPath) === 0) {
+            if (!empty($imagePath) && strpos($imagePath, $tenantPath) === 0) {
                 
                 // Verificar se arquivo existe fisicamente
                 $filePath = __DIR__ . '/../../public' . $imagePath;
@@ -759,11 +759,24 @@ class ProductController extends Controller
                         'id' => $produtoId,
                         'tenant_id' => $tenantId
                     ]);
+                    
+                    // Retornar após processar caminho da biblioteca (não processar upload)
+                    return;
+                } else {
+                    // Arquivo não existe fisicamente - log para debug
+                    if (defined('APP_DEBUG') && APP_DEBUG) {
+                        error_log("ProductController::processMainImage - Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
+                    }
+                }
+            } else {
+                // Caminho inválido - log para debug
+                if (defined('APP_DEBUG') && APP_DEBUG) {
+                    error_log("ProductController::processMainImage - Caminho inválido ou não pertence ao tenant: {$imagePath} (tenant: {$tenantId})");
                 }
             }
         }
         // Verificar se veio arquivo novo (upload direto)
-        elseif (isset($_FILES['imagem_destaque']) && $_FILES['imagem_destaque']['error'] === UPLOAD_ERR_OK) {
+        if (isset($_FILES['imagem_destaque']) && $_FILES['imagem_destaque']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['imagem_destaque'];
             $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             

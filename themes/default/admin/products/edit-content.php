@@ -266,16 +266,9 @@ if (!function_exists('media_url')) {
                                 </button>
                             </div>
                             <div id="imagem_destaque_preview" style="margin-top: 0.75rem;"></div>
-                            <small style="color: #666; display: block; margin-top: 0.5rem;">
-                                Use o botão acima para escolher uma imagem da biblioteca ou faça upload abaixo.
-                            </small>
-                        </div>
-                        <div class="form-group" style="margin-top: 1rem;">
-                            <label>Ou fazer upload direto</label>
-                            <input type="file" name="imagem_destaque" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                            <small style="color: #666; display: block; margin-top: 0.5rem;">
-                                Formatos aceitos: JPG, PNG, GIF, WEBP
-                            </small>
+                    <small style="color: #666; display: block; margin-top: 0.5rem;">
+                        Use o botão acima para escolher uma imagem da biblioteca de mídia.
+                    </small>
                         </div>
                     </div>
                 </div>
@@ -334,19 +327,22 @@ if (!function_exists('media_url')) {
                         </button>
                     </div>
                     <!-- Container para inputs hidden das imagens da biblioteca -->
-                    <div id="galeria_paths_container" style="display: none;"></div>
+                    <div id="galeria_paths_container" style="display: none;">
+                        <?php 
+                        // Preencher com imagens existentes da galeria para preservar ao salvar
+                        foreach ($galeria as $img): 
+                        ?>
+                            <input type="hidden" 
+                                   name="galeria_paths[]" 
+                                   value="<?= htmlspecialchars($img['caminho_arquivo']) ?>"
+                                   data-imagem-id="<?= (int)$img['id'] ?>">
+                        <?php endforeach; ?>
+                    </div>
                     <!-- Container para preview das novas imagens da biblioteca -->
                     <div id="galeria_preview_container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
                     <small style="color: #666; display: block; margin-top: 0.5rem;">
-                        Use o botão acima para escolher imagens da biblioteca ou faça upload direto abaixo.
+                        Use o botão acima para escolher imagens da biblioteca de mídia.
                     </small>
-                    <div style="margin-top: 1rem;">
-                        <label>Ou fazer upload direto</label>
-                        <input type="file" name="galeria[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                        <small style="color: #666; display: block; margin-top: 0.5rem;">
-                            Você pode selecionar múltiplas imagens
-                        </small>
-                    </div>
                 </div>
             </div>
 
@@ -720,40 +716,74 @@ function setMainFromGallery(imageId) {
     var imagemDestaqueInput = document.getElementById('imagem_destaque_path');
     var imagemDestaqueDisplay = document.getElementById('imagem_destaque_path_display');
     
+    function updateImagePreview(url) {
+        if (!url) return;
+        
+        // Atualizar campo de exibição
+        if (imagemDestaqueDisplay) {
+            imagemDestaqueDisplay.value = url;
+        }
+        
+        // Construir URL completa da imagem
+        var imageUrl = url;
+        if (!imageUrl.startsWith('/')) {
+            imageUrl = '/' + imageUrl;
+        }
+        
+        // Atualizar preview pequeno (#imagem_destaque_preview)
+        var previewSmall = document.getElementById('imagem_destaque_preview');
+        if (previewSmall) {
+            previewSmall.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;" onerror="this.parentElement.innerHTML=\'<div style=\\\'color: #999; padding: 1rem; text-align: center;\\\'>Erro ao carregar imagem</div>\'">';
+        }
+        
+        // Atualizar preview principal (.current-image img)
+        var mainPreview = document.querySelector('.current-image img');
+        if (mainPreview) {
+            mainPreview.src = imageUrl;
+            mainPreview.onerror = function() {
+                this.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3ESem imagem%3C/text%3E%3C/svg%3E';
+            };
+            // Remover classe placeholder se existir
+            var currentImageContainer = mainPreview.closest('.current-image');
+            if (currentImageContainer) {
+                currentImageContainer.classList.remove('placeholder');
+            }
+        } else {
+            // Se não existe img, pode ser placeholder - substituir
+            var placeholderContainer = document.querySelector('.current-image.placeholder');
+            if (placeholderContainer) {
+                placeholderContainer.classList.remove('placeholder');
+                var imgElement = document.createElement('img');
+                imgElement.src = imageUrl;
+                imgElement.alt = 'Imagem de destaque';
+                imgElement.onerror = function() {
+                    this.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3ESem imagem%3C/text%3E%3C/svg%3E';
+                };
+                placeholderContainer.innerHTML = '';
+                placeholderContainer.appendChild(imgElement);
+                var label = document.createElement('div');
+                label.className = 'image-label';
+                label.textContent = 'Imagem atual';
+                placeholderContainer.appendChild(label);
+            }
+        }
+    }
+    
     if (imagemDestaqueInput) {
+        // Listener para mudanças no campo hidden
         imagemDestaqueInput.addEventListener('change', function() {
-            var url = this.value;
-            
-            // Atualizar campo de exibição também
-            if (imagemDestaqueDisplay) {
-                imagemDestaqueDisplay.value = url;
-            }
-            
-            if (url) {
-                // Atualizar preview pequeno
-                var previewSmall = document.getElementById('imagem_destaque_preview');
-                if (previewSmall) {
-                    var imageUrl = url;
-                    if (!imageUrl.startsWith('/')) {
-                        imageUrl = '/' + imageUrl;
-                    }
-                    previewSmall.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;">';
-                }
-                
-                // Atualizar preview principal (se existir)
-                var mainPreview = document.querySelector('.current-image img');
-                if (mainPreview) {
-                    var imageUrl = url;
-                    if (!imageUrl.startsWith('/')) {
-                        imageUrl = '/' + imageUrl;
-                    }
-                    mainPreview.src = imageUrl;
-                    mainPreview.onerror = function() {
-                        this.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3ESem imagem%3C/text%3E%3C/svg%3E';
-                    };
-                }
-            }
+            updateImagePreview(this.value);
         });
+        
+        // Também escutar eventos customizados do media-picker
+        imagemDestaqueInput.addEventListener('input', function() {
+            updateImagePreview(this.value);
+        });
+        
+        // Carregar preview inicial se houver valor
+        if (imagemDestaqueInput.value) {
+            updateImagePreview(imagemDestaqueInput.value);
+        }
     }
 })();
 
@@ -762,15 +792,24 @@ function setMainFromGallery(imageId) {
     var container = document.getElementById('galeria_paths_container');
     var previewContainer = document.getElementById('galeria_preview_container');
     
+    // Mostrar container se já houver imagens existentes
+    if (container && container.querySelectorAll('input[type="hidden"]').length > 0) {
+        container.style.display = 'block';
+    }
+    
     if (container) {
         container.addEventListener('media-picker:multiple-selected', function(event) {
             var urls = event.detail.urls;
             
             // Criar inputs hidden para cada URL
             urls.forEach(function(url) {
-                // Verificar se já não existe
+                // Verificar se já não existe (por valor ou por imagem existente)
                 var existing = container.querySelector('input[value="' + url + '"]');
                 if (existing) return;
+                
+                // Verificar se já existe uma imagem com esse caminho na galeria existente
+                var existingByPath = container.querySelector('input[data-imagem-id][value="' + url + '"]');
+                if (existingByPath) return;
                 
                 var input = document.createElement('input');
                 input.type = 'hidden';
@@ -806,8 +845,8 @@ function setMainFromGallery(imageId) {
     window.removeGalleryPreview = function(btn, url) {
         var previewItem = btn.closest('div');
         
-        // Remover input hidden correspondente
-        var inputs = container.querySelectorAll('input[type="hidden"]');
+        // Remover input hidden correspondente (apenas os novos, não os existentes com data-imagem-id)
+        var inputs = container.querySelectorAll('input[type="hidden"]:not([data-imagem-id])');
         inputs.forEach(function(input) {
             if (input.value === url) {
                 input.remove();
@@ -817,10 +856,14 @@ function setMainFromGallery(imageId) {
         // Remover preview
         previewItem.remove();
         
-        // Esconder containers se não houver mais imagens
+        // Esconder container de preview se não houver mais imagens novas
+        if (previewContainer.querySelectorAll('div').length === 0) {
+            previewContainer.style.display = 'none';
+        }
+        
+        // Container de paths sempre fica visível se houver imagens (existentes ou novas)
         if (container.querySelectorAll('input[type="hidden"]').length === 0) {
             container.style.display = 'none';
-            previewContainer.style.display = 'none';
         }
     };
 })();

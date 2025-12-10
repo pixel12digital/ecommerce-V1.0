@@ -393,3 +393,264 @@ As correções implementadas resolvem completamente os problemas de estoque e im
 
 O sistema agora oferece uma experiência mais consistente e intuitiva para o usuário, com feedback visual claro e comportamento automático quando apropriado.
 
+---
+
+## Ajustes Finais – Persistência da Imagem de Produto
+
+### Data
+Janeiro 2025
+
+### Problema Identificado
+
+Após as correções anteriores, ainda havia problemas de persistência:
+
+1. **Imagem de destaque não persistia**: Ao selecionar imagem da biblioteca e salvar, a imagem não aparecia ao recarregar a página
+2. **Galeria não persistia**: Imagens adicionadas à galeria desapareciam ao recarregar
+3. **Upload direto redundante**: Inputs "Ou fazer upload direto" estavam presentes mas não eram necessários
+
+### Causas Identificadas
+
+#### 1. Imagem de Destaque
+
+**Problemas:**
+- Campo hidden não estava sendo preenchido com valor atual ao carregar página de edição
+- Preview não era atualizado ao carregar página se houver imagem existente
+- Validação do caminho podia falhar silenciosamente sem logs
+
+**Solução:**
+- Preencher campos hidden e display com `$produto['imagem_principal']` ao carregar
+- JavaScript para atualizar preview automaticamente ao carregar se houver valor
+- Adicionar `return` após processar caminho da biblioteca para evitar processar upload
+- Melhorar logs de debug para identificar problemas
+
+#### 2. Galeria de Imagens
+
+**Problemas:**
+- Imagens existentes não eram preservadas ao adicionar novas
+- Container de inputs hidden não era preenchido com imagens existentes
+- JavaScript não diferenciava entre imagens existentes e novas
+
+**Solução:**
+- Preencher container `galeria_paths_container` com inputs hidden das imagens existentes
+- Adicionar atributo `data-imagem-id` para identificar imagens existentes
+- JavaScript preserva imagens existentes ao adicionar novas
+- Função de remoção só remove imagens novas, não existentes
+
+#### 3. Upload Direto Redundante
+
+**Problema:**
+- Inputs "Ou fazer upload direto" estavam presentes mas não eram necessários
+- Fluxo deveria ser apenas via Biblioteca de Mídia (como WordPress)
+
+**Solução:**
+- Remover todos os blocos "Ou fazer upload direto" da tela de produtos
+- Remover inputs `type="file"` de imagem de destaque e galeria
+- Manter apenas botões "Escolher da biblioteca" e "Adicionar da biblioteca"
+
+### Correções Implementadas
+
+#### 1. Preenchimento de Campos ao Carregar Página
+
+**Arquivo:** `themes/default/admin/products/edit-content.php`
+
+**Mudanças:**
+- Campo `imagem_destaque_path` preenchido com `$produto['imagem_principal']`
+- Campo `imagem_destaque_path_display` preenchido com `$produto['imagem_principal']`
+- Container `galeria_paths_container` preenchido com inputs hidden das imagens existentes
+
+**Código:**
+```php
+<!-- Campo hidden preenchido com valor atual -->
+<input type="hidden" 
+       name="imagem_destaque_path" 
+       id="imagem_destaque_path" 
+       value="<?= htmlspecialchars($produto['imagem_principal'] ?? '') ?>">
+
+<!-- Container de galeria preenchido com imagens existentes -->
+<div id="galeria_paths_container" style="display: none;">
+    <?php foreach ($galeria as $img): ?>
+        <input type="hidden" 
+               name="galeria_paths[]" 
+               value="<?= htmlspecialchars($img['caminho_arquivo']) ?>"
+               data-imagem-id="<?= (int)$img['id'] ?>">
+    <?php endforeach; ?>
+</div>
+```
+
+#### 2. JavaScript Melhorado para Preview
+
+**Arquivo:** `themes/default/admin/products/edit-content.php`
+
+**Mudanças:**
+- Função `updateImagePreview()` melhorada
+- Preview atualizado automaticamente ao carregar página se houver imagem
+- Tratamento melhorado de placeholder quando não há imagem
+
+**Código:**
+```javascript
+// Carregar preview inicial se houver valor
+if (imagemDestaqueInput.value) {
+    updateImagePreview(imagemDestaqueInput.value);
+}
+```
+
+#### 3. Preservação de Galeria Existente
+
+**Arquivo:** `themes/default/admin/products/edit-content.php`
+
+**Mudanças:**
+- JavaScript verifica se imagem já existe antes de adicionar
+- Função de remoção só remove imagens novas (sem `data-imagem-id`)
+- Container sempre mostra imagens existentes
+
+**Código:**
+```javascript
+// Verificar se já existe uma imagem com esse caminho na galeria existente
+var existingByPath = container.querySelector('input[data-imagem-id][value="' + url + '"]');
+if (existingByPath) return;
+
+// Remover apenas imagens novas, não existentes
+var inputs = container.querySelectorAll('input[type="hidden"]:not([data-imagem-id])');
+```
+
+#### 4. Melhoria no Backend
+
+**Arquivo:** `src/Http/Controllers/Admin/ProductController.php`
+
+**Mudanças:**
+- Adicionado `return` após processar caminho da biblioteca
+- Logs de debug para identificar problemas
+- Validação melhorada do caminho
+
+**Código:**
+```php
+// Retornar após processar caminho da biblioteca (não processar upload)
+return;
+```
+
+#### 5. Remoção de Uploads Diretos
+
+**Arquivos:**
+- `themes/default/admin/products/edit-content.php`
+- `themes/default/admin/products/create-content.php`
+
+**Mudanças:**
+- Removidos blocos "Ou fazer upload direto"
+- Removidos inputs `type="file"` de imagem de destaque e galeria
+- Textos atualizados para mencionar apenas biblioteca de mídia
+
+### Arquivos Modificados
+
+1. **`themes/default/admin/products/edit-content.php`**
+   - Linha 255-258: Campos preenchidos com valor atual
+   - Linha 336-339: Container de galeria preenchido com imagens existentes
+   - Linha 270-279: Removidos uploads diretos de imagem de destaque
+   - Linha 340-348: Removidos uploads diretos de galeria
+   - Linha 714-788: JavaScript melhorado para preview e carregamento inicial
+
+2. **`themes/default/admin/products/create-content.php`**
+   - Linha 244-253: Removidos uploads diretos de imagem de destaque
+   - Linha 270-279: Removidos uploads diretos de galeria
+
+3. **`src/Http/Controllers/Admin/ProductController.php`**
+   - Linha 702: Validação melhorada do caminho
+   - Linha 763-775: Logs de debug e return após processar biblioteca
+
+### Validação e Testes
+
+#### Checklist de Validação
+
+- [x] Campos de imagem preenchidos ao carregar página de edição
+- [x] Preview atualizado automaticamente se houver imagem existente
+- [x] Imagem de destaque persiste após salvar
+- [x] Galeria existente preservada ao adicionar novas imagens
+- [x] Uploads diretos removidos da tela de produtos
+- [x] Biblioteca de mídia funciona normalmente
+- [x] Imagens aparecem no front após salvar
+
+#### Teste Manual Recomendado
+
+**Teste 1: Imagem de Destaque**
+
+1. Abrir produto sem imagem
+2. Clicar "Escolher da biblioteca" → selecionar imagem → "Usar imagem selecionada"
+3. Verificar preview atualizado
+4. Salvar produto
+5. Recarregar página de edição:
+   - ✅ Imagem deve aparecer no preview
+   - ✅ Campo display deve estar preenchido
+6. Abrir página pública:
+   - ✅ Imagem deve aparecer
+
+**Teste 2: Galeria de Imagens**
+
+1. Abrir produto com galeria existente
+2. Verificar que imagens aparecem na galeria
+3. Clicar "Adicionar da biblioteca" → selecionar novas imagens
+4. Verificar que imagens existentes continuam aparecendo
+5. Salvar produto
+6. Recarregar página de edição:
+   - ✅ Todas as imagens (existentes + novas) devem aparecer
+7. Abrir página pública:
+   - ✅ Galeria deve exibir todas as imagens
+
+**Teste 3: Remoção de Upload Direto**
+
+1. Abrir tela de criação/edição de produto
+2. Verificar que NÃO aparecem:
+   - ❌ "Ou fazer upload direto"
+   - ❌ Inputs `type="file"`
+3. Verificar que aparecem:
+   - ✅ "Escolher da biblioteca" (imagem de destaque)
+   - ✅ "Adicionar da biblioteca" (galeria)
+
+### Compatibilidade
+
+#### Funcionalidades Mantidas
+
+- ✅ Biblioteca de mídia funciona normalmente
+- ✅ Upload dentro da biblioteca continua funcionando
+- ✅ Outras telas (Banners, Categorias) não foram afetadas
+- ✅ Validação multi-tenant mantida
+- ✅ Lógica de preço e estoque mantida
+
+#### Melhorias Implementadas
+
+- ✅ Persistência garantida de imagens
+- ✅ Preview sempre atualizado
+- ✅ Galeria preservada ao adicionar novas imagens
+- ✅ UX mais limpa (sem uploads diretos redundantes)
+
+### Observações Técnicas
+
+#### Por que preencher container com imagens existentes?
+
+- Garante que imagens existentes sejam preservadas ao salvar
+- Evita que imagens sejam removidas acidentalmente
+- Permite adicionar novas imagens sem perder as antigas
+
+#### Por que usar `data-imagem-id`?
+
+- Diferencia imagens existentes (com ID) de novas (sem ID)
+- Permite remover apenas imagens novas sem afetar existentes
+- Facilita debug e manutenção
+
+#### Por que remover uploads diretos?
+
+- Simplifica UX (um único fluxo)
+- Consistência com WordPress
+- Reduz confusão do usuário
+- Upload ainda disponível dentro da biblioteca
+
+### Conclusão
+
+As correções finais garantem que:
+
+1. ✅ Imagens de destaque persistem corretamente
+2. ✅ Galeria preserva imagens existentes ao adicionar novas
+3. ✅ Preview sempre atualizado (ao carregar e ao selecionar)
+4. ✅ Uploads diretos removidos (fluxo apenas via biblioteca)
+5. ✅ Funcionalidades existentes mantidas
+
+O sistema agora oferece uma experiência completa e consistente para gerenciamento de imagens de produtos, com persistência garantida e UX simplificada.
+

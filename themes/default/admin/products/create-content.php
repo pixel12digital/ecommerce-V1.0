@@ -242,15 +242,8 @@ if (!function_exists('media_url')) {
                     </div>
                     <div id="imagem_destaque_preview" style="margin-top: 0.75rem;"></div>
                     <small style="color: #666; display: block; margin-top: 0.5rem;">
-                        Use o botão acima para escolher uma imagem da biblioteca ou faça upload abaixo.
+                        Use o botão acima para escolher uma imagem da biblioteca de mídia.
                     </small>
-                    <div style="margin-top: 1rem;">
-                        <label>Ou fazer upload direto</label>
-                        <input type="file" name="imagem_destaque" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                        <small style="color: #666; display: block; margin-top: 0.5rem;">
-                            Formatos aceitos: JPG, PNG, GIF, WEBP
-                        </small>
-                    </div>
                 </div>
             </div>
 
@@ -275,15 +268,8 @@ if (!function_exists('media_url')) {
                     <!-- Container para preview das novas imagens da biblioteca -->
                     <div id="galeria_preview_container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
                     <small style="color: #666; display: block; margin-top: 0.5rem;">
-                        Use o botão acima para escolher imagens da biblioteca ou faça upload direto abaixo.
+                        Use o botão acima para escolher imagens da biblioteca de mídia.
                     </small>
-                    <div style="margin-top: 1rem;">
-                        <label>Ou fazer upload direto</label>
-                        <input type="file" name="galeria[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-                        <small style="color: #666; display: block; margin-top: 0.5rem;">
-                            Você pode selecionar múltiplas imagens
-                        </small>
-                    </div>
                 </div>
             </div>
         </div>
