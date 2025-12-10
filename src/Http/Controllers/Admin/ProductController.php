@@ -21,6 +21,16 @@ class ProductController extends Controller
         $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $perPage = 20;
         $offset = ($currentPage - 1) * $perPage;
+        
+        // Parâmetros de ordenação
+        $sort = $_GET['sort'] ?? '';
+        $direction = strtolower($_GET['direction'] ?? 'asc');
+        $orderBy = 'data_criacao DESC'; // Padrão
+        
+        // Validar e aplicar ordenação por nome
+        if ($sort === 'name' && in_array($direction, ['asc', 'desc'])) {
+            $orderBy = 'nome ' . strtoupper($direction);
+        }
 
         // Construir query com filtros
         $where = ['tenant_id = :tenant_id'];
@@ -73,7 +83,7 @@ class ProductController extends Controller
         $stmt = $db->prepare("
             SELECT * FROM produtos 
             WHERE {$whereClause}
-            ORDER BY data_criacao DESC 
+            ORDER BY {$orderBy}
             LIMIT :limit OFFSET :offset
         ");
         
@@ -92,7 +102,7 @@ class ProductController extends Controller
         $stmt->execute();
         $produtos = $stmt->fetchAll();
 
-        // Buscar imagem principal para cada produto
+        // Buscar imagem principal e categorias para cada produto
         foreach ($produtos as &$produto) {
             // Primeiro tentar usar imagem_principal do produto
             if (!empty($produto['imagem_principal'])) {
@@ -116,6 +126,22 @@ class ProductController extends Controller
                 $imagem = $stmtImg->fetch();
                 $produto['imagem_principal_data'] = $imagem ? $imagem : null;
             }
+
+            // Buscar categorias do produto
+            $stmtCat = $db->prepare("
+                SELECT c.nome 
+                FROM categorias c
+                INNER JOIN produto_categorias pc ON pc.categoria_id = c.id
+                WHERE pc.tenant_id = :tenant_id AND pc.produto_id = :produto_id
+                ORDER BY c.nome ASC
+                LIMIT 5
+            ");
+            $stmtCat->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $produto['id']
+            ]);
+            $categorias = $stmtCat->fetchAll();
+            $produto['categorias'] = array_column($categorias, 'nome');
         }
 
         $totalPages = ceil($total / $perPage);
@@ -137,6 +163,10 @@ class ProductController extends Controller
                 'q' => $q,
                 'status' => $status,
                 'somente_com_imagem' => $somenteComImagem
+            ],
+            'ordenacao' => [
+                'sort' => $sort,
+                'direction' => $direction
             ]
         ]);
     }
@@ -145,6 +175,165 @@ class ProductController extends Controller
     {
         // Redirecionar para edit (mantém compatibilidade)
         $this->edit($id);
+    }
+
+    public function create(): void
+    {
+        // Iniciar sessão se necessário
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+        
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar todas as categorias do tenant
+        $stmt = $db->prepare("
+            SELECT id, nome, slug
+            FROM categorias
+            WHERE tenant_id = :tenant_id
+            ORDER BY nome ASC
+        ");
+        $stmt->execute(['tenant_id' => $tenantId]);
+        $categorias = $stmt->fetchAll();
+
+        $tenant = TenantContext::tenant();
+        
+        $this->viewWithLayout('admin/layouts/store', 'admin/products/create-content', [
+            'tenant' => $tenant,
+            'pageTitle' => 'Novo Produto',
+            'categorias' => $categorias,
+            'message' => $_SESSION['product_create_message'] ?? null,
+            'messageType' => $_SESSION['product_create_message_type'] ?? null,
+            'formData' => $_SESSION['product_create_form_data'] ?? []
+        ]);
+
+        // Limpar mensagens e dados do formulário da sessão
+        unset($_SESSION['product_create_message']);
+        unset($_SESSION['product_create_message_type']);
+        unset($_SESSION['product_create_form_data']);
+    }
+
+    public function store(): void
+    {
+        // Iniciar sessão se necessário
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+        
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        try {
+            $db->beginTransaction();
+
+            // 1. Validar e criar produto
+            $nome = trim($_POST['nome'] ?? '');
+            $slug = trim($_POST['slug'] ?? '');
+            if (empty($slug) && !empty($nome)) {
+                $slug = $this->generateSlug($nome);
+            }
+            $sku = trim($_POST['sku'] ?? '');
+            $status = $_POST['status'] ?? 'draft';
+            $precoRegular = !empty($_POST['preco_regular']) ? (float)$_POST['preco_regular'] : 0;
+            $precoPromocional = !empty($_POST['preco_promocional']) ? (float)$_POST['preco_promocional'] : null;
+            $dataPromocaoInicio = !empty($_POST['data_promocao_inicio']) ? $_POST['data_promocao_inicio'] : null;
+            $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
+            $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;
+            $statusEstoque = $_POST['status_estoque'] ?? 'outofstock';
+            $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
+            $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
+            $exibirNoCatalogo = isset($_POST['exibir_no_catalogo']) ? 1 : 0;
+            $descricaoCurta = $_POST['descricao_curta'] ?? '';
+            $descricao = $_POST['descricao'] ?? '';
+
+            if (empty($nome)) {
+                throw new \Exception('Nome do produto é obrigatório');
+            }
+
+            $stmt = $db->prepare("
+                INSERT INTO produtos (
+                    tenant_id, nome, slug, sku, status, exibir_no_catalogo,
+                    preco_regular, preco_promocional, data_promocao_inicio, data_promocao_fim,
+                    quantidade_estoque, status_estoque, gerencia_estoque, permite_pedidos_falta,
+                    descricao_curta, descricao, created_at, updated_at
+                ) VALUES (
+                    :tenant_id, :nome, :slug, :sku, :status, :exibir_no_catalogo,
+                    :preco_regular, :preco_promocional, :data_promocao_inicio, :data_promocao_fim,
+                    :quantidade_estoque, :status_estoque, :gerencia_estoque, :permite_pedidos_falta,
+                    :descricao_curta, :descricao, NOW(), NOW()
+                )
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'nome' => $nome,
+                'slug' => $slug,
+                'sku' => $sku,
+                'status' => $status,
+                'exibir_no_catalogo' => $exibirNoCatalogo,
+                'preco_regular' => $precoRegular,
+                'preco_promocional' => $precoPromocional,
+                'data_promocao_inicio' => $dataPromocaoInicio,
+                'data_promocao_fim' => $dataPromocaoFim,
+                'quantidade_estoque' => $quantidadeEstoque,
+                'status_estoque' => $statusEstoque,
+                'gerencia_estoque' => $gerenciaEstoque,
+                'permite_pedidos_falta' => $permitePedidosFalta,
+                'descricao_curta' => $descricaoCurta,
+                'descricao' => $descricao
+            ]);
+
+            $produtoId = $db->lastInsertId();
+
+            // 2. Processar imagem de destaque
+            $this->processMainImage($db, $tenantId, $produtoId, ['imagem_principal' => null]);
+
+            // 3. Processar galeria
+            $this->processGallery($db, $tenantId, $produtoId);
+
+            // 4. Processar vídeos
+            $this->processVideos($db, $tenantId, $produtoId);
+
+            // 5. Vincular categorias
+            if (!empty($_POST['categorias']) && is_array($_POST['categorias'])) {
+                $categoriaIds = array_map('intval', $_POST['categorias']);
+                
+                // Validar que todas as categorias pertencem ao tenant
+                $placeholders = implode(',', array_fill(0, count($categoriaIds), '?'));
+                $stmt = $db->prepare("
+                    SELECT id FROM categorias 
+                    WHERE id IN ({$placeholders}) AND tenant_id = ?
+                ");
+                $stmt->execute(array_merge($categoriaIds, [$tenantId]));
+                $validCategoriaIds = array_column($stmt->fetchAll(), 'id');
+                
+                // Inserir relações
+                $stmt = $db->prepare("
+                    INSERT INTO produto_categorias (tenant_id, produto_id, categoria_id, created_at)
+                    VALUES (?, ?, ?, NOW())
+                ");
+                foreach ($validCategoriaIds as $categoriaId) {
+                    $stmt->execute([$tenantId, $produtoId, $categoriaId]);
+                }
+            }
+
+            $db->commit();
+            $_SESSION['product_edit_message'] = 'Produto criado com sucesso!';
+            $_SESSION['product_edit_message_type'] = 'success';
+            header('Location: ' . $this->getBasePath() . '/admin/produtos/' . $produtoId);
+            exit;
+        } catch (\Exception $e) {
+            $db->rollBack();
+            $_SESSION['product_create_message'] = 'Erro ao criar produto: ' . $e->getMessage();
+            $_SESSION['product_create_message_type'] = 'error';
+            $_SESSION['product_create_form_data'] = $_POST;
+            header('Location: ' . $this->getBasePath() . '/admin/produtos/novo');
+            exit;
+        }
     }
 
     public function edit(int $id): void
@@ -215,7 +404,7 @@ class ProductController extends Controller
         ]);
         $videos = $stmt->fetchAll();
 
-        // Buscar categorias (somente leitura por enquanto)
+        // Buscar categorias do produto
         $stmt = $db->prepare("
             SELECT c.* 
             FROM categorias c
@@ -230,7 +419,18 @@ class ProductController extends Controller
             'tenant_id_c' => $tenantId,
             'produto_id' => $produto['id']
         ]);
-        $categorias = $stmt->fetchAll();
+        $categoriasProduto = $stmt->fetchAll();
+        $categoriasProdutoIds = array_column($categoriasProduto, 'id');
+
+        // Buscar todas as categorias do tenant para o formulário
+        $stmt = $db->prepare("
+            SELECT id, nome, slug
+            FROM categorias
+            WHERE tenant_id = :tenant_id
+            ORDER BY nome ASC
+        ");
+        $stmt->execute(['tenant_id' => $tenantId]);
+        $todasCategorias = $stmt->fetchAll();
 
         // Buscar tags (somente leitura por enquanto)
         $stmt = $db->prepare("
@@ -258,7 +458,9 @@ class ProductController extends Controller
             'imagemPrincipal' => $imagemPrincipal,
             'galeria' => $galeria,
             'videos' => $videos,
-            'categorias' => $categorias,
+            'categorias' => $categoriasProduto,
+            'categoriasProdutoIds' => $categoriasProdutoIds,
+            'todasCategorias' => $todasCategorias,
             'tags' => $tags,
             'message' => $_SESSION['product_edit_message'] ?? null,
             'messageType' => $_SESSION['product_edit_message_type'] ?? null
@@ -372,6 +574,42 @@ class ProductController extends Controller
             // 4. Processar vídeos
             $this->processVideos($db, $tenantId, $id);
 
+            // 5. Atualizar categorias (sync: remover antigas e adicionar novas)
+            // Remover todas as categorias atuais do produto
+            $stmt = $db->prepare("
+                DELETE FROM produto_categorias 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $id
+            ]);
+
+            // Adicionar novas categorias se houver
+            if (!empty($_POST['categorias']) && is_array($_POST['categorias'])) {
+                $categoriaIds = array_map('intval', $_POST['categorias']);
+                
+                // Validar que todas as categorias pertencem ao tenant
+                if (!empty($categoriaIds)) {
+                    $placeholders = implode(',', array_fill(0, count($categoriaIds), '?'));
+                    $stmt = $db->prepare("
+                        SELECT id FROM categorias 
+                        WHERE id IN ({$placeholders}) AND tenant_id = ?
+                    ");
+                    $stmt->execute(array_merge($categoriaIds, [$tenantId]));
+                    $validCategoriaIds = array_column($stmt->fetchAll(), 'id');
+                    
+                    // Inserir relações
+                    $stmt = $db->prepare("
+                        INSERT INTO produto_categorias (tenant_id, produto_id, categoria_id, created_at)
+                        VALUES (?, ?, ?, NOW())
+                    ");
+                    foreach ($validCategoriaIds as $categoriaId) {
+                        $stmt->execute([$tenantId, $id, $categoriaId]);
+                    }
+                }
+            }
+
             $db->commit();
             $_SESSION['product_edit_message'] = 'Produto atualizado com sucesso!';
             $_SESSION['product_edit_message_type'] = 'success';
@@ -395,8 +633,78 @@ class ProductController extends Controller
             mkdir($uploadsPath, 0755, true);
         }
 
-        // Verificar se veio arquivo novo
-        if (isset($_FILES['imagem_destaque']) && $_FILES['imagem_destaque']['error'] === UPLOAD_ERR_OK) {
+        // Verificar se veio caminho de imagem da biblioteca (prioridade sobre upload)
+        if (!empty($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
+            $imagePath = trim($_POST['imagem_destaque_path']);
+            
+            // Validar que o caminho é válido e pertence ao tenant
+            // Aceita caminhos da pasta produtos ou outras pastas do tenant
+            $tenantPath = "/uploads/tenants/{$tenantId}/";
+            if (strpos($imagePath, $tenantPath) === 0) {
+                
+                // Verificar se arquivo existe fisicamente
+                $filePath = __DIR__ . '/../../public' . $imagePath;
+                if (file_exists($filePath)) {
+                    // Remover antiga main (virar gallery)
+                    $stmt = $db->prepare("
+                        SELECT COALESCE(MAX(ordem), 0) as max_ordem 
+                        FROM produto_imagens 
+                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+                    ");
+                    $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+                    $result = $stmt->fetch();
+                    $novaOrdem = ($result['max_ordem'] ?? 0) + 1;
+                    
+                    $stmt = $db->prepare("
+                        UPDATE produto_imagens 
+                        SET tipo = 'gallery', ordem = :ordem
+                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'main'
+                    ");
+                    $stmt->execute([
+                        'ordem' => $novaOrdem,
+                        'tenant_id' => $tenantId, 
+                        'produto_id' => $produtoId
+                    ]);
+
+                    // Criar nova main usando caminho da biblioteca
+                    $fileSize = filesize($filePath);
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $filePath);
+                    finfo_close($finfo);
+
+                    $stmt = $db->prepare("
+                        INSERT INTO produto_imagens (
+                            tenant_id, produto_id, tipo, ordem, caminho_arquivo,
+                            mime_type, tamanho_arquivo
+                        ) VALUES (
+                            :tenant_id, :produto_id, 'main', 0, :caminho_arquivo,
+                            :mime_type, :tamanho_arquivo
+                        )
+                    ");
+                    $stmt->execute([
+                        'tenant_id' => $tenantId,
+                        'produto_id' => $produtoId,
+                        'caminho_arquivo' => $imagePath,
+                        'mime_type' => $mimeType,
+                        'tamanho_arquivo' => $fileSize
+                    ]);
+
+                    // Atualizar produtos.imagem_principal
+                    $stmt = $db->prepare("
+                        UPDATE produtos 
+                        SET imagem_principal = :imagem_principal 
+                        WHERE id = :id AND tenant_id = :tenant_id
+                    ");
+                    $stmt->execute([
+                        'imagem_principal' => $imagePath,
+                        'id' => $produtoId,
+                        'tenant_id' => $tenantId
+                    ]);
+                }
+            }
+        }
+        // Verificar se veio arquivo novo (upload direto)
+        elseif (isset($_FILES['imagem_destaque']) && $_FILES['imagem_destaque']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['imagem_destaque'];
             $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             
@@ -590,7 +898,73 @@ class ProductController extends Controller
             }
         }
 
-        // Processar upload de novas imagens
+        // Processar caminhos de imagens da biblioteca (prioridade sobre upload)
+        if (!empty($_POST['galeria_paths']) && is_array($_POST['galeria_paths'])) {
+            // Buscar maior ordem atual
+            $stmt = $db->prepare("
+                SELECT COALESCE(MAX(ordem), 0) as max_ordem 
+                FROM produto_imagens 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+            ");
+            $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+            $result = $stmt->fetch();
+            $ordem = ($result['max_ordem'] ?? 0) + 1;
+
+            foreach ($_POST['galeria_paths'] as $imagePath) {
+                $imagePath = trim($imagePath);
+                
+                // Validar que o caminho é válido e pertence ao tenant
+                // Aceita caminhos de qualquer pasta do tenant (produtos, banners, etc.)
+                $tenantPath = "/uploads/tenants/{$tenantId}/";
+                if (!empty($imagePath) && strpos($imagePath, $tenantPath) === 0) {
+                    
+                    // Verificar se arquivo existe fisicamente
+                    $filePath = __DIR__ . '/../../public' . $imagePath;
+                    if (file_exists($filePath)) {
+                        // Verificar se imagem já não está na galeria deste produto
+                        $stmtCheck = $db->prepare("
+                            SELECT COUNT(*) as count 
+                            FROM produto_imagens 
+                            WHERE tenant_id = :tenant_id AND produto_id = :produto_id 
+                            AND caminho_arquivo = :caminho
+                        ");
+                        $stmtCheck->execute([
+                            'tenant_id' => $tenantId,
+                            'produto_id' => $produtoId,
+                            'caminho' => $imagePath
+                        ]);
+                        $exists = $stmtCheck->fetch()['count'] > 0;
+                        
+                        if (!$exists) {
+                            $fileSize = filesize($filePath);
+                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                            $mimeType = finfo_file($finfo, $filePath);
+                            finfo_close($finfo);
+
+                            $stmt = $db->prepare("
+                                INSERT INTO produto_imagens (
+                                    tenant_id, produto_id, tipo, ordem, caminho_arquivo,
+                                    mime_type, tamanho_arquivo
+                                ) VALUES (
+                                    :tenant_id, :produto_id, 'gallery', :ordem, :caminho_arquivo,
+                                    :mime_type, :tamanho_arquivo
+                                )
+                            ");
+                            $stmt->execute([
+                                'tenant_id' => $tenantId,
+                                'produto_id' => $produtoId,
+                                'ordem' => $ordem++,
+                                'caminho_arquivo' => $imagePath,
+                                'mime_type' => $mimeType,
+                                'tamanho_arquivo' => $fileSize
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Processar upload de novas imagens (se não veio da biblioteca)
         if (!empty($_FILES['galeria']['name'][0])) {
             $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             

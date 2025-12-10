@@ -6,6 +6,14 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 }
 $message = $message ?? null;
 $messageType = $messageType ?? 'success';
+
+// Helper para URLs de mídia
+use App\Support\MediaUrlHelper;
+if (!function_exists('media_url')) {
+    function media_url(string $relativePath): string {
+        return MediaUrlHelper::url($relativePath);
+    }
+}
 ?>
 
 <div class="product-edit-page">
@@ -170,6 +178,34 @@ $messageType = $messageType ?? 'success';
             </div>
         </div>
 
+        <!-- Seção: Categorias -->
+        <div class="info-section">
+            <h2 class="section-title">Categorias</h2>
+            
+            <div class="form-group">
+                <label>Selecione as categorias deste produto</label>
+                <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; background: #f9f9f9;">
+                    <?php 
+                    $categoriasProdutoIds = $categoriasProdutoIds ?? [];
+                    $todasCategorias = $todasCategorias ?? [];
+                    foreach ($todasCategorias as $categoria): 
+                    ?>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
+                            <input type="checkbox" name="categorias[]" value="<?= $categoria['id'] ?>" 
+                                   <?= in_array($categoria['id'], $categoriasProdutoIds) ? 'checked' : '' ?>>
+                            <span><?= htmlspecialchars($categoria['nome']) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                    <?php if (empty($todasCategorias)): ?>
+                        <p style="color: #999; font-style: italic;">Nenhuma categoria cadastrada. Crie categorias primeiro.</p>
+                    <?php endif; ?>
+                </div>
+                <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.5rem;">
+                    Selecione uma ou mais categorias para organizar seus produtos. Um produto pode pertencer a múltiplas categorias.
+                </small>
+            </div>
+        </div>
+
         <!-- Seção: Mídia do Produto -->
         <div class="info-section">
             <h2 class="section-title">Mídia do Produto</h2>
@@ -181,7 +217,7 @@ $messageType = $messageType ?? 'success';
                 <div class="featured-image-container">
                     <?php if ($imagemPrincipal): ?>
                         <div class="current-image">
-                            <img src="<?= $basePath ?><?= htmlspecialchars($imagemPrincipal['caminho_arquivo']) ?>" 
+                            <img src="<?= media_url($imagemPrincipal['caminho_arquivo']) ?>" 
                                  alt="Imagem de destaque atual" 
                                  onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3ESem imagem%3C/text%3E%3C/svg%3E'">
                             <div class="image-label">Imagem atual</div>
@@ -197,7 +233,31 @@ $messageType = $messageType ?? 'success';
                     
                     <div class="image-actions">
                         <div class="form-group">
-                            <label>Nova imagem de destaque</label>
+                            <label>Escolher imagem de destaque</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                                <input type="text" 
+                                       name="imagem_destaque_path" 
+                                       id="imagem_destaque_path" 
+                                       value="" 
+                                       placeholder="Selecione uma imagem na biblioteca"
+                                       readonly
+                                       style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; background: #f8f9fa;">
+                                <button type="button" 
+                                        class="js-open-media-library admin-btn admin-btn-primary" 
+                                        data-media-target="#imagem_destaque_path"
+                                        data-folder="produtos"
+                                        data-preview="#imagem_destaque_preview"
+                                        style="padding: 0.75rem 1.5rem; background: var(--pg-admin-primary, #F7931E); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; white-space: nowrap;">
+                                    <i class="bi bi-image icon"></i> Escolher da biblioteca
+                                </button>
+                            </div>
+                            <div id="imagem_destaque_preview" style="margin-top: 0.75rem;"></div>
+                            <small style="color: #666; display: block; margin-top: 0.5rem;">
+                                Use o botão acima para escolher uma imagem da biblioteca ou faça upload abaixo.
+                            </small>
+                        </div>
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>Ou fazer upload direto</label>
                             <input type="file" name="imagem_destaque" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
                             <small style="color: #666; display: block; margin-top: 0.5rem;">
                                 Formatos aceitos: JPG, PNG, GIF, WEBP
@@ -221,7 +281,7 @@ $messageType = $messageType ?? 'success';
                                  data-imagem-id="<?= (int)$img['id'] ?>"
                                  draggable="true">
                                 <div class="product-gallery__thumb">
-                                    <img src="<?= $basePath ?><?= htmlspecialchars($img['caminho_arquivo']) ?>" 
+                                    <img src="<?= media_url($img['caminho_arquivo']) ?>" 
                                          alt="Imagem da galeria"
                                          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'150\' height=\'150\'%3E%3Crect fill=\'%23ddd\' width=\'150\' height=\'150\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3EImagem%3C/text%3E%3C/svg%3E'">
                                 </div>
@@ -249,10 +309,30 @@ $messageType = $messageType ?? 'success';
                 
                 <div class="form-group" style="margin-top: 1rem;">
                     <label>Adicionar imagens à galeria</label>
-                    <input type="file" name="galeria[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                    <div style="display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 0.75rem;">
+                        <button type="button" 
+                                class="js-open-media-library admin-btn admin-btn-primary" 
+                                data-media-target="#galeria_paths_container"
+                                data-folder="produtos"
+                                data-multiple="true"
+                                style="padding: 0.75rem 1.5rem; background: var(--pg-admin-primary, #F7931E); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; white-space: nowrap;">
+                            <i class="bi bi-image icon"></i> Adicionar da biblioteca
+                        </button>
+                    </div>
+                    <!-- Container para inputs hidden das imagens da biblioteca -->
+                    <div id="galeria_paths_container" style="display: none;"></div>
+                    <!-- Container para preview das novas imagens da biblioteca -->
+                    <div id="galeria_preview_container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;"></div>
                     <small style="color: #666; display: block; margin-top: 0.5rem;">
-                        Você pode selecionar múltiplas imagens
+                        Use o botão acima para escolher imagens da biblioteca ou faça upload direto abaixo.
                     </small>
+                    <div style="margin-top: 1rem;">
+                        <label>Ou fazer upload direto</label>
+                        <input type="file" name="galeria[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                        <small style="color: #666; display: block; margin-top: 0.5rem;">
+                            Você pode selecionar múltiplas imagens
+                        </small>
+                    </div>
                 </div>
             </div>
 
@@ -507,6 +587,108 @@ function setMainFromGallery(imageId) {
             }
         });
     }
+})();
+
+// Atualizar preview da imagem de destaque quando selecionada
+(function() {
+    var imagemDestaqueInput = document.getElementById('imagem_destaque_path');
+    if (imagemDestaqueInput) {
+        imagemDestaqueInput.addEventListener('change', function() {
+            var url = this.value;
+            if (url) {
+                // Atualizar preview pequeno
+                var previewSmall = document.getElementById('imagem_destaque_preview');
+                if (previewSmall) {
+                    var imageUrl = url;
+                    if (!imageUrl.startsWith('/')) {
+                        imageUrl = '/' + imageUrl;
+                    }
+                    previewSmall.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;">';
+                }
+                
+                // Atualizar preview principal (se existir)
+                var mainPreview = document.querySelector('.current-image img');
+                if (mainPreview) {
+                    var imageUrl = url;
+                    if (!imageUrl.startsWith('/')) {
+                        imageUrl = '/' + imageUrl;
+                    }
+                    mainPreview.src = imageUrl;
+                    mainPreview.onerror = function() {
+                        this.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3ESem imagem%3C/text%3E%3C/svg%3E';
+                    };
+                }
+            }
+        });
+    }
+})();
+
+// Processar seleção múltipla da biblioteca de mídia para galeria
+(function() {
+    var container = document.getElementById('galeria_paths_container');
+    var previewContainer = document.getElementById('galeria_preview_container');
+    
+    if (container) {
+        container.addEventListener('media-picker:multiple-selected', function(event) {
+            var urls = event.detail.urls;
+            
+            // Criar inputs hidden para cada URL
+            urls.forEach(function(url) {
+                // Verificar se já não existe
+                var existing = container.querySelector('input[value="' + url + '"]');
+                if (existing) return;
+                
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'galeria_paths[]';
+                input.value = url;
+                container.appendChild(input);
+                
+                // Adicionar preview
+                var previewItem = document.createElement('div');
+                previewItem.style.cssText = 'position: relative; border: 2px solid #ddd; border-radius: 8px; overflow: hidden; aspect-ratio: 1;';
+                var imageUrl = url;
+                if (!imageUrl.startsWith('/')) {
+                    imageUrl = '/' + imageUrl;
+                }
+                previewItem.innerHTML = 
+                    '<img src="' + imageUrl + '" style="width: 100%; height: 100%; object-fit: cover;" ' +
+                    'onerror="this.parentElement.remove()">' +
+                    '<button type="button" onclick="removeGalleryPreview(this, \'' + url + '\')" ' +
+                    'style="position: absolute; top: 0.25rem; right: 0.25rem; background: #dc3545; color: white; border: none; border-radius: 4px; width: 24px; height: 24px; cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center;">' +
+                    '<i class="bi bi-x"></i></button>';
+                previewContainer.appendChild(previewItem);
+            });
+            
+            // Mostrar containers se houver imagens
+            if (container.querySelectorAll('input[type="hidden"]').length > 0) {
+                container.style.display = 'block';
+                previewContainer.style.display = 'grid';
+            }
+        });
+    }
+    
+    // Função para remover preview da galeria
+    window.removeGalleryPreview = function(btn, url) {
+        var previewItem = btn.closest('div');
+        
+        // Remover input hidden correspondente
+        var inputs = container.querySelectorAll('input[type="hidden"]');
+        inputs.forEach(function(input) {
+            if (input.value === url) {
+                input.remove();
+            }
+        });
+        
+        // Remover preview
+        previewItem.remove();
+        
+        // Esconder containers se não houver mais imagens
+        if (container.querySelectorAll('input[type="hidden"]').length === 0) {
+            container.style.display = 'none';
+            previewContainer.style.display = 'none';
+        }
+    };
 })();
 </script>
 

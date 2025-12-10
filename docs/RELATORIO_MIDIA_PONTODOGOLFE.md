@@ -353,3 +353,292 @@ Para que o botão "Escolher da biblioteca" funcione corretamente, ele deve ter:
 **Status:** ✅ Implementação Concluída  
 **Última atualização:** 2025-12-09
 
+---
+
+## Integração da Biblioteca de Mídia com Produtos (Imagem de Destaque + Galeria)
+
+**Data:** 2025-01-10  
+**Status:** ✅ Implementado
+
+### Objetivo
+
+Integrar a Biblioteca de Mídia nos formulários de criação e edição de produtos, permitindo escolher imagens da biblioteca ao invés de fazer upload direto via janela do sistema operacional.
+
+### Funcionalidades Implementadas
+
+#### 1. Imagem de Destaque do Produto
+
+**Localização:**
+- `themes/default/admin/products/create-content.php`
+- `themes/default/admin/products/edit-content.php`
+
+**Implementação:**
+- Campo de texto readonly (`imagem_destaque_path`) que recebe o caminho da imagem selecionada
+- Botão "Escolher da biblioteca" com atributos:
+  - `class="js-open-media-library"`
+  - `data-media-target="#imagem_destaque_path"`
+  - `data-folder="produtos"`
+  - `data-preview="#imagem_destaque_preview"`
+- Preview da imagem selecionada
+- Mantém compatibilidade com upload direto (campo `imagem_destaque` ainda disponível)
+
+**Código HTML:**
+```html
+<input type="text" 
+       name="imagem_destaque_path" 
+       id="imagem_destaque_path" 
+       placeholder="Selecione uma imagem na biblioteca"
+       readonly>
+<button type="button" 
+        class="js-open-media-library admin-btn admin-btn-primary" 
+        data-media-target="#imagem_destaque_path"
+        data-folder="produtos"
+        data-preview="#imagem_destaque_preview">
+    <i class="bi bi-image icon"></i> Escolher da biblioteca
+</button>
+<div id="imagem_destaque_preview"></div>
+```
+
+#### 2. Galeria de Imagens do Produto
+
+**Localização:**
+- `themes/default/admin/products/create-content.php`
+- `themes/default/admin/products/edit-content.php`
+
+**Implementação:**
+- Botão "Adicionar da biblioteca" com modo múltiplo:
+  - `data-multiple="true"`
+  - `data-folder="produtos"`
+- Container para inputs hidden (`galeria_paths_container`)
+- Container para previews das imagens selecionadas (`galeria_preview_container`)
+- JavaScript que processa evento `media-picker:multiple-selected`
+- Função `removeGalleryPreview()` para remover imagens antes de salvar
+
+**Código HTML:**
+```html
+<button type="button" 
+        class="js-open-media-library admin-btn admin-btn-primary" 
+        data-media-target="#galeria_paths_container"
+        data-folder="produtos"
+        data-multiple="true">
+    <i class="bi bi-image icon"></i> Adicionar da biblioteca
+</button>
+<div id="galeria_paths_container" style="display: none;"></div>
+<div id="galeria_preview_container" style="display: grid; ..."></div>
+```
+
+**JavaScript:**
+```javascript
+container.addEventListener('media-picker:multiple-selected', function(event) {
+    var urls = event.detail.urls;
+    // Criar inputs hidden para cada URL
+    // Adicionar previews visuais
+});
+```
+
+#### 3. Backend - Processamento de Caminhos
+
+**Localização:** `src/Http/Controllers/Admin/ProductController.php`
+
+**Métodos adaptados:**
+
+##### `processMainImage()`
+- Aceita `$_POST['imagem_destaque_path']` (caminho da biblioteca)
+- Prioridade: caminho da biblioteca > upload direto
+- Valida que o caminho pertence ao tenant
+- Verifica existência física do arquivo
+- Cria registro em `produto_imagens` com tipo `main`
+- Atualiza `produtos.imagem_principal`
+
+**Código:**
+```php
+// Verificar se veio caminho de imagem da biblioteca (prioridade sobre upload)
+if (!empty($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
+    $imagePath = trim($_POST['imagem_destaque_path']);
+    
+    // Validar que o caminho é válido e pertence ao tenant
+    if (strpos($imagePath, "/uploads/tenants/{$tenantId}/") === 0) {
+        // Processar caminho da biblioteca...
+    }
+}
+// Verificar se veio arquivo novo (upload direto)
+elseif (isset($_FILES['imagem_destaque']) && $_FILES['imagem_destaque']['error'] === UPLOAD_ERR_OK) {
+    // Processar upload...
+}
+```
+
+##### `processGallery()`
+- Aceita `$_POST['galeria_paths']` (array de caminhos)
+- Prioridade: caminhos da biblioteca > upload direto
+- Valida cada caminho
+- Verifica duplicatas (não adiciona se imagem já está na galeria)
+- Cria registros em `produto_imagens` com tipo `gallery`
+
+**Código:**
+```php
+// Processar caminhos de imagens da biblioteca (prioridade sobre upload)
+if (!empty($_POST['galeria_paths']) && is_array($_POST['galeria_paths'])) {
+    foreach ($_POST['galeria_paths'] as $imagePath) {
+        // Validar e processar cada caminho...
+    }
+}
+// Processar upload de novas imagens (se não veio da biblioteca)
+if (!empty($_FILES['galeria']['name'][0])) {
+    // Processar upload...
+}
+```
+
+#### 4. Media Picker - Modo Múltiplo
+
+**Localização:** `public/admin/js/media-picker.js`
+
+**Funcionalidades adicionadas:**
+- Suporte a `data-multiple="true"` no botão
+- Variável global `isMultipleMode`
+- Array `selectedImageUrls` para armazenar múltiplas seleções
+- Toggle de seleção (clique marca/desmarca)
+- Botão "Adicionar X imagem(ns)" dinâmico
+- Função `selectMultipleImages()` que dispara evento customizado
+- Evento `media-picker:multiple-selected` com `detail.urls` (array)
+
+**Código:**
+```javascript
+// Modo múltiplo: toggle seleção
+if (isMultipleMode) {
+    var index = selectedImageUrls.indexOf(url);
+    if (index > -1) {
+        // Desmarcar
+        selectedImageUrls.splice(index, 1);
+    } else {
+        // Marcar
+        selectedImageUrls.push(url);
+    }
+}
+```
+
+### Fluxo de Uso
+
+#### Imagem de Destaque
+
+1. Usuário acessa `/admin/produtos/novo` ou `/admin/produtos/{id}`
+2. Na seção "Imagem de Destaque":
+   - Vê preview atual (se houver) ou placeholder
+   - Clica em "Escolher da biblioteca"
+3. Modal abre filtrado em `produtos`
+4. Usuário pode:
+   - Selecionar imagem existente
+   - Fazer upload dentro do modal e depois selecionar
+5. Ao clicar em "Usar imagem selecionada":
+   - Modal fecha
+   - Campo `imagem_destaque_path` é preenchido
+   - Preview atualiza
+6. Ao salvar:
+   - Backend processa `imagem_destaque_path` primeiro
+   - Se não houver, processa `imagem_destaque` (upload)
+
+#### Galeria
+
+1. Na seção "Galeria de Imagens":
+   - Vê miniaturas já ligadas ao produto (se houver)
+   - Clica em "Adicionar da biblioteca"
+2. Modal abre filtrado em `produtos` em modo múltiplo
+3. Usuário seleciona uma ou mais imagens (toggle com clique)
+4. Ao clicar em "Adicionar X imagem(ns)":
+   - Modal fecha
+   - Inputs hidden `galeria_paths[]` são criados
+   - Previews aparecem na galeria
+5. Usuário pode remover previews antes de salvar
+6. Ao salvar:
+   - Backend processa `galeria_paths[]` primeiro
+   - Se não houver, processa `galeria[]` (upload)
+
+### Compatibilidade
+
+**Mantida:**
+- ✅ Upload direto ainda funciona (campos `imagem_destaque` e `galeria[]`)
+- ✅ Produtos existentes não são afetados
+- ✅ Multi-tenant respeitado (validação de caminhos)
+- ✅ Outros usos do media picker não são afetados
+
+**Novo:**
+- ✅ Seleção múltipla no media picker (modo opcional via `data-multiple`)
+- ✅ Processamento de caminhos de imagens no backend
+- ✅ Preview dinâmico de imagens selecionadas
+
+### Arquivos Modificados
+
+1. **`public/admin/js/media-picker.js`**
+   - Adicionado suporte a seleção múltipla
+   - Variáveis globais: `isMultipleMode`, `selectedImageUrls`
+   - Função `selectMultipleImages()`
+   - Evento customizado `media-picker:multiple-selected`
+
+2. **`src/Http/Controllers/Admin/ProductController.php`**
+   - Método `processMainImage()` adaptado para aceitar `imagem_destaque_path`
+   - Método `processGallery()` adaptado para aceitar `galeria_paths[]`
+
+3. **`themes/default/admin/products/create-content.php`**
+   - Campo de imagem de destaque com media picker
+   - Galeria com media picker em modo múltiplo
+   - JavaScript para processar seleção múltipla
+
+4. **`themes/default/admin/products/edit-content.php`**
+   - Campo de imagem de destaque com media picker
+   - Galeria com media picker em modo múltiplo
+   - JavaScript para processar seleção múltipla
+   - Helper `media_url()` para URLs corretas
+
+### Padrão de Uso
+
+#### Modo Único (Imagem de Destaque)
+
+```html
+<button type="button" 
+        class="js-open-media-library admin-btn admin-btn-primary" 
+        data-media-target="#campo_input"
+        data-folder="produtos"
+        data-preview="#preview_container">
+    Escolher da biblioteca
+</button>
+<input type="text" id="campo_input" name="imagem_destaque_path" readonly>
+<div id="preview_container"></div>
+```
+
+#### Modo Múltiplo (Galeria)
+
+```html
+<button type="button" 
+        class="js-open-media-library admin-btn admin-btn-primary" 
+        data-media-target="#container_paths"
+        data-folder="produtos"
+        data-multiple="true">
+    Adicionar da biblioteca
+</button>
+<div id="container_paths" style="display: none;"></div>
+<div id="preview_container"></div>
+
+<script>
+container.addEventListener('media-picker:multiple-selected', function(event) {
+    var urls = event.detail.urls;
+    // Processar URLs...
+});
+</script>
+```
+
+### Validação
+
+**Backend:**
+- Caminhos devem começar com `/uploads/tenants/{tenant_id}/`
+- Arquivo físico deve existir
+- Validação de tenant (segurança multi-tenant)
+
+**Frontend:**
+- Preview automático ao selecionar
+- Remoção de previews antes de salvar
+- Prevenção de duplicatas na galeria
+
+---
+
+**Status:** ✅ Implementação Concluída  
+**Última atualização:** 2025-01-10
+

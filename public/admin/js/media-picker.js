@@ -10,7 +10,9 @@
     var modalElement = null;
     var currentTargetInput = null;
     var currentFolder = null; // Folder atual do modal (ex: 'banners', 'category-pills')
-    var selectedImageUrl = null; // URL da imagem selecionada
+    var selectedImageUrl = null; // URL da imagem selecionada (modo único)
+    var selectedImageUrls = []; // Array de URLs selecionadas (modo múltiplo)
+    var isMultipleMode = false; // Se está em modo de seleção múltipla
     var basePath = '';
 
     /**
@@ -40,9 +42,10 @@
                 event.preventDefault();
                 var targetSelector = btn.getAttribute('data-media-target');
                 var folder = btn.getAttribute('data-folder') || null;
-                console.log('[Media Picker] Target:', targetSelector, 'Folder:', folder);
+                var multiple = btn.getAttribute('data-multiple') === 'true';
+                console.log('[Media Picker] Target:', targetSelector, 'Folder:', folder, 'Multiple:', multiple);
                 if (targetSelector) {
-                    openMediaLibrary(targetSelector, folder);
+                    openMediaLibrary(targetSelector, folder, multiple);
                 } else {
                     console.error('[Media Picker] Erro: data-media-target não encontrado no botão');
                 }
@@ -148,9 +151,10 @@
      * Abre o modal da biblioteca de mídia
      * @param {string} targetSelector Seletor do input que será preenchido (ex: '#imagem_desktop')
      * @param {string} folder Pasta opcional para filtrar (ex: 'banners', 'category-pills')
+     * @param {boolean} multiple Se está em modo de seleção múltipla
      */
-    function openMediaLibrary(targetSelector, folder) {
-        console.log('[Media Picker] openMediaLibrary chamado:', targetSelector, folder);
+    function openMediaLibrary(targetSelector, folder, multiple) {
+        console.log('[Media Picker] openMediaLibrary chamado:', targetSelector, folder, 'Multiple:', multiple);
         var targetInput = document.querySelector(targetSelector);
         if (!targetInput) {
             console.error('[Media Picker] Input não encontrado:', targetSelector);
@@ -169,11 +173,27 @@
                 folder = 'banners';
             } else if (targetSelector.includes('icone_path')) {
                 folder = 'category-pills';
+            } else if (targetSelector.includes('galeria') || targetSelector.includes('gallery')) {
+                folder = 'produtos';
             }
         }
 
         currentFolder = folder;
         currentTargetInput = targetInput;
+        isMultipleMode = multiple || false;
+        selectedImageUrls = [];
+        selectedImageUrl = null;
+        
+        // Atualizar texto do botão conforme modo
+        var useBtn = document.getElementById('pg-media-picker-use-selected');
+        if (useBtn) {
+            if (isMultipleMode) {
+                useBtn.innerHTML = '<i class="bi bi-check-circle icon"></i> Adicionar imagens selecionadas';
+            } else {
+                useBtn.innerHTML = '<i class="bi bi-check-circle icon"></i> Usar imagem selecionada';
+            }
+        }
+        
         modalElement.style.display = 'flex';
         loadImages(folder);
         setupEventListeners();
@@ -203,7 +223,9 @@
             useBtn.style.pointerEvents = 'none';
         }
         selectedImageUrl = null;
+        selectedImageUrls = [];
         currentTargetInput = null;
+        isMultipleMode = false;
     }
     
     /**
@@ -229,10 +251,20 @@
         }
         if (useSelectedBtn) {
             useSelectedBtn.onclick = function() {
-                if (selectedImageUrl && currentTargetInput) {
-                    selectImage(selectedImageUrl);
-                    selectedImageUrl = null;
-                    closeModal();
+                if (isMultipleMode) {
+                    // Modo múltiplo: retornar array de URLs
+                    if (selectedImageUrls.length > 0 && currentTargetInput) {
+                        selectMultipleImages(selectedImageUrls);
+                        selectedImageUrls = [];
+                        closeModal();
+                    }
+                } else {
+                    // Modo único: retornar URL única
+                    if (selectedImageUrl && currentTargetInput) {
+                        selectImage(selectedImageUrl);
+                        selectedImageUrl = null;
+                        closeModal();
+                    }
                 }
             };
         }
@@ -269,25 +301,61 @@
                 if (item && item.dataset.url) {
                     var grid = document.getElementById('pg-media-picker-grid');
                     if (grid) {
-                        // Destacar item selecionado
-                        grid.querySelectorAll('.pg-midia-item').forEach(function(i) {
-                            i.style.borderColor = '#ddd';
-                            i.style.borderWidth = '2px';
-                            i.classList.remove('selected');
-                        });
-                        item.style.borderColor = 'var(--pg-admin-primary, #F7931E)';
-                        item.style.borderWidth = '3px';
-                        item.classList.add('selected');
-                        
-                        // Guardar URL selecionada
-                        selectedImageUrl = item.dataset.url;
-                        
-                        // Habilitar botão "Usar imagem selecionada"
-                        var useBtn = document.getElementById('pg-media-picker-use-selected');
-                        if (useBtn) {
-                            useBtn.disabled = false;
-                            useBtn.style.opacity = '1';
-                            useBtn.style.pointerEvents = 'auto';
+                        if (isMultipleMode) {
+                            // Modo múltiplo: toggle seleção
+                            var url = item.dataset.url;
+                            var index = selectedImageUrls.indexOf(url);
+                            
+                            if (index > -1) {
+                                // Desmarcar
+                                selectedImageUrls.splice(index, 1);
+                                item.style.borderColor = '#ddd';
+                                item.style.borderWidth = '2px';
+                                item.classList.remove('selected');
+                            } else {
+                                // Marcar
+                                selectedImageUrls.push(url);
+                                item.style.borderColor = 'var(--pg-admin-primary, #F7931E)';
+                                item.style.borderWidth = '3px';
+                                item.classList.add('selected');
+                            }
+                            
+                            // Habilitar botão se houver seleção
+                            var useBtn = document.getElementById('pg-media-picker-use-selected');
+                            if (useBtn) {
+                                if (selectedImageUrls.length > 0) {
+                                    useBtn.disabled = false;
+                                    useBtn.style.opacity = '1';
+                                    useBtn.style.pointerEvents = 'auto';
+                                    useBtn.innerHTML = '<i class="bi bi-check-circle icon"></i> Adicionar ' + selectedImageUrls.length + ' imagem(ns)';
+                                } else {
+                                    useBtn.disabled = true;
+                                    useBtn.style.opacity = '0.5';
+                                    useBtn.style.pointerEvents = 'none';
+                                    useBtn.innerHTML = '<i class="bi bi-check-circle icon"></i> Adicionar imagens selecionadas';
+                                }
+                            }
+                        } else {
+                            // Modo único: seleção única
+                            grid.querySelectorAll('.pg-midia-item').forEach(function(i) {
+                                i.style.borderColor = '#ddd';
+                                i.style.borderWidth = '2px';
+                                i.classList.remove('selected');
+                            });
+                            item.style.borderColor = 'var(--pg-admin-primary, #F7931E)';
+                            item.style.borderWidth = '3px';
+                            item.classList.add('selected');
+                            
+                            // Guardar URL selecionada
+                            selectedImageUrl = item.dataset.url;
+                            
+                            // Habilitar botão "Usar imagem selecionada"
+                            var useBtn = document.getElementById('pg-media-picker-use-selected');
+                            if (useBtn) {
+                                useBtn.disabled = false;
+                                useBtn.style.opacity = '1';
+                                useBtn.style.pointerEvents = 'auto';
+                            }
                         }
                     }
                 }
@@ -455,7 +523,7 @@
     }
 
     /**
-     * Seleciona uma imagem e preenche o input
+     * Seleciona uma imagem e preenche o input (modo único)
      */
     function selectImage(url) {
         if (currentTargetInput) {
@@ -469,9 +537,43 @@
             if (previewId) {
                 var preview = document.getElementById(previewId);
                 if (preview) {
-                    preview.innerHTML = '<img src="' + basePath + url + '" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem;">';
+                    var imageUrl = url;
+                    if (!imageUrl.startsWith('/')) {
+                        imageUrl = '/' + imageUrl;
+                    }
+                    preview.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;">';
                 }
             }
+            
+            // Se for imagem de destaque, atualizar também o preview principal se existir
+            if (currentTargetInput.id === 'imagem_destaque_path') {
+                var mainPreview = document.querySelector('.current-image img');
+                if (mainPreview) {
+                    var imageUrl = url;
+                    if (!imageUrl.startsWith('/')) {
+                        imageUrl = '/' + imageUrl;
+                    }
+                    mainPreview.src = imageUrl;
+                    mainPreview.onerror = function() {
+                        this.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3ESem imagem%3C/text%3E%3C/svg%3E';
+                    };
+                }
+            }
+        }
+    }
+    
+    /**
+     * Seleciona múltiplas imagens (modo múltiplo)
+     * Dispara evento customizado 'media-picker:multiple-selected' com array de URLs
+     */
+    function selectMultipleImages(urls) {
+        if (currentTargetInput && urls.length > 0) {
+            // Disparar evento customizado com as URLs selecionadas
+            var event = new CustomEvent('media-picker:multiple-selected', {
+                bubbles: true,
+                detail: { urls: urls }
+            });
+            currentTargetInput.dispatchEvent(event);
         }
     }
     

@@ -5,9 +5,20 @@ $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
     $basePath = '/ecommerce-v1.0/public';
 }
+$ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
 ?>
 
 <div class="products-page">
+    <div class="admin-content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 class="admin-page-title" style="font-size: 1.875rem; font-weight: 700; color: #333; margin: 0;">
+            Produtos
+        </h1>
+        <a href="<?= $basePath ?>/admin/produtos/novo" class="admin-btn admin-btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-plus-circle icon"></i>
+            Novo produto
+        </a>
+    </div>
+    
     <div class="admin-filters">
         <form method="GET" action="<?= $basePath ?>/admin/produtos">
             <div class="admin-filter-group">
@@ -42,11 +53,45 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 <thead>
                     <tr>
                         <th>Imagem</th>
-                        <th>Nome</th>
+                        <th>
+                            <?php
+                            // Construir URL para ordenação por nome
+                            $queryParams = [];
+                            if (!empty($filtros['q'])) $queryParams['q'] = $filtros['q'];
+                            if (!empty($filtros['status'])) $queryParams['status'] = $filtros['status'];
+                            if (!empty($filtros['somente_com_imagem'])) $queryParams['somente_com_imagem'] = '1';
+                            
+                            // Determinar próxima direção
+                            $currentSort = $ordenacao['sort'] ?? '';
+                            $currentDirection = $ordenacao['direction'] ?? 'asc';
+                            $nextDirection = 'asc';
+                            
+                            if ($currentSort === 'name') {
+                                $nextDirection = ($currentDirection === 'asc') ? 'desc' : 'asc';
+                            }
+                            
+                            $queryParams['sort'] = 'name';
+                            $queryParams['direction'] = $nextDirection;
+                            $sortUrl = $basePath . '/admin/produtos?' . http_build_query($queryParams);
+                            
+                            // Ícone de ordenação
+                            $sortIcon = '';
+                            if ($currentSort === 'name') {
+                                $sortIcon = $currentDirection === 'asc' ? '↑' : '↓';
+                            }
+                            ?>
+                            <a href="<?= htmlspecialchars($sortUrl) ?>" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;">
+                                Nome
+                                <?php if ($sortIcon): ?>
+                                    <span style="font-size: 0.875rem; color: var(--pg-admin-primary);"><?= $sortIcon ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </th>
                         <th>SKU</th>
                         <th>Preço</th>
                         <th>Status</th>
                         <th>Estoque</th>
+                        <th>Categorias</th>
                         <th>Ação</th>
                     </tr>
                 </thead>
@@ -95,6 +140,29 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                                 </small>
                             </td>
                             <td>
+                                <?php 
+                                $categorias = $produto['categorias'] ?? [];
+                                if (!empty($categorias)): 
+                                    $categoriasDisplay = array_slice($categorias, 0, 2);
+                                    $restantes = count($categorias) - 2;
+                                ?>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                        <?php foreach ($categoriasDisplay as $cat): ?>
+                                            <span style="display: inline-block; padding: 0.25rem 0.5rem; background: #e0e0e0; border-radius: 4px; font-size: 0.75rem; color: #555;">
+                                                <?= htmlspecialchars($cat) ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                        <?php if ($restantes > 0): ?>
+                                            <span style="display: inline-block; padding: 0.25rem 0.5rem; background: #f0f0f0; border-radius: 4px; font-size: 0.75rem; color: #999;">
+                                                +<?= $restantes ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <span style="color: #999; font-style: italic; font-size: 0.875rem;">Sem categorias</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
                                 <a href="<?= $basePath ?>/admin/produtos/<?= $produto['id'] ?>" class="btn-view">
                                     <i class="bi bi-eye icon"></i>
                                     Ver detalhes
@@ -113,6 +181,8 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 if (!empty($filtros['q'])) $queryParams[] = 'q=' . urlencode($filtros['q']);
                 if (!empty($filtros['status'])) $queryParams[] = 'status=' . urlencode($filtros['status']);
                 if (!empty($filtros['somente_com_imagem'])) $queryParams[] = 'somente_com_imagem=1';
+                if (!empty($ordenacao['sort'])) $queryParams[] = 'sort=' . urlencode($ordenacao['sort']);
+                if (!empty($ordenacao['direction'])) $queryParams[] = 'direction=' . urlencode($ordenacao['direction']);
                 $queryString = !empty($queryParams) ? '&' . implode('&', $queryParams) : '';
                 ?>
                 <?php if ($paginacao['hasPrev']): ?>

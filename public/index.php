@@ -157,6 +157,14 @@ $router->get('/admin/produtos', AdminProductController::class . '@index', [
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'
 ]);
+$router->get('/admin/produtos/novo', AdminProductController::class . '@create', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/produtos', AdminProductController::class . '@store', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
 $router->get('/admin/produtos/{id}', AdminProductController::class . '@edit', [
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'
