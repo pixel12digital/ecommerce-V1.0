@@ -961,6 +961,49 @@ window.removeFeaturedImage = function() {
         console.error('[Galeria] Container #galeria_paths_container não encontrado!');
     }
     
+    // Adicionar event listeners para os botões de remoção das imagens existentes
+    (function() {
+        // Usar event delegation para capturar cliques nos botões de remoção
+        document.addEventListener('click', function(e) {
+            // Verificar se o clique foi em um botão de remoção (label.btn-remove ou seu ícone)
+            var btnRemove = e.target.closest('.btn-remove');
+            if (btnRemove) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('[Galeria] Botão de remoção clicado');
+                
+                // Encontrar o checkbox dentro do label
+                var checkbox = btnRemove.querySelector('input[type="checkbox"][name="remove_imagens[]"]');
+                if (checkbox) {
+                    // Alternar estado do checkbox
+                    checkbox.checked = !checkbox.checked;
+                    
+                    var imagemId = checkbox.value;
+                    console.log('[Galeria] Checkbox de remoção ' + (checkbox.checked ? 'marcado' : 'desmarcado') + ' para imagem ID:', imagemId);
+                    
+                    // Encontrar o item da galeria correspondente
+                    var galleryItem = btnRemove.closest('.gallery-item');
+                    if (galleryItem) {
+                        if (checkbox.checked) {
+                            // Marcar para remoção - adicionar estilo visual
+                            galleryItem.style.opacity = '0.5';
+                            galleryItem.style.border = '2px solid #dc3545';
+                            console.log('[Galeria] Item da galeria marcado para remoção visual');
+                        } else {
+                            // Desmarcar - remover estilo visual
+                            galleryItem.style.opacity = '1';
+                            galleryItem.style.border = '';
+                            console.log('[Galeria] Item da galeria desmarcado da remoção');
+                        }
+                    }
+                } else {
+                    console.warn('[Galeria] Checkbox não encontrado dentro do botão de remoção');
+                }
+            }
+        });
+    })();
+    
     // Função para remover preview da galeria
     window.removeGalleryPreview = function(btn, url) {
         console.log('[Galeria] removeGalleryPreview chamado para URL:', url);

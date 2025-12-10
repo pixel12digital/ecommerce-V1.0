@@ -1173,17 +1173,26 @@ class ProductController extends Controller
                     if (file_exists($filePath)) {
                         // Verificar se imagem já não está associada a este produto (qualquer tipo)
                         $stmtCheck = $db->prepare("
-                            SELECT COUNT(*) as count 
+                            SELECT id, tipo, caminho_arquivo 
                             FROM produto_imagens 
                             WHERE tenant_id = :tenant_id AND produto_id = :produto_id 
                             AND caminho_arquivo = :caminho
+                            LIMIT 1
                         ");
                         $stmtCheck->execute([
                             'tenant_id' => $tenantId,
                             'produto_id' => $produtoId,
                             'caminho' => $imagePath
                         ]);
-                        $exists = $stmtCheck->fetch()['count'] > 0;
+                        $existingRecord = $stmtCheck->fetch();
+                        $exists = $existingRecord !== false;
+                        
+                        // Log detalhado sobre verificação de existência (sempre, não apenas em debug)
+                        if ($exists) {
+                            error_log("ProductController::processGallery - 🔍 Imagem já existe: ID={$existingRecord['id']}, tipo={$existingRecord['tipo']}, caminho={$imagePath}");
+                        } else {
+                            error_log("ProductController::processGallery - 🔍 Imagem NÃO existe no banco, será inserida: {$imagePath}");
+                        }
                         
                         if (!$exists) {
                             try {
@@ -1210,13 +1219,15 @@ class ProductController extends Controller
                                     'tamanho_arquivo' => $fileSize
                                 ]);
                                 $processedCount++;
+                                // Log sempre (não apenas em debug) para rastrear inserções
+                                error_log("ProductController::processGallery - ✅ Imagem inserida com sucesso: {$imagePath} (ordem: " . ($ordem - 1) . ")");
                             } catch (\Exception $e) {
-                                error_log("ProductController::processGallery - Erro ao inserir imagem: " . $e->getMessage() . " (caminho: {$imagePath})");
+                                error_log("ProductController::processGallery - ❌ Erro ao inserir imagem: " . $e->getMessage() . " (caminho: {$imagePath})");
+                                $errorCount++;
                             }
                         } else {
-                            if ($isDebug) {
-                                error_log("ProductController::processGallery - Imagem já existe no produto (preservada): {$imagePath}");
-                            }
+                            // Log sempre para rastrear por que imagens são puladas
+                            error_log("ProductController::processGallery - ⏭️ Imagem já existe no produto (preservada): {$imagePath}");
                             $skippedCount++;
                         }
                     } else {
