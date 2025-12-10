@@ -532,6 +532,13 @@
             var event = new Event('change', { bubbles: true });
             currentTargetInput.dispatchEvent(event);
             
+            // Atualizar campo display se existir (para campos separados display/hidden)
+            var displayId = currentTargetInput.id + '_display';
+            var displayField = document.getElementById(displayId);
+            if (displayField) {
+                displayField.value = url;
+            }
+            
             // Mostrar preview se houver um elemento de preview
             var previewId = currentTargetInput.getAttribute('data-preview');
             if (previewId) {
@@ -541,24 +548,42 @@
                     if (!imageUrl.startsWith('/')) {
                         imageUrl = '/' + imageUrl;
                     }
-                    preview.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;">';
+                    preview.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;" onerror="this.parentElement.innerHTML=\'<div style=\\\'color: #999; padding: 1rem; text-align: center;\\\'>Erro ao carregar imagem</div>\'">';
                 }
             }
             
             // Se for imagem de destaque, atualizar também o preview principal se existir
             if (currentTargetInput.id === 'imagem_destaque_path') {
+                var imageUrl = url;
+                if (!imageUrl.startsWith('/')) {
+                    imageUrl = '/' + imageUrl;
+                }
+                
+                // Tentar atualizar img existente
                 var mainPreview = document.querySelector('.current-image img');
                 if (mainPreview) {
-                    var imageUrl = url;
-                    if (!imageUrl.startsWith('/')) {
-                        imageUrl = '/' + imageUrl;
-                    }
                     mainPreview.src = imageUrl;
                     mainPreview.onerror = function() {
                         this.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\'%3ESem imagem%3C/text%3E%3C/svg%3E';
                     };
+                    // Remover classe placeholder se existir
+                    var currentImageContainer = mainPreview.closest('.current-image');
+                    if (currentImageContainer) {
+                        currentImageContainer.classList.remove('placeholder');
+                    }
+                } else {
+                    // Se não existe img, pode ser placeholder - substituir
+                    var placeholderContainer = document.querySelector('.current-image.placeholder');
+                    if (placeholderContainer) {
+                        placeholderContainer.classList.remove('placeholder');
+                        placeholderContainer.innerHTML = '<img src="' + imageUrl + '" alt="Imagem de destaque" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'300\\\' height=\\\'300\\\'%3E%3Crect fill=\\\'%23ddd\\\' width=\\\'300\\\' height=\\\'300\\\'/%3E%3Ctext x=\\\'50%25\\\' y=\\\'50%25\\\' text-anchor=\\\'middle\\\' dy=\\\'.3em\\\' fill=\\\'%23999\\\'%3ESem imagem%3C/text%3E%3C/svg%3E\'">';
+                    }
                 }
             }
+            
+            // Disparar evento input também para garantir que listeners sejam acionados
+            var inputEvent = new Event('input', { bubbles: true });
+            currentTargetInput.dispatchEvent(inputEvent);
         }
     }
     

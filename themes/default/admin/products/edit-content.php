@@ -247,7 +247,7 @@ if (!function_exists('media_url')) {
                             <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
                                 <input type="text" 
                                        id="imagem_destaque_path_display" 
-                                       value="" 
+                                       value="<?= htmlspecialchars($produto['imagem_principal'] ?? '') ?>" 
                                        placeholder="Selecione uma imagem na biblioteca"
                                        readonly
                                        style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; background: #f8f9fa;">
@@ -255,7 +255,7 @@ if (!function_exists('media_url')) {
                                 <input type="hidden" 
                                        name="imagem_destaque_path" 
                                        id="imagem_destaque_path" 
-                                       value="">
+                                       value="<?= htmlspecialchars($produto['imagem_principal'] ?? '') ?>">
                                 <button type="button" 
                                         class="js-open-media-library admin-btn admin-btn-primary" 
                                         data-media-target="#imagem_destaque_path"
@@ -600,6 +600,55 @@ function setMainFromGallery(imageId) {
                 input.value = index + 1;
             }
         });
+    }
+})();
+
+// Gerenciar comportamento do campo Status de Estoque baseado em Gerencia Estoque
+(function() {
+    var gerenciaEstoqueCheckbox = document.querySelector('input[name="gerencia_estoque"]');
+    var statusEstoqueSelect = document.querySelector('select[name="status_estoque"]');
+    var statusEstoqueGroup = statusEstoqueSelect ? statusEstoqueSelect.closest('.form-group') : null;
+    
+    function updateStatusEstoqueField() {
+        if (!gerenciaEstoqueCheckbox || !statusEstoqueSelect) return;
+        
+        var isGerenciando = gerenciaEstoqueCheckbox.checked;
+        
+        if (isGerenciando) {
+            // Desabilitar select e adicionar texto explicativo
+            statusEstoqueSelect.disabled = true;
+            statusEstoqueSelect.style.opacity = '0.6';
+            statusEstoqueSelect.style.cursor = 'not-allowed';
+            
+            // Adicionar ou atualizar texto de ajuda
+            var helpText = statusEstoqueGroup.querySelector('.help-text-estoque');
+            if (!helpText) {
+                helpText = document.createElement('small');
+                helpText.className = 'help-text-estoque';
+                helpText.style.cssText = 'color: #666; display: block; margin-top: 0.5rem; font-style: italic;';
+                helpText.textContent = 'Quando o gerenciamento de estoque está ativo, o status é definido automaticamente com base na quantidade em estoque.';
+                statusEstoqueGroup.appendChild(helpText);
+            }
+            helpText.style.display = 'block';
+        } else {
+            // Habilitar select e remover texto de ajuda
+            statusEstoqueSelect.disabled = false;
+            statusEstoqueSelect.style.opacity = '1';
+            statusEstoqueSelect.style.cursor = 'pointer';
+            
+            var helpText = statusEstoqueGroup.querySelector('.help-text-estoque');
+            if (helpText) {
+                helpText.style.display = 'none';
+            }
+        }
+    }
+    
+    // Aplicar ao carregar a página
+    if (gerenciaEstoqueCheckbox && statusEstoqueSelect) {
+        updateStatusEstoqueField();
+        
+        // Aplicar quando checkbox mudar
+        gerenciaEstoqueCheckbox.addEventListener('change', updateStatusEstoqueField);
     }
 })();
 
