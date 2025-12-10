@@ -419,31 +419,28 @@ $router->get('/migrations', function() {
     require __DIR__ . '/migrations.php';
 });
 
-// Rota pública - Script de verificação de imagens (protegida por autenticação básica)
+// Rota para verificação de imagens (protegida por sessão do admin)
 $router->get('/scripts/check-product-images', function() {
-    // Verificação básica de autenticação (pode ser melhorada)
-    $authUser = $_SERVER['PHP_AUTH_USER'] ?? null;
-    $authPass = $_SERVER['PHP_AUTH_PW'] ?? null;
-    
-    // Permitir acesso se estiver autenticado no admin ou se tiver credenciais básicas
-    $isAuthenticated = false;
+    // Iniciar sessão se necessário
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    if (isset($_SESSION['user_id'])) {
-        $isAuthenticated = true;
-    }
     
-    // Se não estiver autenticado, pedir autenticação básica
+    // Verificar se está autenticado no admin
+    $isAuthenticated = isset($_SESSION['user_id']) && isset($_SESSION['tenant_id']);
+    
+    // Se não estiver autenticado, redirecionar para login
     if (!$isAuthenticated) {
-        header('WWW-Authenticate: Basic realm="Verificação de Imagens"');
-        http_response_code(401);
-        echo 'Acesso negado. Autenticação necessária.';
+        // Salvar URL de retorno
+        $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+        header('Location: /admin/login');
         exit;
     }
     
     require __DIR__ . '/../scripts/check_product_images_web.php';
-});
+}, [
+    AuthMiddleware::class => [false, true]
+]);
 
 // Rotas protegidas - Área do Cliente
 $router->get('/minha-conta', CustomerController::class . '@dashboard', [CustomerAuthMiddleware::class]);
