@@ -1128,15 +1128,12 @@ class ProductController extends Controller
             foreach ($_POST['galeria_paths'] as $index => $imagePath) {
                 $imagePath = trim($imagePath);
                 
-                if ($isDebug) {
-                    error_log("ProductController::processGallery - Processando imagem #{$index}: '{$imagePath}'");
-                }
+                // Log sempre (não apenas em debug) para rastrear cada imagem
+                error_log("ProductController::processGallery - [IMAGEM #{$index}] Iniciando processamento: '{$imagePath}'");
                 
                 // Pular se vazio
                 if (empty($imagePath)) {
-                    if ($isDebug) {
-                        error_log("ProductController::processGallery - Imagem #{$index} está vazia, pulando");
-                    }
+                    error_log("ProductController::processGallery - [IMAGEM #{$index}] ⚠️ Caminho vazio, pulando");
                     $skippedCount++;
                     continue;
                 }
@@ -1210,32 +1207,34 @@ class ProductController extends Controller
                                         :mime_type, :tamanho_arquivo
                                     )
                                 ");
+                                $currentOrdem = $ordem++;
                                 $stmt->execute([
                                     'tenant_id' => $tenantId,
                                     'produto_id' => $produtoId,
-                                    'ordem' => $ordem++,
+                                    'ordem' => $currentOrdem,
                                     'caminho_arquivo' => $imagePath,
                                     'mime_type' => $mimeType,
                                     'tamanho_arquivo' => $fileSize
                                 ]);
+                                $insertedId = $db->lastInsertId();
                                 $processedCount++;
                                 // Log sempre (não apenas em debug) para rastrear inserções
-                                error_log("ProductController::processGallery - ✅ Imagem inserida com sucesso: {$imagePath} (ordem: " . ($ordem - 1) . ")");
+                                error_log("ProductController::processGallery - ✅ [IMAGEM #{$index}] INSERIDA COM SUCESSO: {$imagePath} (ordem: {$currentOrdem}, ID inserido: {$insertedId})");
                             } catch (\Exception $e) {
                                 error_log("ProductController::processGallery - ❌ Erro ao inserir imagem: " . $e->getMessage() . " (caminho: {$imagePath})");
                                 $errorCount++;
                             }
                         } else {
                             // Log sempre para rastrear por que imagens são puladas
-                            error_log("ProductController::processGallery - ⏭️ Imagem já existe no produto (preservada): {$imagePath}");
+                            error_log("ProductController::processGallery - ⏭️ [IMAGEM #{$index}] JÁ EXISTE no produto (preservada): {$imagePath} (ID existente: {$existingRecord['id']}, tipo: {$existingRecord['tipo']})");
                             $skippedCount++;
                         }
                     } else {
-                        error_log("ProductController::processGallery - ⚠️ Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
+                        error_log("ProductController::processGallery - ⚠️ [IMAGEM #{$index}] Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
                         $errorCount++;
                     }
                 } else {
-                    error_log("ProductController::processGallery - ⚠️ Caminho inválido: {$imagePath} (tenant: {$tenantId}, tenantPath esperado: {$tenantPath})");
+                    error_log("ProductController::processGallery - ⚠️ [IMAGEM #{$index}] Caminho inválido: {$imagePath} (tenant: {$tenantId}, tenantPath esperado: {$tenantPath})");
                     $errorCount++;
                 }
             }
@@ -1248,6 +1247,15 @@ class ProductController extends Controller
             ");
             $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
             $totalAfter = $stmt->fetch()['total'];
+            
+            // Log resumo sempre (não apenas em debug)
+            error_log("ProductController::processGallery - 📊 RESUMO FINAL:");
+            error_log("ProductController::processGallery -   Total recebido no POST: " . count($_POST['galeria_paths']));
+            error_log("ProductController::processGallery -   Total ANTES: {$totalBefore}");
+            error_log("ProductController::processGallery -   Imagens novas inseridas: {$processedCount}");
+            error_log("ProductController::processGallery -   Imagens já existentes (preservadas): {$skippedCount}");
+            error_log("ProductController::processGallery -   Imagens com erro: {$errorCount}");
+            error_log("ProductController::processGallery -   Total APÓS: {$totalAfter}");
             
             // Logs resumidos (sempre) e detalhados (apenas em debug)
             if ($isDebug) {

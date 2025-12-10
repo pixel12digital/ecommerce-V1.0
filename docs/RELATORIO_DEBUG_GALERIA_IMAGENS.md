@@ -874,6 +874,138 @@ Após aplicar as correções, validar:
 
 ---
 
-**Última Atualização:** 10 de dezembro de 2025
-**Status:** ✅ Correções implementadas - Aguardando testes
+## 🔄 Atualização - Problema Persistente (10/12/2025 - Tarde)
+
+### Status Atual
+
+**Problema Reportado:**
+- ✅ Adição de imagens funciona (JavaScript corrigido)
+- ✅ Botão de excluir funciona (event listener adicionado)
+- ❌ **Terceira imagem não persiste após salvar e recarregar**
+
+### Logs do Console (Última Tentativa)
+
+```
+[Form Submit] Total de inputs de galeria que serão enviados: 3
+[Form Submit] Caminhos de galeria: (3) [
+  '/uploads/tenants/1/produtos/IMG-20251206-WA0054.jpg',
+  '/uploads/tenants/1/produtos/IMG-20251206-WA0055.jpg',
+  '/uploads/tenants/1/produtos/IMG-20251206-WA0052.jpg'
+]
+```
+
+**Observação:** 3 imagens estão sendo enviadas no POST, mas apenas 2 persistem após recarregar.
+
+### Correções Adicionais Implementadas
+
+#### 1. Logs Detalhados no Backend
+
+**Adicionado:**
+- Log para cada imagem processada (sempre, não apenas em debug)
+- Log mostrando se imagem foi inserida ou pulada
+- Log com ID inserido quando imagem é salva
+- Log com ID existente quando imagem é preservada
+- Resumo final sempre logado
+
+**Exemplo de logs esperados:**
+```
+ProductController::processGallery - [IMAGEM #0] Iniciando processamento: '/uploads/tenants/1/produtos/IMG-20251206-WA0054.jpg'
+ProductController::processGallery - 🔍 Imagem NÃO existe no banco, será inserida: /uploads/tenants/1/produtos/IMG-20251206-WA0054.jpg
+ProductController::processGallery - ✅ [IMAGEM #0] INSERIDA COM SUCESSO: /uploads/tenants/1/produtos/IMG-20251206-WA0054.jpg (ordem: 1, ID inserido: 154)
+
+ProductController::processGallery - [IMAGEM #1] Iniciando processamento: '/uploads/tenants/1/produtos/IMG-20251206-WA0055.jpg'
+ProductController::processGallery - 🔍 Imagem NÃO existe no banco, será inserida: /uploads/tenants/1/produtos/IMG-20251206-WA0055.jpg
+ProductController::processGallery - ✅ [IMAGEM #1] INSERIDA COM SUCESSO: /uploads/tenants/1/produtos/IMG-20251206-WA0055.jpg (ordem: 2, ID inserido: 155)
+
+ProductController::processGallery - [IMAGEM #2] Iniciando processamento: '/uploads/tenants/1/produtos/IMG-20251206-WA0052.jpg'
+ProductController::processGallery - 🔍 Imagem já existe: ID=152, tipo=gallery, caminho=/uploads/tenants/1/produtos/IMG-20251206-WA0052.jpg
+ProductController::processGallery - ⏭️ [IMAGEM #2] JÁ EXISTE no produto (preservada): /uploads/tenants/1/produtos/IMG-20251206-WA0052.jpg (ID existente: 152, tipo: gallery)
+
+ProductController::processGallery - 📊 RESUMO FINAL:
+ProductController::processGallery -   Total recebido no POST: 3
+ProductController::processGallery -   Total ANTES: 2
+ProductController::processGallery -   Imagens novas inseridas: 2
+ProductController::processGallery -   Imagens já existentes (preservadas): 1
+ProductController::processGallery -   Imagens com erro: 0
+ProductController::processGallery -   Total APÓS: 4
+```
+
+#### 2. Correção na Ordem de Inserção
+
+**Problema Identificado:**
+- Uso de `$ordem++` diretamente no array de parâmetros pode causar problemas
+- Log mostrava ordem incorreta (mostrava `$ordem - 1`)
+
+**Correção:**
+- Armazenar ordem em variável `$currentOrdem` antes de incrementar
+- Usar `$currentOrdem` no INSERT
+- Log mostrar ordem correta
+
+### Hipóteses para Investigação
+
+#### Hipótese 1: Verificação de Duplicatas Muito Restritiva
+
+**Possível Causa:**
+- A verificação `SELECT id, tipo, caminho_arquivo` pode estar encontrando a imagem que acabou de ser inserida no mesmo loop
+- Se a imagem #0 e #1 forem inseridas, e a imagem #2 tiver o mesmo caminho de uma já inserida, ela será pulada
+
+**Como Verificar:**
+- Verificar nos logs se a terceira imagem está sendo detectada como "já existe"
+- Verificar se os caminhos são realmente diferentes
+
+#### Hipótese 2: Problema com Transação/Commit
+
+**Possível Causa:**
+- A transação pode não estar sendo commitada corretamente
+- Algumas inserções podem estar sendo revertidas
+
+**Como Verificar:**
+- Verificar se há `commit()` após `processGallery()`
+- Verificar se há `rollback()` sendo chamado
+
+#### Hipótese 3: Problema na Query de Busca da Galeria
+
+**Possível Causa:**
+- A query que busca a galeria para exibir pode ter um `LIMIT 2` ou similar
+- Ou pode estar ordenando de forma que a terceira imagem não aparece
+
+**Como Verificar:**
+- Verificar a query em `edit()` que busca `$galeria`
+- Verificar se há `LIMIT` ou ordenação que possa ocultar imagens
+
+### Próximos Passos de Investigação
+
+1. **Verificar Logs do Backend:**
+   ```bash
+   php scripts/collect_product_logs.php --product=929 --last-hour
+   ```
+   - Procurar por `[IMAGEM #2]` nos logs
+   - Verificar se está sendo inserida ou pulada
+   - Verificar se há erros
+
+2. **Verificar Banco de Dados Diretamente:**
+   ```bash
+   php scripts/check_product_images.php 929
+   ```
+   - Verificar quantas imagens estão realmente no banco
+   - Verificar se a terceira imagem foi inserida
+
+3. **Verificar Query de Busca:**
+   - Verificar `ProductController::edit()` método que busca `$galeria`
+   - Verificar se há `LIMIT` ou filtros que possam ocultar imagens
+
+4. **Testar com Produto Limpo:**
+   - Criar produto novo sem imagens
+   - Adicionar 3 imagens de uma vez
+   - Verificar se todas persistem
+
+### Arquivos Modificados (Última Atualização)
+
+- `src/Http/Controllers/Admin/ProductController.php` - Logs detalhados adicionados
+- `themes/default/admin/products/edit-content.php` - Event listener para botão de remoção
+
+---
+
+**Última Atualização:** 10 de dezembro de 2025 (Tarde)
+**Status:** 🔄 Problema persistente - Terceira imagem não persiste - Logs detalhados adicionados para investigação
 
