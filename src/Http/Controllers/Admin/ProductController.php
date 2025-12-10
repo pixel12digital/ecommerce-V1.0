@@ -239,8 +239,20 @@ class ProductController extends Controller
             }
             $sku = trim($_POST['sku'] ?? '');
             $status = $_POST['status'] ?? 'draft';
-            $precoRegular = !empty($_POST['preco_regular']) ? (float)$_POST['preco_regular'] : 0;
-            $precoPromocional = !empty($_POST['preco_promocional']) ? (float)$_POST['preco_promocional'] : null;
+            
+            // Processar preço regular (converter vírgula para ponto)
+            $precoRegularStr = trim($_POST['preco_regular'] ?? '0');
+            $precoRegularStr = str_replace(',', '.', $precoRegularStr);
+            $precoRegular = !empty($precoRegularStr) ? (float)$precoRegularStr : 0;
+            
+            // Processar preço promocional (converter vírgula para ponto)
+            $precoPromocionalStr = trim($_POST['preco_promocional'] ?? '');
+            $precoPromocional = null;
+            if (!empty($precoPromocionalStr)) {
+                $precoPromocionalStr = str_replace(',', '.', $precoPromocionalStr);
+                $precoPromocional = (float)$precoPromocionalStr;
+            }
+            
             $dataPromocaoInicio = !empty($_POST['data_promocao_inicio']) ? $_POST['data_promocao_inicio'] : null;
             $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
             $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;

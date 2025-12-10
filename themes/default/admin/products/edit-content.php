@@ -93,14 +93,24 @@ if (!function_exists('media_url')) {
             <div class="form-grid">
                 <div class="form-group">
                     <label>Preço Regular *</label>
-                    <input type="number" name="preco_regular" value="<?= $produto['preco_regular'] ?>" 
-                           step="0.01" min="0" required>
+                    <input type="text" name="preco_regular" id="preco_regular" 
+                           value="<?= number_format($produto['preco_regular'], 2, ',', '') ?>" 
+                           placeholder="0,00" required
+                           class="price-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Digite o preço usando vírgula (ex: 380,00)
+                    </small>
                 </div>
                 
                 <div class="form-group">
                     <label>Preço Promocional</label>
-                    <input type="number" name="preco_promocional" value="<?= $produto['preco_promocional'] ?? '' ?>" 
-                           step="0.01" min="0">
+                    <input type="text" name="preco_promocional" id="preco_promocional" 
+                           value="<?= $produto['preco_promocional'] ? number_format($produto['preco_promocional'], 2, ',', '') : '' ?>" 
+                           placeholder="0,00"
+                           class="price-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Digite o preço usando vírgula (ex: 350,00)
+                    </small>
                 </div>
                 
                 <div class="form-group">
@@ -236,12 +246,16 @@ if (!function_exists('media_url')) {
                             <label>Escolher imagem de destaque</label>
                             <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
                                 <input type="text" 
-                                       name="imagem_destaque_path" 
-                                       id="imagem_destaque_path" 
+                                       id="imagem_destaque_path_display" 
                                        value="" 
                                        placeholder="Selecione uma imagem na biblioteca"
                                        readonly
                                        style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; background: #f8f9fa;">
+                                <!-- Campo hidden que será enviado no POST -->
+                                <input type="hidden" 
+                                       name="imagem_destaque_path" 
+                                       id="imagem_destaque_path" 
+                                       value="">
                                 <button type="button" 
                                         class="js-open-media-library admin-btn admin-btn-primary" 
                                         data-media-target="#imagem_destaque_path"
@@ -589,12 +603,83 @@ function setMainFromGallery(imageId) {
     }
 })();
 
+// Máscara de preço (aceitar vírgula, converter para ponto antes de enviar)
+(function() {
+    function formatPrice(value) {
+        // Remove tudo exceto números e vírgula
+        value = value.replace(/[^\d,]/g, '');
+        // Substitui múltiplas vírgulas por uma única
+        value = value.replace(/,+/g, ',');
+        // Garante que há no máximo uma vírgula
+        var parts = value.split(',');
+        if (parts.length > 2) {
+            value = parts[0] + ',' + parts.slice(1).join('');
+        }
+        return value;
+    }
+    
+    function convertPriceToFloat(value) {
+        if (!value || value.trim() === '') return '';
+        // Converte vírgula para ponto
+        return value.replace(',', '.');
+    }
+    
+    var precoRegular = document.getElementById('preco_regular');
+    var precoPromocional = document.getElementById('preco_promocional');
+    
+    if (precoRegular) {
+        precoRegular.addEventListener('input', function() {
+            this.value = formatPrice(this.value);
+        });
+        
+        precoRegular.addEventListener('blur', function() {
+            if (this.value && !this.value.includes(',')) {
+                // Se não tem vírgula, adiciona ,00
+                this.value = this.value + ',00';
+            }
+        });
+    }
+    
+    if (precoPromocional) {
+        precoPromocional.addEventListener('input', function() {
+            this.value = formatPrice(this.value);
+        });
+        
+        precoPromocional.addEventListener('blur', function() {
+            if (this.value && !this.value.includes(',')) {
+                this.value = this.value + ',00';
+            }
+        });
+    }
+    
+    // Converter antes de enviar formulário
+    var form = document.querySelector('form[method="POST"]');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (precoRegular && precoRegular.value) {
+                precoRegular.value = convertPriceToFloat(precoRegular.value);
+            }
+            if (precoPromocional && precoPromocional.value) {
+                precoPromocional.value = convertPriceToFloat(precoPromocional.value);
+            }
+        });
+    }
+})();
+
 // Atualizar preview da imagem de destaque quando selecionada
 (function() {
     var imagemDestaqueInput = document.getElementById('imagem_destaque_path');
+    var imagemDestaqueDisplay = document.getElementById('imagem_destaque_path_display');
+    
     if (imagemDestaqueInput) {
         imagemDestaqueInput.addEventListener('change', function() {
             var url = this.value;
+            
+            // Atualizar campo de exibição também
+            if (imagemDestaqueDisplay) {
+                imagemDestaqueDisplay.value = url;
+            }
+            
             if (url) {
                 // Atualizar preview pequeno
                 var previewSmall = document.getElementById('imagem_destaque_preview');
