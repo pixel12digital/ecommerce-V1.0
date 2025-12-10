@@ -27,6 +27,7 @@ use App\Core\Router;
 use App\Http\Middleware\TenantResolverMiddleware;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\CustomerAuthMiddleware;
+use App\Http\Middleware\CheckPermissionMiddleware;
 use App\Http\Controllers\PlatformAuthController;
 use App\Http\Controllers\StoreAuthController;
 use App\Http\Controllers\PlatformDashboardController;
@@ -52,6 +53,8 @@ use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Controllers\Admin\GatewayConfigController;
+use App\Http\Controllers\Admin\StoreUsersController;
+use App\Http\Controllers\Admin\RolesController;
 use App\Http\Controllers\Storefront\NewsletterController as StorefrontNewsletterController;
 use App\Http\Controllers\Storefront\StaticPageController;
 
@@ -139,7 +142,8 @@ $router->post('/admin/platform/tenants/{id}/edit', PlatformDashboardController::
 
 // Rotas protegidas - Store Admin
 $router->get('/admin', StoreDashboardController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'view_dashboard'
 ]);
 $router->get('/admin/system/updates', SystemUpdatesController::class . '@index', [
     AuthMiddleware::class => [false, true]
@@ -150,136 +154,212 @@ $router->post('/admin/system/updates/run', SystemUpdatesController::class . '@ru
 
 // Rotas Admin - Catálogo
 $router->get('/admin/produtos', AdminProductController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
 ]);
 $router->get('/admin/produtos/{id}', AdminProductController::class . '@edit', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
 ]);
 $router->post('/admin/produtos/{id}', AdminProductController::class . '@update', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
 ]);
 
 // Rotas Admin - Tema
 $router->get('/admin/tema', ThemeController::class . '@edit', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_theme'
 ]);
 $router->post('/admin/tema', ThemeController::class . '@update', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_theme'
 ]);
 
 // Rotas Admin - Home (Configuração Agregadora)
 $router->get('/admin/home', HomeConfigController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 
 // Rotas Admin - Home (Categorias em Destaque)
 $router->get('/admin/home/categorias-pills', HomeCategoriesController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->post('/admin/home/categorias-pills', HomeCategoriesController::class . '@store', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->get('/admin/home/categorias-pills/{id}/editar', HomeCategoriesController::class . '@edit', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->post('/admin/home/categorias-pills/{id}', HomeCategoriesController::class . '@update', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->post('/admin/home/categorias-pills/{id}/excluir', HomeCategoriesController::class . '@destroy', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->get('/admin/home/categorias-pills/midia', HomeCategoriesController::class . '@listarImagensExistentes', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 
 // Rotas Admin - Biblioteca de Mídia
 $router->get('/admin/midias', MediaLibraryController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_media'
 ]);
 $router->get('/admin/midias/listar', MediaLibraryController::class . '@listar', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_media'
 ]);
 $router->post('/admin/midias/upload', MediaLibraryController::class . '@upload', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_media'
 ]);
 
 // Rotas Admin - Home (Seções de Categorias)
 $router->get('/admin/home/secoes-categorias', HomeSectionsController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->post('/admin/home/secoes-categorias', HomeSectionsController::class . '@update', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 
 // Rotas Admin - Home (Banners)
 // IMPORTANTE: Rotas específicas devem vir ANTES de rotas com parâmetros dinâmicos
 $router->get('/admin/home/banners', HomeBannersController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->get('/admin/home/banners/novo', HomeBannersController::class . '@create', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->post('/admin/home/banners/novo', HomeBannersController::class . '@store', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 // Rota específica ANTES da rota com {id}
 $router->post('/admin/home/banners/reordenar', HomeBannersController::class . '@reordenar', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->get('/admin/home/banners/{id}/editar', HomeBannersController::class . '@edit', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->post('/admin/home/banners/{id}', HomeBannersController::class . '@update', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 $router->post('/admin/home/banners/{id}/excluir', HomeBannersController::class . '@destroy', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_home_page'
 ]);
 
 // Rotas Admin - Newsletter
 $router->get('/admin/newsletter', AdminNewsletterController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_newsletter'
 ]);
 
 // Rotas Admin - Pedidos
 $router->get('/admin/pedidos', AdminOrderController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
 ]);
 $router->get('/admin/pedidos/{id}', AdminOrderController::class . '@show', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
 ]);
 $router->post('/admin/pedidos/{id}/status', AdminOrderController::class . '@updateStatus', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
 ]);
 
 // Rotas Admin - Clientes
 $router->get('/admin/clientes', AdminCustomerController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_customers'
 ]);
 $router->get('/admin/clientes/{id}', AdminCustomerController::class . '@show', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_customers'
 ]);
 
 // Rotas Admin - Avaliações de Produtos
 $router->get('/admin/avaliacoes', AdminProductReviewController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_reviews'
 ]);
 $router->get('/admin/avaliacoes/{id}', AdminProductReviewController::class . '@show', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_reviews'
 ]);
 $router->post('/admin/avaliacoes/{id}/aprovar', AdminProductReviewController::class . '@approve', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_reviews'
 ]);
 $router->post('/admin/avaliacoes/{id}/rejeitar', AdminProductReviewController::class . '@reject', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_reviews'
 ]);
 
 // Rotas Admin - Configurações / Gateways
 $router->get('/admin/configuracoes/gateways', GatewayConfigController::class . '@index', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_gateways'
 ]);
 $router->post('/admin/configuracoes/gateways', GatewayConfigController::class . '@store', [
-    AuthMiddleware::class => [false, true]
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_gateways'
+]);
+
+// Rotas Admin - Usuários e Perfis
+$router->get('/admin/usuarios', StoreUsersController::class . '@index', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+$router->get('/admin/usuarios/novo', StoreUsersController::class . '@create', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+$router->post('/admin/usuarios', StoreUsersController::class . '@store', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+$router->get('/admin/usuarios/{id}/editar', StoreUsersController::class . '@edit', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+$router->post('/admin/usuarios/{id}', StoreUsersController::class . '@update', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+$router->post('/admin/usuarios/{id}/excluir', StoreUsersController::class . '@destroy', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+
+// Rotas Admin - Perfis de Acesso
+$router->get('/admin/usuarios/perfis', RolesController::class . '@index', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+$router->get('/admin/usuarios/perfis/{id}/editar', RolesController::class . '@edit', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
+]);
+$router->post('/admin/usuarios/perfis/{id}', RolesController::class . '@update', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_store_users'
 ]);
 
 // Rotas Públicas - Newsletter

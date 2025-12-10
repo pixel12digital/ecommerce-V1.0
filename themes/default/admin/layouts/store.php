@@ -631,67 +631,123 @@
                     <span class="pg-admin-brand-subtitle">Store Admin</span>
                 </div>
             </div>
+            <?php
+            // Verificar permissões do usuário logado para o menu
+            $currentUserId = \App\Services\StoreUserService::getCurrentUserId();
+            $canViewDashboard = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'view_dashboard');
+            $canManageOrders = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_orders');
+            $canManageCustomers = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_customers');
+            $canManageProducts = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_products');
+            $canManageReviews = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_reviews');
+            $canManageHomePage = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_home_page');
+            $canManageTheme = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_theme');
+            $canManageGateways = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_gateways');
+            $canManageNewsletter = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_newsletter');
+            $canManageMedia = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_media');
+            $canManageStoreUsers = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_store_users');
+            ?>
             <ul class="sidebar-menu">
+                <?php if ($canViewDashboard): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin" class="<?= $isActive('/admin') && $currentPath === '/admin' ? 'active' : '' ?>">
                         <i class="bi bi-speedometer2 icon"></i>
                         <span>Dashboard</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageOrders): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/pedidos" class="<?= $isActive('/admin/pedidos') ? 'active' : '' ?>">
                         <i class="bi bi-receipt icon"></i>
                         <span>Pedidos</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageCustomers): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/clientes" class="<?= $isActive('/admin/clientes') ? 'active' : '' ?>">
                         <i class="bi bi-people icon"></i>
                         <span>Clientes</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageProducts): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/produtos" class="<?= $isActive('/admin/produtos') ? 'active' : '' ?>">
                         <i class="bi bi-box-seam icon"></i>
                         <span>Produtos</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageReviews): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/avaliacoes" class="<?= $isActive('/admin/avaliacoes') ? 'active' : '' ?>">
                         <i class="bi bi-star icon"></i>
                         <span>Avaliações</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageHomePage): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/home" class="<?= $isActive('/admin/home') ? 'active' : '' ?>">
                         <i class="bi bi-house icon"></i>
                         <span>Home da Loja</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php
+                // Verificar se usuário tem permissão para gerenciar usuários
+                $currentUserId = \App\Services\StoreUserService::getCurrentUserId();
+                $canManageStoreUsers = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_store_users');
+                if ($canManageStoreUsers):
+                ?>
+                <li>
+                    <a href="<?= $basePath ?>/admin/usuarios" class="<?= $isActive('/admin/usuarios') ? 'active' : '' ?>">
+                        <i class="bi bi-shield-check icon"></i>
+                        <span>Usuários e Perfis</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                <?php if ($canManageStoreUsers): ?>
+                <li>
+                    <a href="<?= $basePath ?>/admin/usuarios" class="<?= $isActive('/admin/usuarios') ? 'active' : '' ?>">
+                        <i class="bi bi-shield-check icon"></i>
+                        <span>Usuários e Perfis</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                <?php if ($canManageTheme): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/tema" class="<?= $isActive('/admin/tema') ? 'active' : '' ?>">
                         <i class="bi bi-palette icon"></i>
                         <span>Tema da Loja</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageGateways): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/configuracoes/gateways" class="<?= $isActive('/admin/configuracoes/gateways') ? 'active' : '' ?>">
                         <i class="bi bi-credit-card icon"></i>
                         <span>Gateways</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageNewsletter): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/newsletter" class="<?= $isActive('/admin/newsletter') ? 'active' : '' ?>">
                         <i class="bi bi-envelope icon"></i>
                         <span>Newsletter</span>
                     </a>
                 </li>
+                <?php endif; ?>
+                <?php if ($canManageMedia): ?>
                 <li>
                     <a href="<?= $basePath ?>/admin/midias" class="<?= $isActive('/admin/midias') ? 'active' : '' ?>">
                         <i class="bi bi-images icon"></i>
                         <span>Biblioteca de Mídia</span>
                     </a>
                 </li>
+                <?php endif; ?>
                 <li style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
                     <a href="<?= $basePath ?>/" target="_blank" style="color: var(--pg-admin-primary); font-weight: 600;">
                         <i class="bi bi-eye icon"></i>

@@ -48,6 +48,11 @@ class Router
                         $params = $middleware;
                         $reflection = new \ReflectionClass($middlewareClass);
                         $middlewareInstance = $reflection->newInstanceArgs($params);
+                    } elseif (is_string($key) && is_string($middleware)) {
+                        // Middleware com parâmetro string: ['CheckPermissionMiddleware' => 'manage_products']
+                        $middlewareClass = $key;
+                        $reflection = new \ReflectionClass($middlewareClass);
+                        $middlewareInstance = $reflection->newInstance($middleware);
                     } else {
                         // Middleware simples
                         $middlewareInstance = new $middleware();

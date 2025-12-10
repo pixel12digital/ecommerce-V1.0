@@ -76,29 +76,94 @@ switch ($tenantPlan) {
         </div>
     </div>
     
+    <?php
+    // Verificar permissões do usuário logado
+    use App\Services\StoreUserService;
+    
+    $currentUserId = StoreUserService::getCurrentUserId();
+    $canManageProducts = $currentUserId && StoreUserService::can($currentUserId, 'manage_products');
+    $canManageOrders = $currentUserId && StoreUserService::can($currentUserId, 'manage_orders');
+    $canManageHomePage = $currentUserId && StoreUserService::can($currentUserId, 'manage_home_page');
+    $canManageTheme = $currentUserId && StoreUserService::can($currentUserId, 'manage_theme');
+    $canManageGateways = $currentUserId && StoreUserService::can($currentUserId, 'manage_gateways');
+    $canManageStoreUsers = $currentUserId && StoreUserService::can($currentUserId, 'manage_store_users');
+    $canManageCustomers = $currentUserId && StoreUserService::can($currentUserId, 'manage_customers');
+    $canManageReviews = $currentUserId && StoreUserService::can($currentUserId, 'manage_reviews');
+    $canManageNewsletter = $currentUserId && StoreUserService::can($currentUserId, 'manage_newsletter');
+    $canManageMedia = $currentUserId && StoreUserService::can($currentUserId, 'manage_media');
+    ?>
     <div class="quick-actions">
         <h3>Ações Rápidas</h3>
         <div class="action-buttons">
-            <a href="<?= $basePath ?>/admin/system/updates" class="action-btn">
-                <i class="bi bi-gear-fill action-icon"></i>
-                <span class="action-text">Atualizações do Sistema</span>
-            </a>
-            <a href="<?= $basePath ?>/admin/produtos" class="action-btn">
-                <i class="bi bi-bag action-icon"></i>
-                <span class="action-text">Produtos</span>
-            </a>
-            <a href="<?= $basePath ?>/admin/home" class="action-btn">
-                <i class="bi bi-house-door action-icon"></i>
-                <span class="action-text">Home da Loja</span>
-            </a>
-            <a href="<?= $basePath ?>/admin/pedidos" class="action-btn">
-                <i class="bi bi-receipt action-icon"></i>
-                <span class="action-text">Pedidos</span>
-            </a>
-            <a href="<?= $basePath ?>/admin/tema" class="action-btn">
-                <i class="bi bi-palette action-icon"></i>
-                <span class="action-text">Tema da Loja</span>
-            </a>
+            <?php if ($canManageProducts): ?>
+                <a href="<?= $basePath ?>/admin/produtos" class="action-btn">
+                    <i class="bi bi-bag action-icon"></i>
+                    <span class="action-text">Produtos</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageOrders): ?>
+                <a href="<?= $basePath ?>/admin/pedidos" class="action-btn">
+                    <i class="bi bi-receipt action-icon"></i>
+                    <span class="action-text">Pedidos</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageCustomers): ?>
+                <a href="<?= $basePath ?>/admin/clientes" class="action-btn">
+                    <i class="bi bi-people action-icon"></i>
+                    <span class="action-text">Clientes</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageHomePage): ?>
+                <a href="<?= $basePath ?>/admin/home" class="action-btn">
+                    <i class="bi bi-house-door action-icon"></i>
+                    <span class="action-text">Home da Loja</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageTheme): ?>
+                <a href="<?= $basePath ?>/admin/tema" class="action-btn">
+                    <i class="bi bi-palette action-icon"></i>
+                    <span class="action-text">Tema da Loja</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageGateways): ?>
+                <a href="<?= $basePath ?>/admin/configuracoes/gateways" class="action-btn">
+                    <i class="bi bi-credit-card action-icon"></i>
+                    <span class="action-text">Gateways</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageNewsletter): ?>
+                <a href="<?= $basePath ?>/admin/newsletter" class="action-btn">
+                    <i class="bi bi-envelope action-icon"></i>
+                    <span class="action-text">Newsletter</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageMedia): ?>
+                <a href="<?= $basePath ?>/admin/midias" class="action-btn">
+                    <i class="bi bi-image action-icon"></i>
+                    <span class="action-text">Biblioteca de Mídia</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageReviews): ?>
+                <a href="<?= $basePath ?>/admin/avaliacoes" class="action-btn">
+                    <i class="bi bi-star action-icon"></i>
+                    <span class="action-text">Avaliações</span>
+                </a>
+            <?php endif; ?>
+            
+            <?php if ($canManageStoreUsers): ?>
+                <a href="<?= $basePath ?>/admin/usuarios" class="action-btn">
+                    <i class="bi bi-shield-check action-icon"></i>
+                    <span class="action-text">Usuários e Perfis</span>
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
