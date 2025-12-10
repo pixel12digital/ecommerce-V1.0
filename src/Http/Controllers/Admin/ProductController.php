@@ -1102,7 +1102,27 @@ class ProductController extends Controller
                 if (strpos($imagePath, $tenantPath) === 0) {
                     
                     // Verificar se arquivo existe fisicamente
-                    $filePath = __DIR__ . '/../../public' . $imagePath;
+                    // Usar a mesma lógica do config/paths.php para detectar caminho correto
+                    $paths = require __DIR__ . '/../../../../config/paths.php';
+                    $root = $paths['root'];
+                    
+                    // Tentar caminho de desenvolvimento primeiro
+                    $devPath = $root . '/public' . $imagePath;
+                    $prodPath = $root . $imagePath;
+                    
+                    // Verificar qual caminho existe
+                    if (file_exists($devPath)) {
+                        $filePath = $devPath;
+                    } elseif (file_exists($prodPath)) {
+                        $filePath = $prodPath;
+                    } else {
+                        // Fallback: usar caminho de desenvolvimento
+                        $filePath = $devPath;
+                    }
+                    
+                    error_log("ProductController::processGallery - Caminho completo do arquivo: {$filePath}");
+                    error_log("ProductController::processGallery - Arquivo existe? " . (file_exists($filePath) ? 'SIM' : 'NÃO'));
+                    
                     if (file_exists($filePath)) {
                         // Verificar se imagem já não está associada a este produto (qualquer tipo)
                         $stmtCheck = $db->prepare("
