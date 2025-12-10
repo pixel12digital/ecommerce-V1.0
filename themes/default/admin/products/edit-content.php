@@ -965,6 +965,15 @@ window.removeFeaturedImage = function() {
     window.removeGalleryPreview = function(btn, url) {
         console.log('[Galeria] removeGalleryPreview chamado para URL:', url);
         
+        // Buscar container novamente (pode não estar no escopo)
+        var container = document.getElementById('galeria_paths_container');
+        var previewContainer = document.getElementById('galeria_preview_container');
+        
+        if (!container) {
+            console.error('[Galeria] Container #galeria_paths_container não encontrado');
+            return;
+        }
+        
         var previewItem = btn.closest('div');
         if (!previewItem) {
             console.error('[Galeria] Preview item não encontrado');
@@ -972,7 +981,9 @@ window.removeFeaturedImage = function() {
         }
         
         // Encontrar o input hidden correspondente a essa URL
-        var input = container.querySelector('input[value="' + url.replace(/"/g, '&quot;').replace(/'/g, "&#39;") + '"]');
+        // Escapar caracteres especiais para querySelector
+        var escapedUrl = url.replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+        var input = container.querySelector('input[value="' + escapedUrl + '"]');
         
         if (input) {
             // Verificar se é imagem existente (tem data-imagem-id) ou nova

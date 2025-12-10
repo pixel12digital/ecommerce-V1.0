@@ -603,36 +603,37 @@
         if (currentTargetInput && urls.length > 0) {
             console.log('[Media Picker] selectMultipleImages chamado com', urls.length, 'URLs');
             console.log('[Media Picker] currentTargetInput:', currentTargetInput);
+            console.log('[Media Picker] Tipo de currentTargetInput:', typeof currentTargetInput, currentTargetInput instanceof Element ? '(Element)' : '(não é Element)');
             
-            // Disparar evento customizado com as URLs selecionadas
-            // O evento deve ser disparado no container (#galeria_paths_container), não no input
-            var container = document.querySelector(currentTargetInput.id || currentTargetInput);
-            if (!container) {
-                // Se currentTargetInput é um seletor string, buscar o elemento
-                container = document.querySelector(currentTargetInput);
-            }
+            // currentTargetInput é sempre um elemento HTML (definido em openMediaLibrary linha 182)
+            // Usar diretamente como container
+            var container = currentTargetInput;
             
-            // Se ainda não encontrou, tentar buscar pelo ID do target
-            if (!container && typeof currentTargetInput === 'string') {
-                container = document.getElementById(currentTargetInput.replace('#', ''));
-            }
-            
-            // Fallback: usar currentTargetInput diretamente se for elemento
-            if (!container && currentTargetInput instanceof Element) {
-                container = currentTargetInput;
-            }
-            
-            if (container) {
-                console.log('[Media Picker] Disparando evento no container:', container);
+            if (container && container instanceof Element) {
+                console.log('[Media Picker] Container encontrado (usando currentTargetInput diretamente):', container);
+                console.log('[Media Picker] Container ID:', container.id || '(sem ID)');
+                console.log('[Media Picker] Disparando evento no container');
+                
                 var event = new CustomEvent('media-picker:multiple-selected', {
                     bubbles: true,
                     cancelable: true,
                     detail: { urls: urls }
                 });
+                
                 container.dispatchEvent(event);
-                console.log('[Media Picker] Evento disparado, URLs:', urls);
+                console.log('[Media Picker] ✅ Evento disparado com sucesso, URLs:', urls);
             } else {
-                console.error('[Media Picker] Container não encontrado para disparar evento. currentTargetInput:', currentTargetInput);
+                console.error('[Media Picker] ❌ currentTargetInput não é um Element válido');
+                console.error('[Media Picker] currentTargetInput:', currentTargetInput);
+                console.error('[Media Picker] Tipo:', typeof currentTargetInput);
+                console.error('[Media Picker] É Element?', currentTargetInput instanceof Element);
+            }
+        } else {
+            if (!currentTargetInput) {
+                console.warn('[Media Picker] ⚠️ selectMultipleImages chamado mas currentTargetInput não está definido');
+            }
+            if (!urls || urls.length === 0) {
+                console.warn('[Media Picker] ⚠️ selectMultipleImages chamado mas urls está vazio');
             }
         }
     }
