@@ -437,10 +437,9 @@ $router->get('/scripts/check-product-images', function() {
         exit;
     }
     
+    // Executar script diretamente (sem middleware adicional)
     require __DIR__ . '/../scripts/check_product_images_web.php';
-}, [
-    AuthMiddleware::class => [false, true]
-]);
+});
 
 // Rotas protegidas - Área do Cliente
 $router->get('/minha-conta', CustomerController::class . '@dashboard', [CustomerAuthMiddleware::class]);
