@@ -654,3 +654,197 @@ As correções finais garantem que:
 
 O sistema agora oferece uma experiência completa e consistente para gerenciamento de imagens de produtos, com persistência garantida e UX simplificada.
 
+---
+
+## Correção Crítica – Persistência de Imagens (Revisão)
+
+### Data
+Janeiro 2025 (Revisão)
+
+### Problema Identificado Após Primeira Correção
+
+Mesmo após as correções anteriores, as imagens ainda não estavam sendo salvas. Análise revelou problemas na lógica de validação e processamento.
+
+### Problemas Encontrados
+
+1. **Validação muito restritiva**: Uso de `!empty()` impedia processamento quando campo estava vazio (para remover imagem)
+2. **Falta de logs**: Erros silenciosos dificultavam diagnóstico
+3. **Verificação de duplicatas incompleta**: Verificava apenas por tipo, não por caminho completo
+4. **Falta de tratamento de erros**: Exceções não eram capturadas
+
+### Correções Implementadas
+
+#### 1. Mudança de `!empty()` para `isset()`
+
+**Problema:**
+- `!empty()` retorna `false` para string vazia `""`
+- Campo vazio não era processado, mesmo quando deveria remover imagem
+
+**Solução:**
+- Mudança para `isset()` para verificar se campo foi enviado
+- Processamento separado para campo vazio (remover imagem)
+
+**Código:**
+```php
+// ANTES
+if (!empty($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
+
+// DEPOIS
+if (isset($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
+    $imagePath = trim($_POST['imagem_destaque_path']);
+    
+    // Se o caminho está vazio, remover imagem existente
+    if (empty($imagePath)) {
+        // Remover registro da imagem principal
+        // ...
+        return;
+    }
+    // ... processar caminho não vazio
+}
+```
+
+#### 2. Logs de Debug Completos
+
+**Adicionado:**
+- Logs em todos os pontos críticos
+- Informações sobre caminho, tenant, produto
+- Logs de sucesso e erro
+
+**Exemplos:**
+```php
+error_log("ProductController::processMainImage - Caminho inválido: {$imagePath} (tenant: {$tenantId})");
+error_log("ProductController::processMainImage - Imagem principal atualizada com sucesso: {$imagePath}");
+error_log("ProductController::processGallery - Processadas {$processedCount} imagens para produto {$produtoId}");
+```
+
+#### 3. Verificação de Duplicatas Melhorada
+
+**Problema:**
+- Verificava apenas se imagem existia como 'gallery'
+- Não detectava se imagem já era 'main'
+
+**Solução:**
+- Verificação independente do tipo
+- Se já existe, apenas atualiza tipo (não cria duplicata)
+
+**Código:**
+```php
+// Verificar se já existe uma imagem com esse caminho (independente do tipo)
+$stmtCheck = $db->prepare("
+    SELECT id, tipo FROM produto_imagens 
+    WHERE tenant_id = :tenant_id AND produto_id = :produto_id 
+    AND caminho_arquivo = :caminho
+    LIMIT 1
+");
+$existingImage = $stmtCheck->fetch();
+
+if ($existingImage) {
+    // Se já existe, apenas atualizar para main
+    // Não criar duplicata
+} else {
+    // Criar nova
+}
+```
+
+#### 4. Tratamento de Erros com Try-Catch
+
+**Adicionado:**
+- Try-catch em todas as inserções no banco
+- Logs de erro detalhados
+- Continuação do fluxo mesmo em caso de erro parcial
+
+**Código:**
+```php
+try {
+    $stmt->execute([...]);
+    error_log("Sucesso ao inserir imagem");
+} catch (\Exception $e) {
+    error_log("Erro ao inserir imagem: " . $e->getMessage());
+    // Não interromper fluxo completamente
+}
+```
+
+#### 5. Atualização do Media Picker
+
+**Melhoria:**
+- Garantir que campo `imagem_destaque_path_display` seja atualizado
+- Suporte para nome alternativo do campo
+
+**Código:**
+```javascript
+// Também verificar se existe campo imagem_destaque_path_display (nome alternativo)
+if (currentTargetInput.id === 'imagem_destaque_path') {
+    var displayFieldAlt = document.getElementById('imagem_destaque_path_display');
+    if (displayFieldAlt) {
+        displayFieldAlt.value = url;
+    }
+}
+```
+
+### Arquivos Modificados
+
+1. **`src/Http/Controllers/Admin/ProductController.php`**
+   - Linha 696: Mudança de `!empty()` para `isset()`
+   - Linha 702-720: Tratamento de campo vazio (remover imagem)
+   - Linha 732-757: Verificação de duplicatas melhorada
+   - Linha 759-795: Try-catch em inserções
+   - Linha 800-805: Logs de sucesso
+   - Linha 1028: Mudança de `!empty()` para `isset()` na galeria
+   - Linha 1056-1094: Try-catch e logs na galeria
+
+2. **`public/admin/js/media-picker.js`**
+   - Linha 541-547: Atualização do campo display alternativo
+
+### Validação
+
+#### Como Verificar se Está Funcionando
+
+1. **Verificar Logs:**
+   - Abrir arquivo de log do PHP (geralmente em `error_log` ou `php_error.log`)
+   - Procurar por mensagens `ProductController::processMainImage` ou `ProductController::processGallery`
+   - Verificar se há erros ou mensagens de sucesso
+
+2. **Teste Manual:**
+   - Selecionar imagem da biblioteca
+   - Salvar produto
+   - Verificar logs para confirmar processamento
+   - Recarregar página e verificar se imagem aparece
+
+3. **Verificar Banco de Dados:**
+   ```sql
+   SELECT * FROM produto_imagens WHERE produto_id = 929;
+   SELECT imagem_principal FROM produtos WHERE id = 929;
+   ```
+
+### Observações Importantes
+
+#### Por que `isset()` em vez de `!empty()`?
+
+- `isset()` verifica se a variável existe no array
+- `!empty()` também verifica se o valor não é vazio
+- Para processar remoção de imagem (campo vazio), precisamos de `isset()`
+
+#### Por que logs sempre ativos?
+
+- Facilita diagnóstico em produção
+- Não impacta performance significativamente
+- Ajuda a identificar problemas rapidamente
+
+#### Por que verificar duplicatas independente do tipo?
+
+- Evita criar registros duplicados
+- Permite reutilizar imagem existente
+- Mantém integridade dos dados
+
+### Conclusão
+
+As correções críticas garantem que:
+
+1. ✅ Campo vazio é processado corretamente (remove imagem)
+2. ✅ Logs detalhados facilitam diagnóstico
+3. ✅ Duplicatas são evitadas
+4. ✅ Erros são capturados e logados
+5. ✅ Media picker atualiza todos os campos necessários
+
+O sistema agora tem visibilidade completa do processo de salvamento de imagens, facilitando identificação e correção de problemas.
+

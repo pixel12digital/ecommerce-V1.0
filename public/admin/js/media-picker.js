@@ -539,6 +539,14 @@
                 displayField.value = url;
             }
             
+            // Também verificar se existe campo imagem_destaque_path_display (nome alternativo)
+            if (currentTargetInput.id === 'imagem_destaque_path') {
+                var displayFieldAlt = document.getElementById('imagem_destaque_path_display');
+                if (displayFieldAlt) {
+                    displayFieldAlt.value = url;
+                }
+            }
+            
             // Mostrar preview se houver um elemento de preview
             var previewId = currentTargetInput.getAttribute('data-preview');
             if (previewId) {

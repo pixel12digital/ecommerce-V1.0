@@ -693,87 +693,151 @@ class ProductController extends Controller
         }
 
         // Verificar se veio caminho de imagem da biblioteca (prioridade sobre upload)
-        if (!empty($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
+        // IMPORTANTE: Verificar se o campo existe no POST, mesmo que vazio (para limpar imagem)
+        if (isset($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
             $imagePath = trim($_POST['imagem_destaque_path']);
+            
+            // Se o caminho está vazio, remover imagem existente
+            if (empty($imagePath)) {
+                // Remover registro da imagem principal da tabela produto_imagens
+                $stmt = $db->prepare("
+                    DELETE FROM produto_imagens 
+                    WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'main'
+                ");
+                $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+
+                // Atualizar produtos.imagem_principal para NULL
+                $stmt = $db->prepare("
+                    UPDATE produtos 
+                    SET imagem_principal = NULL 
+                    WHERE id = :id AND tenant_id = :tenant_id
+                ");
+                $stmt->execute([
+                    'id' => $produtoId,
+                    'tenant_id' => $tenantId
+                ]);
+                
+                // Retornar após remover imagem
+                return;
+            }
             
             // Validar que o caminho é válido e pertence ao tenant
             // Aceita caminhos da pasta produtos ou outras pastas do tenant
             $tenantPath = "/uploads/tenants/{$tenantId}/";
-            if (!empty($imagePath) && strpos($imagePath, $tenantPath) === 0) {
+            if (strpos($imagePath, $tenantPath) === 0) {
                 
                 // Verificar se arquivo existe fisicamente
                 $filePath = __DIR__ . '/../../public' . $imagePath;
                 if (file_exists($filePath)) {
-                    // Remover antiga main (virar gallery)
-                    $stmt = $db->prepare("
-                        SELECT COALESCE(MAX(ordem), 0) as max_ordem 
-                        FROM produto_imagens 
-                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+                    // Verificar se já existe uma imagem com esse caminho (independente do tipo)
+                    $stmtCheck = $db->prepare("
+                        SELECT id, tipo FROM produto_imagens 
+                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id 
+                        AND caminho_arquivo = :caminho
+                        LIMIT 1
                     ");
-                    $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
-                    $result = $stmt->fetch();
-                    $novaOrdem = ($result['max_ordem'] ?? 0) + 1;
-                    
-                    $stmt = $db->prepare("
-                        UPDATE produto_imagens 
-                        SET tipo = 'gallery', ordem = :ordem
-                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'main'
-                    ");
-                    $stmt->execute([
-                        'ordem' => $novaOrdem,
-                        'tenant_id' => $tenantId, 
-                        'produto_id' => $produtoId
-                    ]);
-
-                    // Criar nova main usando caminho da biblioteca
-                    $fileSize = filesize($filePath);
-                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                    $mimeType = finfo_file($finfo, $filePath);
-                    finfo_close($finfo);
-
-                    $stmt = $db->prepare("
-                        INSERT INTO produto_imagens (
-                            tenant_id, produto_id, tipo, ordem, caminho_arquivo,
-                            mime_type, tamanho_arquivo
-                        ) VALUES (
-                            :tenant_id, :produto_id, 'main', 0, :caminho_arquivo,
-                            :mime_type, :tamanho_arquivo
-                        )
-                    ");
-                    $stmt->execute([
+                    $stmtCheck->execute([
                         'tenant_id' => $tenantId,
                         'produto_id' => $produtoId,
-                        'caminho_arquivo' => $imagePath,
-                        'mime_type' => $mimeType,
-                        'tamanho_arquivo' => $fileSize
+                        'caminho' => $imagePath
                     ]);
+                    $existingImage = $stmtCheck->fetch();
+                    
+                    if ($existingImage) {
+                        // Se já existe, apenas atualizar para main
+                        $stmt = $db->prepare("
+                            UPDATE produto_imagens 
+                            SET tipo = 'main', ordem = 0
+                            WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
+                        ");
+                        $stmt->execute([
+                            'id' => $existingImage['id'],
+                            'tenant_id' => $tenantId,
+                            'produto_id' => $produtoId
+                        ]);
+                    } else {
+                        // Remover antiga main (virar gallery) se existir
+                        $stmt = $db->prepare("
+                            SELECT COALESCE(MAX(ordem), 0) as max_ordem 
+                            FROM produto_imagens 
+                            WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+                        ");
+                        $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+                        $result = $stmt->fetch();
+                        $novaOrdem = ($result['max_ordem'] ?? 0) + 1;
+                        
+                        $stmt = $db->prepare("
+                            UPDATE produto_imagens 
+                            SET tipo = 'gallery', ordem = :ordem
+                            WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'main'
+                        ");
+                        $stmt->execute([
+                            'ordem' => $novaOrdem,
+                            'tenant_id' => $tenantId, 
+                            'produto_id' => $produtoId
+                        ]);
 
-                    // Atualizar produtos.imagem_principal
-                    $stmt = $db->prepare("
-                        UPDATE produtos 
-                        SET imagem_principal = :imagem_principal 
-                        WHERE id = :id AND tenant_id = :tenant_id
-                    ");
-                    $stmt->execute([
-                        'imagem_principal' => $imagePath,
-                        'id' => $produtoId,
-                        'tenant_id' => $tenantId
-                    ]);
+                        // Criar nova main usando caminho da biblioteca
+                        try {
+                            $fileSize = filesize($filePath);
+                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                            $mimeType = finfo_file($finfo, $filePath);
+                            finfo_close($finfo);
+
+                            $stmt = $db->prepare("
+                                INSERT INTO produto_imagens (
+                                    tenant_id, produto_id, tipo, ordem, caminho_arquivo,
+                                    mime_type, tamanho_arquivo
+                                ) VALUES (
+                                    :tenant_id, :produto_id, 'main', 0, :caminho_arquivo,
+                                    :mime_type, :tamanho_arquivo
+                                )
+                            ");
+                            $stmt->execute([
+                                'tenant_id' => $tenantId,
+                                'produto_id' => $produtoId,
+                                'caminho_arquivo' => $imagePath,
+                                'mime_type' => $mimeType,
+                                'tamanho_arquivo' => $fileSize
+                            ]);
+                        } catch (\Exception $e) {
+                            error_log("ProductController::processMainImage - Erro ao inserir imagem principal: " . $e->getMessage() . " (caminho: {$imagePath})");
+                            // Não retornar aqui, tentar atualizar produtos.imagem_principal mesmo assim
+                        }
+                    }
+
+                    // Atualizar produtos.imagem_principal (sempre, mesmo se já existia)
+                    try {
+                        $stmt = $db->prepare("
+                            UPDATE produtos 
+                            SET imagem_principal = :imagem_principal 
+                            WHERE id = :id AND tenant_id = :tenant_id
+                        ");
+                        $stmt->execute([
+                            'imagem_principal' => $imagePath,
+                            'id' => $produtoId,
+                            'tenant_id' => $tenantId
+                        ]);
+                        error_log("ProductController::processMainImage - Imagem principal atualizada com sucesso: {$imagePath} para produto {$produtoId}");
+                    } catch (\Exception $e) {
+                        error_log("ProductController::processMainImage - Erro ao atualizar produtos.imagem_principal: " . $e->getMessage());
+                    }
                     
                     // Retornar após processar caminho da biblioteca (não processar upload)
                     return;
                 } else {
                     // Arquivo não existe fisicamente - log para debug
-                    if (defined('APP_DEBUG') && APP_DEBUG) {
-                        error_log("ProductController::processMainImage - Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
-                    }
+                    error_log("ProductController::processMainImage - Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
+                    // Não retornar aqui, deixar tentar upload direto se houver
                 }
             } else {
                 // Caminho inválido - log para debug
-                if (defined('APP_DEBUG') && APP_DEBUG) {
-                    error_log("ProductController::processMainImage - Caminho inválido ou não pertence ao tenant: {$imagePath} (tenant: {$tenantId})");
-                }
+                error_log("ProductController::processMainImage - Caminho inválido ou não pertence ao tenant: {$imagePath} (tenant: {$tenantId}, tenantPath esperado: {$tenantPath})");
+                // Não retornar aqui, deixar tentar upload direto se houver
             }
+        } else {
+            // Campo não foi enviado no POST - log para debug
+            error_log("ProductController::processMainImage - Campo imagem_destaque_path não foi enviado no POST. POST keys: " . implode(', ', array_keys($_POST)));
         }
         // Verificar se veio arquivo novo (upload direto)
         if (isset($_FILES['imagem_destaque']) && $_FILES['imagem_destaque']['error'] === UPLOAD_ERR_OK) {
@@ -971,7 +1035,7 @@ class ProductController extends Controller
         }
 
         // Processar caminhos de imagens da biblioteca (prioridade sobre upload)
-        if (!empty($_POST['galeria_paths']) && is_array($_POST['galeria_paths'])) {
+        if (isset($_POST['galeria_paths']) && is_array($_POST['galeria_paths'])) {
             // Buscar maior ordem atual
             $stmt = $db->prepare("
                 SELECT COALESCE(MAX(ordem), 0) as max_ordem 
@@ -982,18 +1046,24 @@ class ProductController extends Controller
             $result = $stmt->fetch();
             $ordem = ($result['max_ordem'] ?? 0) + 1;
 
+            $processedCount = 0;
             foreach ($_POST['galeria_paths'] as $imagePath) {
                 $imagePath = trim($imagePath);
+                
+                // Pular se vazio
+                if (empty($imagePath)) {
+                    continue;
+                }
                 
                 // Validar que o caminho é válido e pertence ao tenant
                 // Aceita caminhos de qualquer pasta do tenant (produtos, banners, etc.)
                 $tenantPath = "/uploads/tenants/{$tenantId}/";
-                if (!empty($imagePath) && strpos($imagePath, $tenantPath) === 0) {
+                if (strpos($imagePath, $tenantPath) === 0) {
                     
                     // Verificar se arquivo existe fisicamente
                     $filePath = __DIR__ . '/../../public' . $imagePath;
                     if (file_exists($filePath)) {
-                        // Verificar se imagem já não está na galeria deste produto
+                        // Verificar se imagem já não está associada a este produto (qualquer tipo)
                         $stmtCheck = $db->prepare("
                             SELECT COUNT(*) as count 
                             FROM produto_imagens 
@@ -1008,32 +1078,49 @@ class ProductController extends Controller
                         $exists = $stmtCheck->fetch()['count'] > 0;
                         
                         if (!$exists) {
-                            $fileSize = filesize($filePath);
-                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                            $mimeType = finfo_file($finfo, $filePath);
-                            finfo_close($finfo);
+                            try {
+                                $fileSize = filesize($filePath);
+                                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                                $mimeType = finfo_file($finfo, $filePath);
+                                finfo_close($finfo);
 
-                            $stmt = $db->prepare("
-                                INSERT INTO produto_imagens (
-                                    tenant_id, produto_id, tipo, ordem, caminho_arquivo,
-                                    mime_type, tamanho_arquivo
-                                ) VALUES (
-                                    :tenant_id, :produto_id, 'gallery', :ordem, :caminho_arquivo,
-                                    :mime_type, :tamanho_arquivo
-                                )
-                            ");
-                            $stmt->execute([
-                                'tenant_id' => $tenantId,
-                                'produto_id' => $produtoId,
-                                'ordem' => $ordem++,
-                                'caminho_arquivo' => $imagePath,
-                                'mime_type' => $mimeType,
-                                'tamanho_arquivo' => $fileSize
-                            ]);
+                                $stmt = $db->prepare("
+                                    INSERT INTO produto_imagens (
+                                        tenant_id, produto_id, tipo, ordem, caminho_arquivo,
+                                        mime_type, tamanho_arquivo
+                                    ) VALUES (
+                                        :tenant_id, :produto_id, 'gallery', :ordem, :caminho_arquivo,
+                                        :mime_type, :tamanho_arquivo
+                                    )
+                                ");
+                                $stmt->execute([
+                                    'tenant_id' => $tenantId,
+                                    'produto_id' => $produtoId,
+                                    'ordem' => $ordem++,
+                                    'caminho_arquivo' => $imagePath,
+                                    'mime_type' => $mimeType,
+                                    'tamanho_arquivo' => $fileSize
+                                ]);
+                                $processedCount++;
+                            } catch (\Exception $e) {
+                                error_log("ProductController::processGallery - Erro ao inserir imagem: " . $e->getMessage() . " (caminho: {$imagePath})");
+                            }
+                        } else {
+                            error_log("ProductController::processGallery - Imagem já existe no produto: {$imagePath}");
                         }
+                    } else {
+                        error_log("ProductController::processGallery - Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
                     }
+                } else {
+                    error_log("ProductController::processGallery - Caminho inválido: {$imagePath} (tenant: {$tenantId}, tenantPath esperado: {$tenantPath})");
                 }
             }
+            
+            if ($processedCount > 0) {
+                error_log("ProductController::processGallery - Processadas {$processedCount} imagens para produto {$produtoId}");
+            }
+        } else {
+            error_log("ProductController::processGallery - Campo galeria_paths não foi enviado no POST ou não é array. POST keys: " . implode(', ', array_keys($_POST)));
         }
         
         // Processar upload de novas imagens (se não veio da biblioteca)
