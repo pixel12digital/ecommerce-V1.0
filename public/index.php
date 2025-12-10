@@ -419,6 +419,32 @@ $router->get('/migrations', function() {
     require __DIR__ . '/migrations.php';
 });
 
+// Rota pública - Script de verificação de imagens (protegida por autenticação básica)
+$router->get('/scripts/check-product-images', function() {
+    // Verificação básica de autenticação (pode ser melhorada)
+    $authUser = $_SERVER['PHP_AUTH_USER'] ?? null;
+    $authPass = $_SERVER['PHP_AUTH_PW'] ?? null;
+    
+    // Permitir acesso se estiver autenticado no admin ou se tiver credenciais básicas
+    $isAuthenticated = false;
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (isset($_SESSION['user_id'])) {
+        $isAuthenticated = true;
+    }
+    
+    // Se não estiver autenticado, pedir autenticação básica
+    if (!$isAuthenticated) {
+        header('WWW-Authenticate: Basic realm="Verificação de Imagens"');
+        http_response_code(401);
+        echo 'Acesso negado. Autenticação necessária.';
+        exit;
+    }
+    
+    require __DIR__ . '/../scripts/check_product_images_web.php';
+});
+
 // Rotas protegidas - Área do Cliente
 $router->get('/minha-conta', CustomerController::class . '@dashboard', [CustomerAuthMiddleware::class]);
 $router->get('/minha-conta/pedidos', CustomerController::class . '@orders', [CustomerAuthMiddleware::class]);

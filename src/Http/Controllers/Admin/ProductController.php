@@ -1040,15 +1040,10 @@ class ProductController extends Controller
 
         // Remover imagens marcadas
         if (!empty($_POST['remove_imagens']) && is_array($_POST['remove_imagens'])) {
+            error_log("ProductController::processGallery - Removendo " . count($_POST['remove_imagens']) . " imagens");
             foreach ($_POST['remove_imagens'] as $imgId) {
                 $imgId = (int)$imgId;
-                // Buscar caminho antes de deletar
-                $stmt = $db->prepare("
-                    SELECT caminho_arquivo FROM produto_imagens 
-                    WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
-                ");
-                $stmt->execute(['id' => $imgId, 'tenant_id' => $tenantId, 'produto_id' => $produtoId]);
-                $img = $stmt->fetch();
+                error_log("ProductController::processGallery - Tentando remover imagem ID: {$imgId}");
                 
                 // Buscar registro antes de deletar
                 $stmt = $db->prepare("
@@ -1058,19 +1053,33 @@ class ProductController extends Controller
                 $stmt->execute(['id' => $imgId, 'tenant_id' => $tenantId, 'produto_id' => $produtoId]);
                 $img = $stmt->fetch();
                 
-                if ($img && $img['tipo'] !== 'main') {
-                    // Deletar arquivo físico
-                    $filePath = __DIR__ . '/../../public' . $img['caminho_arquivo'];
-                    if (file_exists($filePath)) {
-                        @unlink($filePath);
+                if ($img) {
+                    if ($img['tipo'] !== 'main') {
+                        // Deletar arquivo físico (usar mesma lógica de caminho)
+                        $paths = require __DIR__ . '/../../../../config/paths.php';
+                        $root = $paths['root'];
+                        $devPath = $root . '/public' . $img['caminho_arquivo'];
+                        $prodPath = $root . $img['caminho_arquivo'];
+                        
+                        $filePath = file_exists($devPath) ? $devPath : (file_exists($prodPath) ? $prodPath : $devPath);
+                        
+                        if (file_exists($filePath)) {
+                            @unlink($filePath);
+                            error_log("ProductController::processGallery - Arquivo físico removido: {$filePath}");
+                        }
+                        
+                        // Deletar registro
+                        $stmt = $db->prepare("
+                            DELETE FROM produto_imagens 
+                            WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
+                        ");
+                        $stmt->execute(['id' => $imgId, 'tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+                        error_log("ProductController::processGallery - Registro removido do banco: ID {$imgId}");
+                    } else {
+                        error_log("ProductController::processGallery - Tentativa de remover imagem principal (ID {$imgId}) - ignorado");
                     }
-                    
-                    // Deletar registro
-                    $stmt = $db->prepare("
-                        DELETE FROM produto_imagens 
-                        WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
-                    ");
-                    $stmt->execute(['id' => $imgId, 'tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+                } else {
+                    error_log("ProductController::processGallery - Imagem ID {$imgId} não encontrada no banco");
                 }
             }
         }
@@ -1177,8 +1186,23 @@ class ProductController extends Controller
                 }
             }
             
+            error_log("ProductController::processGallery - Total de caminhos recebidos no POST: " . count($_POST['galeria_paths']));
+            error_log("ProductController::processGallery - Total de imagens processadas (novas): {$processedCount}");
+            
+            // Verificar quantas imagens existem no banco após processamento
+            $stmt = $db->prepare("
+                SELECT COUNT(*) as total 
+                FROM produto_imagens 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+            ");
+            $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+            $totalAfter = $stmt->fetch()['total'];
+            error_log("ProductController::processGallery - Total de imagens na galeria após processamento: {$totalAfter}");
+            
             if ($processedCount > 0) {
-                error_log("ProductController::processGallery - Processadas {$processedCount} imagens para produto {$produtoId}");
+                error_log("ProductController::processGallery - Processadas {$processedCount} imagens novas para produto {$produtoId}");
+            } else {
+                error_log("ProductController::processGallery - Nenhuma imagem nova foi processada (pode ser que todas já existam no banco)");
             }
         } else {
             error_log("ProductController::processGallery - Campo galeria_paths não foi enviado no POST ou não é array. POST keys: " . implode(', ', array_keys($_POST)));
