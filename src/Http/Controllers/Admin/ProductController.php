@@ -511,6 +511,20 @@ class ProductController extends Controller
         
         $tenantId = TenantContext::id();
         $db = Database::getConnection();
+        
+        // Log para debug - verificar o que está chegando no POST
+        error_log("ProductController::update - Produto ID: {$id}, Tenant ID: {$tenantId}");
+        error_log("ProductController::update - POST keys: " . implode(', ', array_keys($_POST)));
+        if (isset($_POST['imagem_destaque_path'])) {
+            error_log("ProductController::update - imagem_destaque_path recebido: " . var_export($_POST['imagem_destaque_path'], true));
+        } else {
+            error_log("ProductController::update - imagem_destaque_path NÃO foi enviado no POST");
+        }
+        if (isset($_POST['galeria_paths'])) {
+            error_log("ProductController::update - galeria_paths recebido: " . var_export($_POST['galeria_paths'], true));
+        } else {
+            error_log("ProductController::update - galeria_paths NÃO foi enviado no POST");
+        }
 
         // Buscar produto
         $stmt = $db->prepare("
@@ -684,6 +698,8 @@ class ProductController extends Controller
 
     private function processMainImage($db, $tenantId, $produtoId, $produto): void
     {
+        error_log("ProductController::processMainImage - Iniciando para produto {$produtoId}, tenant {$tenantId}");
+        
         $paths = require __DIR__ . '/../../../../config/paths.php';
         $uploadsBasePath = $paths['uploads_produtos_base_path'];
         $uploadsPath = $uploadsBasePath . '/' . $tenantId . '/produtos';
@@ -695,6 +711,7 @@ class ProductController extends Controller
         // Verificar se veio caminho de imagem da biblioteca (prioridade sobre upload)
         // IMPORTANTE: Verificar se o campo existe no POST, mesmo que vazio (para limpar imagem)
         if (isset($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
+            error_log("ProductController::processMainImage - Campo imagem_destaque_path encontrado: " . var_export($_POST['imagem_destaque_path'], true));
             $imagePath = trim($_POST['imagem_destaque_path']);
             
             // Se o caminho está vazio, remover imagem existente
@@ -724,10 +741,32 @@ class ProductController extends Controller
             // Validar que o caminho é válido e pertence ao tenant
             // Aceita caminhos da pasta produtos ou outras pastas do tenant
             $tenantPath = "/uploads/tenants/{$tenantId}/";
+            error_log("ProductController::processMainImage - Validando caminho: {$imagePath} contra tenantPath: {$tenantPath}");
             if (strpos($imagePath, $tenantPath) === 0) {
+                error_log("ProductController::processMainImage - Caminho válido, verificando arquivo físico");
                 
                 // Verificar se arquivo existe fisicamente
-                $filePath = __DIR__ . '/../../public' . $imagePath;
+                // Usar a mesma lógica do config/paths.php para detectar caminho correto
+                $paths = require __DIR__ . '/../../../../config/paths.php';
+                $root = $paths['root'];
+                
+                // Tentar caminho de desenvolvimento primeiro
+                $devPath = $root . '/public' . $imagePath;
+                $prodPath = $root . $imagePath;
+                
+                // Verificar qual caminho existe
+                if (file_exists($devPath)) {
+                    $filePath = $devPath;
+                } elseif (file_exists($prodPath)) {
+                    $filePath = $prodPath;
+                } else {
+                    // Fallback: usar caminho de desenvolvimento
+                    $filePath = $devPath;
+                }
+                
+                error_log("ProductController::processMainImage - Caminho completo do arquivo: {$filePath}");
+                error_log("ProductController::processMainImage - Arquivo existe? " . (file_exists($filePath) ? 'SIM' : 'NÃO'));
+                
                 if (file_exists($filePath)) {
                     // Verificar se já existe uma imagem com esse caminho (independente do tipo)
                     $stmtCheck = $db->prepare("
@@ -989,6 +1028,8 @@ class ProductController extends Controller
 
     private function processGallery($db, $tenantId, $produtoId): void
     {
+        error_log("ProductController::processGallery - Iniciando para produto {$produtoId}, tenant {$tenantId}");
+        
         $paths = require __DIR__ . '/../../../../config/paths.php';
         $uploadsBasePath = $paths['uploads_produtos_base_path'];
         $uploadsPath = $uploadsBasePath . '/' . $tenantId . '/produtos';
