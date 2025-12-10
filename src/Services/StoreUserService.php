@@ -88,19 +88,23 @@ class StoreUserService
 
     /**
      * Atribui um role ao usuário (remove roles antigos e adiciona o novo)
+     * @param int $storeUserId ID do usuário
+     * @param string $roleSlug Slug do role
+     * @param \PDO|null $db Conexão do banco (opcional, para usar transação existente)
+     * @return bool True em caso de sucesso, false caso contrário
      */
-    public static function assignRole(int $storeUserId, string $roleSlug): bool
+    public static function assignRole(int $storeUserId, string $roleSlug, ?\PDO $db = null): bool
     {
         $role = Role::findBySlug($roleSlug);
         if (!$role) {
-            return false;
+            throw new \InvalidArgumentException("Role com slug '{$roleSlug}' não encontrado.");
         }
 
-        $db = Database::getConnection();
+        if ($db === null) {
+            $db = Database::getConnection();
+        }
         
         try {
-            $db->beginTransaction();
-
             // Remover roles antigos
             $stmt = $db->prepare("DELETE FROM store_user_roles WHERE store_user_id = :user_id");
             $stmt->execute(['user_id' => $storeUserId]);
@@ -115,11 +119,9 @@ class StoreUserService
                 'role_id' => $role->getId()
             ]);
 
-            $db->commit();
             return true;
-        } catch (\Exception $e) {
-            $db->rollBack();
-            return false;
+        } catch (\PDOException $e) {
+            throw new \RuntimeException("Erro ao atribuir role ao usuário: " . $e->getMessage(), 0, $e);
         }
     }
 

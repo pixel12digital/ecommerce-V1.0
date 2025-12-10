@@ -98,6 +98,14 @@ class StoreUsersController extends Controller
             $errors[] = 'Perfil de acesso é obrigatório';
         }
 
+        // Verificar se o role existe
+        if (!empty($roleSlug)) {
+            $role = Role::findBySlug($roleSlug);
+            if (!$role) {
+                $errors[] = 'Perfil de acesso selecionado é inválido';
+            }
+        }
+
         // Verificar se email já existe para este tenant
         if (!empty($email)) {
             $stmt = $db->prepare("
@@ -146,25 +154,32 @@ class StoreUsersController extends Controller
 
             $userId = $db->lastInsertId();
 
-            // Atribuir role
-            StoreUserService::assignRole($userId, $roleSlug);
+            // Atribuir role (usando a mesma conexão da transação)
+            StoreUserService::assignRole($userId, $roleSlug, $db);
 
             $db->commit();
 
             $_SESSION['admin_message'] = 'Usuário criado com sucesso!';
             $_SESSION['admin_message_type'] = 'success';
             $this->redirect('/admin/usuarios');
-        } catch (\Exception $e) {
-            $db->rollBack();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             $roles = Role::getByScope('store');
             $tenant = TenantContext::tenant();
+            
+            $errorMessage = 'Erro ao criar usuário: ' . $e->getMessage();
+            if (($_ENV['APP_DEBUG'] ?? false) === 'true') {
+                $errorMessage .= '<br><small>' . htmlspecialchars($e->getTraceAsString()) . '</small>';
+            }
             
             $this->viewWithLayout('admin/layouts/store', 'admin/users/form-content', [
                 'tenant' => $tenant,
                 'pageTitle' => 'Novo Usuário',
                 'user' => null,
                 'roles' => $roles,
-                'errors' => ['Erro ao criar usuário: ' . $e->getMessage()],
+                'errors' => [$errorMessage],
                 'formData' => $_POST
             ]);
         }
@@ -264,6 +279,14 @@ class StoreUsersController extends Controller
             $errors[] = 'Perfil de acesso é obrigatório';
         }
 
+        // Verificar se o role existe
+        if (!empty($roleSlug)) {
+            $role = Role::findBySlug($roleSlug);
+            if (!$role) {
+                $errors[] = 'Perfil de acesso selecionado é inválido';
+            }
+        }
+
         if (!empty($errors)) {
             $user['role_slug'] = StoreUserService::getRoleSlug($user['id']);
             $roles = Role::getByScope('store');
@@ -308,26 +331,33 @@ class StoreUsersController extends Controller
 
             $stmt->execute($updateData);
 
-            // Atualizar role
-            StoreUserService::assignRole($id, $roleSlug);
+            // Atualizar role (usando a mesma conexão da transação)
+            StoreUserService::assignRole($id, $roleSlug, $db);
 
             $db->commit();
 
             $_SESSION['admin_message'] = 'Usuário atualizado com sucesso!';
             $_SESSION['admin_message_type'] = 'success';
             $this->redirect('/admin/usuarios');
-        } catch (\Exception $e) {
-            $db->rollBack();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             $user['role_slug'] = StoreUserService::getRoleSlug($user['id']);
             $roles = Role::getByScope('store');
             $tenant = TenantContext::tenant();
+            
+            $errorMessage = 'Erro ao atualizar usuário: ' . $e->getMessage();
+            if (($_ENV['APP_DEBUG'] ?? false) === 'true') {
+                $errorMessage .= '<br><small>' . htmlspecialchars($e->getTraceAsString()) . '</small>';
+            }
             
             $this->viewWithLayout('admin/layouts/store', 'admin/users/form-content', [
                 'tenant' => $tenant,
                 'pageTitle' => 'Editar Usuário',
                 'user' => array_merge($user, $_POST),
                 'roles' => $roles,
-                'errors' => ['Erro ao atualizar usuário: ' . $e->getMessage()]
+                'errors' => [$errorMessage]
             ]);
         }
     }
