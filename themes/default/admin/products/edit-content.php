@@ -256,6 +256,11 @@ if (!function_exists('media_url')) {
                                        name="imagem_destaque_path" 
                                        id="imagem_destaque_path" 
                                        value="<?= htmlspecialchars($produto['imagem_principal'] ?? '') ?>">
+                                <!-- Campo hidden para sinalizar remoção da imagem de destaque -->
+                                <input type="hidden" 
+                                       name="remove_featured" 
+                                       id="remove_featured" 
+                                       value="0">
                                 <button type="button" 
                                         class="js-open-media-library admin-btn admin-btn-primary" 
                                         data-media-target="#imagem_destaque_path"
@@ -264,6 +269,15 @@ if (!function_exists('media_url')) {
                                         style="padding: 0.75rem 1.5rem; background: var(--pg-admin-primary, #F7931E); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; white-space: nowrap;">
                                     <i class="bi bi-image icon"></i> Escolher da biblioteca
                                 </button>
+                                <?php if ($imagemPrincipal): ?>
+                                <button type="button" 
+                                        id="btn-remove-featured"
+                                        class="admin-btn" 
+                                        onclick="removeFeaturedImage()"
+                                        style="padding: 0.75rem 1.5rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; white-space: nowrap;">
+                                    <i class="bi bi-trash icon"></i> Remover imagem
+                                </button>
+                                <?php endif; ?>
                             </div>
                             <div id="imagem_destaque_preview" style="margin-top: 0.75rem;"></div>
                     <small style="color: #666; display: block; margin-top: 0.5rem;">
@@ -707,14 +721,76 @@ function setMainFromGallery(imageId) {
             if (precoPromocional && precoPromocional.value) {
                 precoPromocional.value = convertPriceToFloat(precoPromocional.value);
             }
+            
+            // Log para debug: verificar quantos inputs de galeria estão sendo enviados
+            var galeriaInputs = document.querySelectorAll('#galeria_paths_container input[name="galeria_paths[]"]');
+            console.log('[Form Submit] Total de inputs de galeria que serão enviados:', galeriaInputs.length);
+            var galeriaPaths = [];
+            galeriaInputs.forEach(function(input) {
+                galeriaPaths.push(input.value);
+            });
+            console.log('[Form Submit] Caminhos de galeria:', galeriaPaths);
+            
+            // Verificar se há imagens marcadas para remoção
+            var removeInputs = document.querySelectorAll('input[name="remove_imagens[]"]:checked');
+            console.log('[Form Submit] Imagens marcadas para remoção:', removeInputs.length);
         });
     }
 })();
+
+// Função para remover imagem de destaque
+window.removeFeaturedImage = function() {
+    console.log('[Imagem Destaque] Removendo imagem de destaque');
+    
+    var imagemDestaqueInput = document.getElementById('imagem_destaque_path');
+    var imagemDestaqueDisplay = document.getElementById('imagem_destaque_path_display');
+    var removeFeaturedInput = document.getElementById('remove_featured');
+    var previewContainer = document.getElementById('imagem_destaque_preview');
+    var currentImageContainer = document.querySelector('.current-image');
+    var btnRemove = document.getElementById('btn-remove-featured');
+    
+    // Limpar campos
+    if (imagemDestaqueInput) {
+        imagemDestaqueInput.value = '';
+    }
+    if (imagemDestaqueDisplay) {
+        imagemDestaqueDisplay.value = '';
+    }
+    
+    // Marcar flag de remoção
+    if (removeFeaturedInput) {
+        removeFeaturedInput.value = '1';
+    }
+    
+    // Atualizar preview visual
+    if (previewContainer) {
+        previewContainer.innerHTML = '';
+    }
+    
+    // Atualizar container da imagem atual
+    if (currentImageContainer) {
+        currentImageContainer.classList.add('placeholder');
+        currentImageContainer.innerHTML = 
+            '<div class="placeholder-content">' +
+            '<i class="bi bi-image icon" style="font-size: 3rem; color: #999;"></i>' +
+            '<div class="image-label">Sem imagem de destaque</div>' +
+            '</div>';
+    }
+    
+    // Esconder botão de remoção
+    if (btnRemove) {
+        btnRemove.style.display = 'none';
+    }
+    
+    console.log('[Imagem Destaque] Imagem de destaque removida (será salva ao submeter formulário)');
+};
 
 // Atualizar preview da imagem de destaque quando selecionada
 (function() {
     var imagemDestaqueInput = document.getElementById('imagem_destaque_path');
     var imagemDestaqueDisplay = document.getElementById('imagem_destaque_path_display');
+    var removeFeaturedInput = document.getElementById('remove_featured');
+    var btnRemove = document.getElementById('btn-remove-featured');
     
     function updateImagePreview(url) {
         if (!url) return;
@@ -798,24 +874,52 @@ function setMainFromGallery(imageId) {
     }
     
     if (container) {
+        console.log('[Galeria] Container encontrado, adicionando listener para media-picker:multiple-selected');
+        
         container.addEventListener('media-picker:multiple-selected', function(event) {
+            console.log('[Galeria] Evento media-picker:multiple-selected recebido!');
+            console.log('[Galeria] URLs recebidas:', event.detail.urls);
+            
             var urls = event.detail.urls;
+            if (!urls || !Array.isArray(urls)) {
+                console.error('[Galeria] URLs inválidas:', urls);
+                return;
+            }
+            
+            var addedCount = 0;
+            var skippedCount = 0;
             
             // Criar inputs hidden para cada URL
             urls.forEach(function(url) {
+                if (!url || typeof url !== 'string') {
+                    console.warn('[Galeria] URL inválida ignorada:', url);
+                    return;
+                }
+                
                 // Verificar se já não existe (por valor ou por imagem existente)
-                var existing = container.querySelector('input[value="' + url + '"]');
-                if (existing) return;
+                var existing = container.querySelector('input[value="' + url.replace(/"/g, '&quot;') + '"]');
+                if (existing) {
+                    console.log('[Galeria] URL já existe (por valor), ignorando:', url);
+                    skippedCount++;
+                    return;
+                }
                 
                 // Verificar se já existe uma imagem com esse caminho na galeria existente
-                var existingByPath = container.querySelector('input[data-imagem-id][value="' + url + '"]');
-                if (existingByPath) return;
+                var existingByPath = container.querySelector('input[data-imagem-id][value="' + url.replace(/"/g, '&quot;') + '"]');
+                if (existingByPath) {
+                    console.log('[Galeria] URL já existe (por data-imagem-id), ignorando:', url);
+                    skippedCount++;
+                    return;
+                }
+                
+                console.log('[Galeria] Adicionando nova URL:', url);
                 
                 var input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'galeria_paths[]';
                 input.value = url;
                 container.appendChild(input);
+                addedCount++;
                 
                 // Adicionar preview
                 var previewItem = document.createElement('div');
@@ -824,14 +928,19 @@ function setMainFromGallery(imageId) {
                 if (!imageUrl.startsWith('/')) {
                     imageUrl = '/' + imageUrl;
                 }
+                // Escapar aspas simples para evitar problemas no onclick
+                var escapedUrl = url.replace(/'/g, "\\'");
                 previewItem.innerHTML = 
                     '<img src="' + imageUrl + '" style="width: 100%; height: 100%; object-fit: cover;" ' +
                     'onerror="this.parentElement.remove()">' +
-                    '<button type="button" onclick="removeGalleryPreview(this, \'' + url + '\')" ' +
+                    '<button type="button" onclick="removeGalleryPreview(this, \'' + escapedUrl + '\')" ' +
                     'style="position: absolute; top: 0.25rem; right: 0.25rem; background: #dc3545; color: white; border: none; border-radius: 4px; width: 24px; height: 24px; cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center;">' +
                     '<i class="bi bi-x"></i></button>';
                 previewContainer.appendChild(previewItem);
             });
+            
+            console.log('[Galeria] Resumo: ' + addedCount + ' adicionadas, ' + skippedCount + ' ignoradas');
+            console.log('[Galeria] Total de inputs hidden agora:', container.querySelectorAll('input[type="hidden"]').length);
             
             // Mostrar containers se houver imagens
             if (container.querySelectorAll('input[type="hidden"]').length > 0) {
@@ -839,30 +948,91 @@ function setMainFromGallery(imageId) {
                 previewContainer.style.display = 'grid';
             }
         });
+        
+        // Também escutar no document para garantir que o evento seja capturado
+        document.addEventListener('media-picker:multiple-selected', function(event) {
+            // Verificar se o evento é para o nosso container
+            if (event.target && event.target.id === 'galeria_paths_container') {
+                console.log('[Galeria] Evento capturado via document listener');
+                // O listener do container já vai processar, não precisa fazer nada aqui
+            }
+        });
+    } else {
+        console.error('[Galeria] Container #galeria_paths_container não encontrado!');
     }
     
     // Função para remover preview da galeria
     window.removeGalleryPreview = function(btn, url) {
+        console.log('[Galeria] removeGalleryPreview chamado para URL:', url);
+        
         var previewItem = btn.closest('div');
+        if (!previewItem) {
+            console.error('[Galeria] Preview item não encontrado');
+            return;
+        }
         
-        // Remover input hidden correspondente (apenas os novos, não os existentes com data-imagem-id)
-        var inputs = container.querySelectorAll('input[type="hidden"]:not([data-imagem-id])');
-        inputs.forEach(function(input) {
-            if (input.value === url) {
+        // Encontrar o input hidden correspondente a essa URL
+        var input = container.querySelector('input[value="' + url.replace(/"/g, '&quot;').replace(/'/g, "&#39;") + '"]');
+        
+        if (input) {
+            // Verificar se é imagem existente (tem data-imagem-id) ou nova
+            if (input.hasAttribute('data-imagem-id')) {
+                // É imagem existente - marcar checkbox de remoção
+                var imagemId = input.getAttribute('data-imagem-id');
+                console.log('[Galeria] Imagem existente encontrada, ID:', imagemId);
+                
+                // Buscar checkbox de remoção correspondente
+                var removeCheckbox = document.querySelector('input[name="remove_imagens[]"][value="' + imagemId + '"]');
+                if (removeCheckbox) {
+                    removeCheckbox.checked = true;
+                    console.log('[Galeria] Checkbox de remoção marcado para imagem ID:', imagemId);
+                    
+                    // Remover visualmente o preview (opcional - pode manter até salvar)
+                    previewItem.style.opacity = '0.5';
+                    previewItem.style.border = '2px solid #dc3545';
+                    
+                    // Adicionar indicador visual de que será removida
+                    var indicator = document.createElement('div');
+                    indicator.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem; border-radius: 4px; font-size: 0.875rem; z-index: 10;';
+                    indicator.textContent = 'Será removida';
+                    previewItem.appendChild(indicator);
+                } else {
+                    console.warn('[Galeria] Checkbox de remoção não encontrado para imagem ID:', imagemId);
+                    // Criar checkbox se não existir (fallback)
+                    var newCheckbox = document.createElement('input');
+                    newCheckbox.type = 'checkbox';
+                    newCheckbox.name = 'remove_imagens[]';
+                    newCheckbox.value = imagemId;
+                    newCheckbox.checked = true;
+                    newCheckbox.style.display = 'none';
+                    document.querySelector('form[method="POST"]').appendChild(newCheckbox);
+                    console.log('[Galeria] Checkbox de remoção criado dinamicamente');
+                }
+            } else {
+                // É imagem nova - remover input e preview
+                console.log('[Galeria] Imagem nova encontrada, removendo input e preview');
                 input.remove();
+                previewItem.remove();
             }
-        });
+        } else {
+            console.warn('[Galeria] Input hidden não encontrado para URL:', url);
+            // Remover preview mesmo assim
+            previewItem.remove();
+        }
         
-        // Remover preview
-        previewItem.remove();
+        // Atualizar contadores
+        var totalInputs = container ? container.querySelectorAll('input[type="hidden"]').length : 0;
+        var totalPreviews = previewContainer ? previewContainer.querySelectorAll('div').length : 0;
+        console.log('[Galeria] Total de inputs restantes:', totalInputs);
+        console.log('[Galeria] Total de previews restantes:', totalPreviews);
         
         // Esconder container de preview se não houver mais imagens novas
-        if (previewContainer.querySelectorAll('div').length === 0) {
+        if (previewContainer && previewContainer.querySelectorAll('div').length === 0) {
             previewContainer.style.display = 'none';
         }
         
         // Container de paths sempre fica visível se houver imagens (existentes ou novas)
-        if (container.querySelectorAll('input[type="hidden"]').length === 0) {
+        if (container && container.querySelectorAll('input[type="hidden"]').length === 0) {
             container.style.display = 'none';
         }
     };

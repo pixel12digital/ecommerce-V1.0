@@ -708,14 +708,17 @@ class ProductController extends Controller
             mkdir($uploadsPath, 0755, true);
         }
 
+        // Verificar se usuário quer remover a imagem de destaque explicitamente
+        $removeFeatured = isset($_POST['remove_featured']) && $_POST['remove_featured'] == '1';
+        
         // Verificar se veio caminho de imagem da biblioteca (prioridade sobre upload)
         // IMPORTANTE: Verificar se o campo existe no POST, mesmo que vazio (para limpar imagem)
         if (isset($_POST['imagem_destaque_path']) && is_string($_POST['imagem_destaque_path'])) {
             error_log("ProductController::processMainImage - Campo imagem_destaque_path encontrado: " . var_export($_POST['imagem_destaque_path'], true));
             $imagePath = trim($_POST['imagem_destaque_path']);
             
-            // Se o caminho está vazio, remover imagem existente
-            if (empty($imagePath)) {
+            // Se o caminho está vazio OU se remove_featured está marcado, remover imagem existente
+            if (empty($imagePath) || $removeFeatured) {
                 // Remover registro da imagem principal da tabela produto_imagens
                 $stmt = $db->prepare("
                     DELETE FROM produto_imagens 
@@ -1086,6 +1089,25 @@ class ProductController extends Controller
 
         // Processar caminhos de imagens da biblioteca (prioridade sobre upload)
         if (isset($_POST['galeria_paths']) && is_array($_POST['galeria_paths'])) {
+            // Log condicional apenas em modo debug
+            $isDebug = defined('APP_DEBUG') && APP_DEBUG;
+            if ($isDebug) {
+                error_log("ProductController::processGallery - INÍCIO - Total de caminhos recebidos no POST: " . count($_POST['galeria_paths']));
+                error_log("ProductController::processGallery - Caminhos recebidos: " . var_export($_POST['galeria_paths'], true));
+            }
+            
+            // Verificar quantas imagens existem no banco ANTES do processamento
+            $stmt = $db->prepare("
+                SELECT COUNT(*) as total 
+                FROM produto_imagens 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+            ");
+            $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+            $totalBefore = $stmt->fetch()['total'];
+            if ($isDebug) {
+                error_log("ProductController::processGallery - Total de imagens na galeria ANTES do processamento: {$totalBefore}");
+            }
+            
             // Buscar maior ordem atual
             $stmt = $db->prepare("
                 SELECT COALESCE(MAX(ordem), 0) as max_ordem 
@@ -1095,13 +1117,27 @@ class ProductController extends Controller
             $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
             $result = $stmt->fetch();
             $ordem = ($result['max_ordem'] ?? 0) + 1;
+            if ($isDebug) {
+                error_log("ProductController::processGallery - Próxima ordem a usar: {$ordem}");
+            }
 
             $processedCount = 0;
-            foreach ($_POST['galeria_paths'] as $imagePath) {
+            $skippedCount = 0;
+            $errorCount = 0;
+            
+            foreach ($_POST['galeria_paths'] as $index => $imagePath) {
                 $imagePath = trim($imagePath);
+                
+                if ($isDebug) {
+                    error_log("ProductController::processGallery - Processando imagem #{$index}: '{$imagePath}'");
+                }
                 
                 // Pular se vazio
                 if (empty($imagePath)) {
+                    if ($isDebug) {
+                        error_log("ProductController::processGallery - Imagem #{$index} está vazia, pulando");
+                    }
+                    $skippedCount++;
                     continue;
                 }
                 
@@ -1129,8 +1165,10 @@ class ProductController extends Controller
                         $filePath = $devPath;
                     }
                     
-                    error_log("ProductController::processGallery - Caminho completo do arquivo: {$filePath}");
-                    error_log("ProductController::processGallery - Arquivo existe? " . (file_exists($filePath) ? 'SIM' : 'NÃO'));
+                    if ($isDebug) {
+                        error_log("ProductController::processGallery - Caminho completo do arquivo: {$filePath}");
+                        error_log("ProductController::processGallery - Arquivo existe? " . (file_exists($filePath) ? 'SIM' : 'NÃO'));
+                    }
                     
                     if (file_exists($filePath)) {
                         // Verificar se imagem já não está associada a este produto (qualquer tipo)
@@ -1176,18 +1214,20 @@ class ProductController extends Controller
                                 error_log("ProductController::processGallery - Erro ao inserir imagem: " . $e->getMessage() . " (caminho: {$imagePath})");
                             }
                         } else {
-                            error_log("ProductController::processGallery - Imagem já existe no produto: {$imagePath}");
+                            if ($isDebug) {
+                                error_log("ProductController::processGallery - Imagem já existe no produto (preservada): {$imagePath}");
+                            }
+                            $skippedCount++;
                         }
                     } else {
-                        error_log("ProductController::processGallery - Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
+                        error_log("ProductController::processGallery - ⚠️ Arquivo não encontrado: {$filePath} (caminho: {$imagePath})");
+                        $errorCount++;
                     }
                 } else {
-                    error_log("ProductController::processGallery - Caminho inválido: {$imagePath} (tenant: {$tenantId}, tenantPath esperado: {$tenantPath})");
+                    error_log("ProductController::processGallery - ⚠️ Caminho inválido: {$imagePath} (tenant: {$tenantId}, tenantPath esperado: {$tenantPath})");
+                    $errorCount++;
                 }
             }
-            
-            error_log("ProductController::processGallery - Total de caminhos recebidos no POST: " . count($_POST['galeria_paths']));
-            error_log("ProductController::processGallery - Total de imagens processadas (novas): {$processedCount}");
             
             // Verificar quantas imagens existem no banco após processamento
             $stmt = $db->prepare("
@@ -1197,12 +1237,43 @@ class ProductController extends Controller
             ");
             $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
             $totalAfter = $stmt->fetch()['total'];
-            error_log("ProductController::processGallery - Total de imagens na galeria após processamento: {$totalAfter}");
             
+            // Logs resumidos (sempre) e detalhados (apenas em debug)
+            if ($isDebug) {
+                error_log("ProductController::processGallery - RESUMO DO PROCESSAMENTO:");
+                error_log("ProductController::processGallery - Total de caminhos recebidos no POST: " . count($_POST['galeria_paths']));
+                error_log("ProductController::processGallery - Total de imagens ANTES: {$totalBefore}");
+                error_log("ProductController::processGallery - Imagens novas processadas: {$processedCount}");
+                error_log("ProductController::processGallery - Imagens já existentes (preservadas): {$skippedCount}");
+                error_log("ProductController::processGallery - Imagens com erro: {$errorCount}");
+                error_log("ProductController::processGallery - Total de imagens na galeria APÓS processamento: {$totalAfter}");
+                
+                // Listar todas as imagens da galeria após processamento
+                $stmt = $db->prepare("
+                    SELECT id, caminho_arquivo, ordem 
+                    FROM produto_imagens 
+                    WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+                    ORDER BY ordem ASC
+                ");
+                $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+                $allImages = $stmt->fetchAll();
+                error_log("ProductController::processGallery - Lista completa de imagens na galeria:");
+                foreach ($allImages as $img) {
+                    error_log("ProductController::processGallery -   - ID: {$img['id']}, Ordem: {$img['ordem']}, Caminho: {$img['caminho_arquivo']}");
+                }
+            }
+            
+            // Logs importantes sempre (mesmo sem debug)
             if ($processedCount > 0) {
-                error_log("ProductController::processGallery - Processadas {$processedCount} imagens novas para produto {$produtoId}");
-            } else {
-                error_log("ProductController::processGallery - Nenhuma imagem nova foi processada (pode ser que todas já existam no banco)");
+                error_log("ProductController::processGallery - ✅ Processadas {$processedCount} imagens novas para produto {$produtoId}");
+            }
+            
+            if ($errorCount > 0) {
+                error_log("ProductController::processGallery - ⚠️ {$errorCount} imagens com erro ao processar");
+            }
+            
+            if ($totalAfter < count($_POST['galeria_paths'])) {
+                error_log("ProductController::processGallery - ⚠️ ATENÇÃO: Total no banco ({$totalAfter}) é menor que total enviado (" . count($_POST['galeria_paths']) . ")");
             }
         } else {
             error_log("ProductController::processGallery - Campo galeria_paths não foi enviado no POST ou não é array. POST keys: " . implode(', ', array_keys($_POST)));

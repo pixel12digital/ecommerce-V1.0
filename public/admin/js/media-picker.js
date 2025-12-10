@@ -601,12 +601,39 @@
      */
     function selectMultipleImages(urls) {
         if (currentTargetInput && urls.length > 0) {
+            console.log('[Media Picker] selectMultipleImages chamado com', urls.length, 'URLs');
+            console.log('[Media Picker] currentTargetInput:', currentTargetInput);
+            
             // Disparar evento customizado com as URLs selecionadas
-            var event = new CustomEvent('media-picker:multiple-selected', {
-                bubbles: true,
-                detail: { urls: urls }
-            });
-            currentTargetInput.dispatchEvent(event);
+            // O evento deve ser disparado no container (#galeria_paths_container), não no input
+            var container = document.querySelector(currentTargetInput.id || currentTargetInput);
+            if (!container) {
+                // Se currentTargetInput é um seletor string, buscar o elemento
+                container = document.querySelector(currentTargetInput);
+            }
+            
+            // Se ainda não encontrou, tentar buscar pelo ID do target
+            if (!container && typeof currentTargetInput === 'string') {
+                container = document.getElementById(currentTargetInput.replace('#', ''));
+            }
+            
+            // Fallback: usar currentTargetInput diretamente se for elemento
+            if (!container && currentTargetInput instanceof Element) {
+                container = currentTargetInput;
+            }
+            
+            if (container) {
+                console.log('[Media Picker] Disparando evento no container:', container);
+                var event = new CustomEvent('media-picker:multiple-selected', {
+                    bubbles: true,
+                    cancelable: true,
+                    detail: { urls: urls }
+                });
+                container.dispatchEvent(event);
+                console.log('[Media Picker] Evento disparado, URLs:', urls);
+            } else {
+                console.error('[Media Picker] Container não encontrado para disparar evento. currentTargetInput:', currentTargetInput);
+            }
         }
     }
     
