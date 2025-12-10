@@ -1168,11 +1168,14 @@ class ProductController extends Controller
                     }
                     
                     if (file_exists($filePath)) {
-                        // Verificar se imagem já não está associada a este produto (qualquer tipo)
+                        // Verificar se imagem já não está associada a este produto como GALERIA (tipo='gallery')
+                        // IMPORTANTE: Verificar apenas tipo='gallery' para não confundir com imagem principal (tipo='main')
                         $stmtCheck = $db->prepare("
                             SELECT id, tipo, caminho_arquivo 
                             FROM produto_imagens 
-                            WHERE tenant_id = :tenant_id AND produto_id = :produto_id 
+                            WHERE tenant_id = :tenant_id 
+                            AND produto_id = :produto_id 
+                            AND tipo = 'gallery'
                             AND caminho_arquivo = :caminho
                             LIMIT 1
                         ");
@@ -1186,9 +1189,9 @@ class ProductController extends Controller
                         
                         // Log detalhado sobre verificação de existência (sempre, não apenas em debug)
                         if ($exists) {
-                            error_log("ProductController::processGallery - 🔍 Imagem já existe: ID={$existingRecord['id']}, tipo={$existingRecord['tipo']}, caminho={$imagePath}");
+                            error_log("ProductController::processGallery - 🔍 [IMAGEM #{$index}] Imagem já existe na GALERIA: ID={$existingRecord['id']}, tipo={$existingRecord['tipo']}, caminho={$imagePath}");
                         } else {
-                            error_log("ProductController::processGallery - 🔍 Imagem NÃO existe no banco, será inserida: {$imagePath}");
+                            error_log("ProductController::processGallery - 🔍 [IMAGEM #{$index}] Imagem NÃO existe na galeria, será inserida: {$imagePath}");
                         }
                         
                         if (!$exists) {

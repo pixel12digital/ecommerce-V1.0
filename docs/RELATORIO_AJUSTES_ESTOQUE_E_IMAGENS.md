@@ -830,11 +830,69 @@ if (currentTargetInput.id === 'imagem_destaque_path') {
 - Não impacta performance significativamente
 - Ajuda a identificar problemas rapidamente
 
-#### Por que verificar duplicatas independente do tipo?
+#### Por que verificar duplicatas apenas para tipo='gallery'?
 
-- Evita criar registros duplicados
-- Permite reutilizar imagem existente
-- Mantém integridade dos dados
+**CORREÇÃO APLICADA (11/12/2025):**
+- A verificação de duplicatas agora é específica para `tipo = 'gallery'`
+- Isso evita que imagens da galeria sejam consideradas duplicadas se houver uma imagem principal com o mesmo caminho
+- Permite que múltiplas imagens sejam adicionadas à galeria sem falsos positivos
+
+**Antes:**
+```php
+// Verificava qualquer tipo (main ou gallery)
+SELECT id, tipo, caminho_arquivo 
+FROM produto_imagens 
+WHERE tenant_id = :tenant_id AND produto_id = :produto_id 
+AND caminho_arquivo = :caminho
+LIMIT 1
+```
+
+**Depois:**
+```php
+// Verifica apenas tipo='gallery'
+SELECT id, tipo, caminho_arquivo 
+FROM produto_imagens 
+WHERE tenant_id = :tenant_id 
+AND produto_id = :produto_id 
+AND tipo = 'gallery'
+AND caminho_arquivo = :caminho
+LIMIT 1
+```
+
+### Correções Finais - Remoção de Imagens (11/12/2025)
+
+#### Problema Identificado
+
+1. **Botão de Remoção da Galeria:**
+   - Event listener não estava capturando cliques
+   - Checkbox não era marcado quando botão era clicado
+   - Nenhum feedback visual era aplicado
+
+2. **Botão de Remoção da Imagem de Destaque:**
+   - Função tinha poucos logs
+   - Feedback visual não indicava claramente remoção
+
+#### Correções Aplicadas
+
+**Arquivo:** `themes/default/admin/products/edit-content.php`
+
+1. **Event Listener Melhorado (Linhas ~964-1005):**
+   - Múltiplos fallbacks para encontrar botão `.btn-remove`
+   - Logs verbosos: `console.log('[Galeria] 🔴 CLICK NO BOTAO DE REMOCAO')`
+   - Checkbox sempre marcado como `checked = true` (não alterna)
+   - Feedback visual: opacidade, borda vermelha, indicador "Será removida"
+
+2. **Função removeFeaturedImage() Melhorada (Linhas ~742-786):**
+   - Logs verbosos: `console.log('[Imagem Destaque] 🔴 CLICK NO BOTAO DE REMOCAO DA IMAGEM DE DESTAQUE')`
+   - Validação de campos antes de usar
+   - Feedback visual melhorado com indicador "Será removida"
+
+#### Resultado
+
+- ✅ Botão de remoção da galeria agora funciona corretamente
+- ✅ Botão de remoção da imagem de destaque agora funciona corretamente
+- ✅ Feedback visual claro indica que imagem será removida
+- ✅ Logs verbosos facilitam debug
 
 ### Conclusão
 
@@ -842,9 +900,11 @@ As correções críticas garantem que:
 
 1. ✅ Campo vazio é processado corretamente (remove imagem)
 2. ✅ Logs detalhados facilitam diagnóstico
-3. ✅ Duplicatas são evitadas
+3. ✅ Duplicatas são evitadas (verificação específica para tipo='gallery')
 4. ✅ Erros são capturados e logados
 5. ✅ Media picker atualiza todos os campos necessários
+6. ✅ **Remoção de imagens funciona corretamente (galeria e destaque)**
+7. ✅ **Múltiplas imagens na galeria são suportadas (sem limite de 2)**
 
-O sistema agora tem visibilidade completa do processo de salvamento de imagens, facilitando identificação e correção de problemas.
+O sistema agora tem visibilidade completa do processo de salvamento de imagens, facilitando identificação e correção de problemas. **Não há mais limite de 2 imagens na galeria.**
 

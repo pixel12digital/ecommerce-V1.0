@@ -740,7 +740,7 @@ function setMainFromGallery(imageId) {
 
 // Função para remover imagem de destaque
 window.removeFeaturedImage = function() {
-    console.log('[Imagem Destaque] Removendo imagem de destaque');
+    console.log('[Imagem Destaque] 🔴 CLICK NO BOTAO DE REMOCAO DA IMAGEM DE DESTAQUE');
     
     var imagemDestaqueInput = document.getElementById('imagem_destaque_path');
     var imagemDestaqueDisplay = document.getElementById('imagem_destaque_path_display');
@@ -749,40 +749,51 @@ window.removeFeaturedImage = function() {
     var currentImageContainer = document.querySelector('.current-image');
     var btnRemove = document.getElementById('btn-remove-featured');
     
+    if (!removeFeaturedInput) {
+        console.error('[Imagem Destaque] ❌ Campo remove_featured não encontrado!');
+        return;
+    }
+    
+    // Marcar para remoção
+    removeFeaturedInput.value = '1';
+    console.log('[Imagem Destaque] ✅ Campo remove_featured marcado como 1');
+    
     // Limpar campos
     if (imagemDestaqueInput) {
         imagemDestaqueInput.value = '';
+        console.log('[Imagem Destaque] ✅ Campo imagem_destaque_path limpo');
     }
     if (imagemDestaqueDisplay) {
         imagemDestaqueDisplay.value = '';
+        console.log('[Imagem Destaque] ✅ Campo imagem_destaque_path_display limpo');
     }
     
-    // Marcar flag de remoção
-    if (removeFeaturedInput) {
-        removeFeaturedInput.value = '1';
-    }
-    
-    // Atualizar preview visual
+    // Limpar preview
     if (previewContainer) {
         previewContainer.innerHTML = '';
+        console.log('[Imagem Destaque] ✅ Preview limpo');
     }
     
-    // Atualizar container da imagem atual
+    // Atualizar visual para placeholder
     if (currentImageContainer) {
         currentImageContainer.classList.add('placeholder');
+        currentImageContainer.style.opacity = '0.5';
+        currentImageContainer.style.border = '2px solid #dc3545';
         currentImageContainer.innerHTML = 
-            '<div class="placeholder-content">' +
+            '<div class="placeholder-content" style="position: relative;">' +
             '<i class="bi bi-image icon" style="font-size: 3rem; color: #999;"></i>' +
             '<div class="image-label">Sem imagem de destaque</div>' +
+            '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; font-weight: bold; z-index: 10;">Será removida</div>' +
             '</div>';
+        console.log('[Imagem Destaque] ✅ Visual atualizado para placeholder com indicador de remoção');
     }
     
-    // Esconder botão de remoção
-    if (btnRemove) {
-        btnRemove.style.display = 'none';
-    }
+    // Esconder botão de remoção (opcional - pode manter visível até salvar)
+    // if (btnRemove) {
+    //     btnRemove.style.display = 'none';
+    // }
     
-    console.log('[Imagem Destaque] Imagem de destaque removida (será salva ao submeter formulário)');
+    console.log('[Imagem Destaque] ✅ Remoção configurada. Ao salvar, a imagem será removida do banco.');
 };
 
 // Atualizar preview da imagem de destaque quando selecionada
@@ -965,40 +976,59 @@ window.removeFeaturedImage = function() {
     (function() {
         // Usar event delegation para capturar cliques nos botões de remoção
         document.addEventListener('click', function(e) {
-            // Verificar se o clique foi em um botão de remoção (label.btn-remove ou seu ícone)
+            // Verificar se o clique foi em um botão de remoção (label.btn-remove, seu ícone, ou qualquer elemento dentro)
             var btnRemove = e.target.closest('.btn-remove');
+            
+            // Se não encontrou pelo closest, verificar se o clique foi diretamente no ícone dentro do label
+            if (!btnRemove && e.target.closest('label.btn-remove')) {
+                btnRemove = e.target.closest('label.btn-remove');
+            }
+            
+            // Se ainda não encontrou, verificar se o clique foi no ícone bi-trash
+            if (!btnRemove && (e.target.classList.contains('bi-trash') || e.target.closest('.bi-trash'))) {
+                btnRemove = e.target.closest('label.btn-remove') || e.target.closest('.gallery-item-actions')?.querySelector('.btn-remove');
+            }
+            
             if (btnRemove) {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                console.log('[Galeria] Botão de remoção clicado');
+                console.log('[Galeria] 🔴 CLICK NO BOTAO DE REMOCAO - Elemento:', btnRemove);
                 
                 // Encontrar o checkbox dentro do label
                 var checkbox = btnRemove.querySelector('input[type="checkbox"][name="remove_imagens[]"]');
                 if (checkbox) {
-                    // Alternar estado do checkbox
-                    checkbox.checked = !checkbox.checked;
+                    // SEMPRE marcar como checked (não alternar) - se clicou, quer remover
+                    checkbox.checked = true;
                     
                     var imagemId = checkbox.value;
-                    console.log('[Galeria] Checkbox de remoção ' + (checkbox.checked ? 'marcado' : 'desmarcado') + ' para imagem ID:', imagemId);
+                    console.log('[Galeria] ✅ Checkbox de remoção MARCADO para imagem ID:', imagemId);
                     
                     // Encontrar o item da galeria correspondente
                     var galleryItem = btnRemove.closest('.gallery-item');
                     if (galleryItem) {
-                        if (checkbox.checked) {
-                            // Marcar para remoção - adicionar estilo visual
-                            galleryItem.style.opacity = '0.5';
-                            galleryItem.style.border = '2px solid #dc3545';
-                            console.log('[Galeria] Item da galeria marcado para remoção visual');
-                        } else {
-                            // Desmarcar - remover estilo visual
-                            galleryItem.style.opacity = '1';
-                            galleryItem.style.border = '';
-                            console.log('[Galeria] Item da galeria desmarcado da remoção');
+                        // Marcar para remoção - adicionar estilo visual
+                        galleryItem.style.opacity = '0.5';
+                        galleryItem.style.border = '2px solid #dc3545';
+                        galleryItem.style.transition = 'all 0.3s ease';
+                        
+                        // Adicionar indicador visual "Será removida"
+                        var existingIndicator = galleryItem.querySelector('.removal-indicator');
+                        if (!existingIndicator) {
+                            var indicator = document.createElement('div');
+                            indicator.className = 'removal-indicator';
+                            indicator.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; font-weight: bold; z-index: 100; pointer-events: none;';
+                            indicator.textContent = 'Será removida';
+                            galleryItem.style.position = 'relative';
+                            galleryItem.appendChild(indicator);
                         }
+                        
+                        console.log('[Galeria] ✅ Item da galeria marcado para remoção visual - ID:', imagemId);
+                    } else {
+                        console.warn('[Galeria] ⚠️ Item da galeria (.gallery-item) não encontrado');
                     }
                 } else {
-                    console.warn('[Galeria] Checkbox não encontrado dentro do botão de remoção');
+                    console.error('[Galeria] ❌ Checkbox não encontrado dentro do botão de remoção. HTML:', btnRemove.innerHTML);
                 }
             }
         });
