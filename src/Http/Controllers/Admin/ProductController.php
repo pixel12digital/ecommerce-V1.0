@@ -256,8 +256,21 @@ class ProductController extends Controller
             $dataPromocaoInicio = !empty($_POST['data_promocao_inicio']) ? $_POST['data_promocao_inicio'] : null;
             $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
             $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;
-            $statusEstoque = $_POST['status_estoque'] ?? 'outofstock';
             $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
+            
+            // Determinar status_estoque baseado em gerencia_estoque e quantidade_estoque
+            // Se gerencia_estoque = 1 e quantidade_estoque > 0 → instock
+            // Se gerencia_estoque = 1 e quantidade_estoque = 0 → outofstock
+            // Se gerencia_estoque = 0 → usar valor do formulário ou padrão instock
+            $statusEstoqueInput = $_POST['status_estoque'] ?? null;
+            if ($gerenciaEstoque == 1) {
+                // Se gerencia estoque está ativo, determinar status baseado na quantidade
+                $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+            } else {
+                // Se não gerencia estoque, usar valor do formulário ou padrão instock
+                $statusEstoque = $statusEstoqueInput ?? 'instock';
+            }
+            
             $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
             $exibirNoCatalogo = isset($_POST['exibir_no_catalogo']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
@@ -267,15 +280,18 @@ class ProductController extends Controller
                 throw new \Exception('Nome do produto é obrigatório');
             }
 
+            // Preço principal: usar preco_promocional se existir, senão preco_regular
+            $precoPrincipal = $precoPromocional ?? $precoRegular;
+
             $stmt = $db->prepare("
                 INSERT INTO produtos (
                     tenant_id, nome, slug, sku, status, exibir_no_catalogo,
-                    preco_regular, preco_promocional, data_promocao_inicio, data_promocao_fim,
+                    preco, preco_regular, preco_promocional, data_promocao_inicio, data_promocao_fim,
                     quantidade_estoque, status_estoque, gerencia_estoque, permite_pedidos_falta,
                     descricao_curta, descricao, created_at, updated_at
                 ) VALUES (
                     :tenant_id, :nome, :slug, :sku, :status, :exibir_no_catalogo,
-                    :preco_regular, :preco_promocional, :data_promocao_inicio, :data_promocao_fim,
+                    :preco, :preco_regular, :preco_promocional, :data_promocao_inicio, :data_promocao_fim,
                     :quantidade_estoque, :status_estoque, :gerencia_estoque, :permite_pedidos_falta,
                     :descricao_curta, :descricao, NOW(), NOW()
                 )
@@ -287,6 +303,7 @@ class ProductController extends Controller
                 'sku' => $sku,
                 'status' => $status,
                 'exibir_no_catalogo' => $exibirNoCatalogo,
+                'preco' => $precoPrincipal,
                 'preco_regular' => $precoRegular,
                 'preco_promocional' => $precoPromocional,
                 'data_promocao_inicio' => $dataPromocaoInicio,
@@ -525,17 +542,45 @@ class ProductController extends Controller
             }
             $sku = trim($_POST['sku'] ?? '');
             $status = $_POST['status'] ?? 'draft';
-            $precoRegular = !empty($_POST['preco_regular']) ? (float)$_POST['preco_regular'] : 0;
-            $precoPromocional = !empty($_POST['preco_promocional']) ? (float)$_POST['preco_promocional'] : null;
+            
+            // Processar preço regular (converter vírgula para ponto)
+            $precoRegularStr = trim($_POST['preco_regular'] ?? '0');
+            $precoRegularStr = str_replace(',', '.', $precoRegularStr);
+            $precoRegular = !empty($precoRegularStr) ? (float)$precoRegularStr : 0;
+            
+            // Processar preço promocional (converter vírgula para ponto)
+            $precoPromocionalStr = trim($_POST['preco_promocional'] ?? '');
+            $precoPromocional = null;
+            if (!empty($precoPromocionalStr)) {
+                $precoPromocionalStr = str_replace(',', '.', $precoPromocionalStr);
+                $precoPromocional = (float)$precoPromocionalStr;
+            }
+            
             $dataPromocaoInicio = !empty($_POST['data_promocao_inicio']) ? $_POST['data_promocao_inicio'] : null;
             $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
             $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;
-            $statusEstoque = $_POST['status_estoque'] ?? 'outofstock';
             $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
+            
+            // Determinar status_estoque baseado em gerencia_estoque e quantidade_estoque
+            // Se gerencia_estoque = 1 e quantidade_estoque > 0 → instock
+            // Se gerencia_estoque = 1 e quantidade_estoque = 0 → outofstock
+            // Se gerencia_estoque = 0 → usar valor do formulário ou padrão instock
+            $statusEstoqueInput = $_POST['status_estoque'] ?? null;
+            if ($gerenciaEstoque == 1) {
+                // Se gerencia estoque está ativo, determinar status baseado na quantidade
+                $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+            } else {
+                // Se não gerencia estoque, usar valor do formulário ou padrão instock
+                $statusEstoque = $statusEstoqueInput ?? 'instock';
+            }
+            
             $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
             $exibirNoCatalogo = isset($_POST['exibir_no_catalogo']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
+
+            // Preço principal: usar preco_promocional se existir, senão preco_regular
+            $precoPrincipal = $precoPromocional ?? $precoRegular;
 
             $stmt = $db->prepare("
                 UPDATE produtos SET
@@ -544,6 +589,7 @@ class ProductController extends Controller
                     sku = :sku,
                     status = :status,
                     exibir_no_catalogo = :exibir_no_catalogo,
+                    preco = :preco,
                     preco_regular = :preco_regular,
                     preco_promocional = :preco_promocional,
                     data_promocao_inicio = :data_promocao_inicio,
@@ -563,6 +609,7 @@ class ProductController extends Controller
                 'sku' => $sku,
                 'status' => $status,
                 'exibir_no_catalogo' => $exibirNoCatalogo,
+                'preco' => $precoPrincipal,
                 'preco_regular' => $precoRegular,
                 'preco_promocional' => $precoPromocional,
                 'data_promocao_inicio' => $dataPromocaoInicio,
