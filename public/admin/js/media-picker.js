@@ -54,49 +54,49 @@
         
         console.log('[Media Picker] Inicialização concluída');
 
-        // Detectar basePath (apenas para requisições AJAX, NÃO para URLs de imagens)
-        var scripts = document.getElementsByTagName('script');
-        for (var i = 0; i < scripts.length; i++) {
-            if (scripts[i].src && scripts[i].src.includes('/admin/js/media-picker.js')) {
-                var match = scripts[i].src.match(/(.*)\/admin\/js\/media-picker\.js/);
-                if (match) {
-                    // Extrair apenas o caminho (sem protocolo/domínio)
-                    var detectedPath = match[1];
-                    // Se contém protocolo (http/https), extrair apenas o caminho
-                    if (detectedPath.indexOf('://') !== -1) {
+        // Detectar basePath - PRIORIDADE: window.basePath (definido no layout PHP)
+        // Isso garante consistência entre local e produção
+        if (typeof window.basePath !== 'undefined' && window.basePath && 
+            window.basePath !== 'undefined' && window.basePath !== 'null') {
+            basePath = String(window.basePath);
+            console.log('[Media Picker] basePath obtido de window.basePath:', basePath);
+        } else {
+            // Fallback: tentar detectar do script src (menos confiável)
+            var scripts = document.getElementsByTagName('script');
+            for (var i = 0; i < scripts.length; i++) {
+                if (scripts[i].src && scripts[i].src.includes('/admin/js/media-picker.js')) {
+                    try {
                         var urlObj = new URL(scripts[i].src);
-                        basePath = urlObj.pathname.replace('/admin/js/media-picker.js', '');
-                    } else {
-                        basePath = detectedPath;
+                        var pathname = urlObj.pathname;
+                        // Remover /admin/js/media-picker.js do final
+                        basePath = pathname.replace(/\/admin\/js\/media-picker\.js$/, '');
+                        console.log('[Media Picker] basePath detectado do script src:', basePath);
+                    } catch (e) {
+                        console.warn('[Media Picker] Erro ao parsear URL do script:', e);
                     }
-                    console.log('[Media Picker] basePath detectado do script src:', basePath);
+                    break;
                 }
-                break;
             }
         }
-        // Fallback: tentar detectar do window.basePath (definido no layout)
-        if (!basePath && typeof window.basePath !== 'undefined') {
-            basePath = window.basePath || '';
-            console.log('[Media Picker] basePath detectado do window.basePath:', basePath);
+        
+        // Normalizar basePath: remover protocolo/domínio se presente
+        if (basePath && (basePath.indexOf('://') !== -1 || basePath.indexOf('pontodogolfeoutlet.com.br') !== -1)) {
+            console.warn('[Media Picker] basePath contém URL completa, extraindo apenas caminho');
+            try {
+                var urlObj = new URL(basePath, window.location.origin);
+                basePath = urlObj.pathname;
+            } catch (e) {
+                // Se falhar, tentar regex simples
+                basePath = basePath.replace(/^https?:\/\/[^\/]+/, '');
+            }
         }
+        
+        // Garantir que basePath seja string válida
         if (!basePath || basePath === 'undefined' || basePath === 'null') {
             console.warn('[Media Picker] basePath não detectado ou inválido, usando vazio');
             basePath = '';
         }
-        // Limpar basePath se contiver protocolo/domínio (não deve ser usado para imagens)
-        if (basePath && (basePath.indexOf('://') !== -1 || basePath.indexOf('pontodogolfeoutlet.com.br') !== -1)) {
-            console.warn('[Media Picker] basePath contém URL completa, extraindo apenas caminho');
-            // Tentar extrair apenas o caminho
-            if (basePath.indexOf('/public') !== -1) {
-                // Em produção, se basePath contém /public, remover (DocumentRoot já é public_html/)
-                basePath = basePath.replace(/^https?:\/\/[^\/]+/, ''); // Remove protocolo e domínio
-                if (basePath.startsWith('/public')) {
-                    basePath = basePath.replace('/public', '');
-                }
-            } else {
-                basePath = basePath.replace(/^https?:\/\/[^\/]+/, ''); // Remove protocolo e domínio
-            }
-        }
+        
         console.log('[Media Picker] basePath final:', basePath, '(tipo:', typeof basePath, ')');
     }
 

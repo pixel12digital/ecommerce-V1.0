@@ -349,7 +349,39 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
     // Definir basePath globalmente para o JS
     window.basePath = <?= json_encode($basePath) ?>;
 </script>
-<script src="<?= $basePath ?>/admin/js/products.js"></script>
+<?php
+/**
+ * Helper para gerar caminho de assets do admin
+ * Detecta automaticamente o ambiente (dev vs produção)
+ * 
+ * Em dev: /ecommerce-v1.0/public/admin/js/products.js
+ * Em produção: /public/admin/js/products.js (DocumentRoot = public_html/)
+ */
+function admin_asset_path_products($relativePath) {
+    // Remover barra inicial se existir
+    $relativePath = ltrim($relativePath, '/');
+    
+    // Detectar se estamos em desenvolvimento local
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    
+    // Se REQUEST_URI ou SCRIPT_NAME contém /ecommerce-v1.0/public, estamos em dev
+    if (strpos($requestUri, '/ecommerce-v1.0/public') !== false || 
+        strpos($scriptName, '/ecommerce-v1.0/public') !== false) {
+        return '/ecommerce-v1.0/public/admin/' . $relativePath;
+    }
+    
+    // Em produção na Hostinger:
+    // - DocumentRoot aponta para public_html/ (raiz do projeto)
+    // - Arquivos físicos estão em public_html/public/admin/js/...
+    // - Para acessar via URL, precisamos usar /public/admin/...
+    // Isso porque o Apache resolve URLs baseado no DocumentRoot
+    return '/public/admin/' . $relativePath;
+}
+
+$productsJsPath = admin_asset_path_products('js/products.js');
+?>
+<script src="<?= htmlspecialchars($productsJsPath) ?>" onerror="console.error('Erro ao carregar products.js:', this.src);"></script>
 
 <style>
 /* Fase 10 – Ajustes layout Admin - Produtos */

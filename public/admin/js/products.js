@@ -5,11 +5,14 @@
 (function() {
     'use strict';
 
+    console.log('[Produtos] JS inicializado');
+
     // Obter basePath do contexto
     var basePath = '';
     // Tentar obter do contexto global primeiro
     if (typeof window.basePath !== 'undefined') {
         basePath = window.basePath;
+        console.log('[Produtos] basePath obtido de window.basePath:', basePath);
     } else {
         // Fallback: tentar obter do script src
         var scripts = document.getElementsByTagName('script');
@@ -23,6 +26,7 @@
                 break;
             }
         }
+        console.log('[Produtos] basePath obtido do script src:', basePath);
     }
 
     // Função auxiliar para fazer requisições AJAX

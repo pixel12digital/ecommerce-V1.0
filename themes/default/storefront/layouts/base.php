@@ -29,6 +29,30 @@ $showNewsletter = $showNewsletter ?? false;
 $categoryPills = $categoryPills ?? [];
 $allCategories = $allCategories ?? [];
 
+// Fallback: Se showCategoryStrip está ativo mas não há categorias, tentar carregar
+if ($showCategoryStrip && empty($categoryPills)) {
+    try {
+        $db = \App\Core\Database::getConnection();
+        $tenantId = \App\Tenant\TenantContext::id();
+        $stmt = $db->prepare("
+            SELECT hcp.*, c.nome as categoria_nome, c.slug as categoria_slug
+            FROM home_category_pills hcp
+            LEFT JOIN categorias c ON c.id = hcp.categoria_id AND c.tenant_id = :tenant_id_join
+            WHERE hcp.tenant_id = :tenant_id_where AND hcp.ativo = 1
+            ORDER BY hcp.ordem ASC, hcp.id ASC
+        ");
+        $stmt->bindValue(':tenant_id_join', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_where', $tenantId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $categoryPills = $stmt->fetchAll();
+        $allCategories = $categoryPills;
+    } catch (\Exception $e) {
+        // Em caso de erro, manter arrays vazios
+        $categoryPills = [];
+        $allCategories = [];
+    }
+}
+
 // Base path
 $basePath = '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
