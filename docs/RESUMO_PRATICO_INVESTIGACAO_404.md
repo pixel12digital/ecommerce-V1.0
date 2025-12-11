@@ -24,10 +24,20 @@ O `index.php` em produção contém:
 - O menu "Categorias" aparece no menu lateral em produção
 - O layout `store.php` está atualizado
 
-### 4. Problema persiste ❌
+### 4. Router enxerga a rota ✅
 
-- Mesmo com o arquivo correto, a rota `/admin/categorias` ainda retorna 404
-- **Causa raiz anterior (arquivo desatualizado) foi descartada**
+- Router consegue registrar e enxergar `/admin/categorias` nas rotas GET
+
+### 5. Problema identificado: Arquivos faltando ❌
+
+**Diagnóstico do `debug_rota_categorias.php` mostrou:**
+- ❌ `CategoriaController.php` não existe em produção
+- ❌ View `index-content.php` não existe em produção
+- ❌ Autoload não consegue carregar o Controller
+
+**Causa raiz:** Deploy incompleto - arquivos novos de categorias não foram enviados para o servidor
+
+**Solução:** Fazer upload dos arquivos conforme `docs/GUIA_DEPLOY_ARQUIVOS_CATEGORIAS.md`
 
 ---
 
