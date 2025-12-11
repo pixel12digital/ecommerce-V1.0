@@ -99,6 +99,10 @@ if (strpos($uri, '/ecommerce-v1.0/public') === 0) {
 
 $uri = rtrim($uri, '/') ?: '/';
 
+// DEBUG: Log da URI processada
+error_log('[DEBUG INDEX] URI após processamento: ' . $uri);
+error_log('[DEBUG INDEX] URI original (REQUEST_URI): ' . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
+
 // Rotas que não precisam de tenant resolvido (login e migrations)
 $publicRoutes = ['/admin/platform/login', '/admin/login', '/migrations'];
 
