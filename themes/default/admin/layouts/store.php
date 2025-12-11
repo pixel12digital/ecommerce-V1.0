@@ -599,6 +599,7 @@
         return false;
     };
     ?>
+    <!-- DEBUG-STORE-LAYOUT: versão categorias v2 -->
     <div class="admin-wrapper">
         <aside class="admin-sidebar" id="sidebar">
             <?php
@@ -638,6 +639,11 @@
             $canManageOrders = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_orders');
             $canManageCustomers = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_customers');
             $canManageProducts = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_products');
+            // DEBUG: Log de permissões para diagnóstico
+            if (isset($_GET['debug_menu'])) {
+                error_log('[DEBUG MENU] currentUserId: ' . ($currentUserId ?: 'null'));
+                error_log('[DEBUG MENU] canManageProducts: ' . ($canManageProducts ? 'true' : 'false'));
+            }
             $canManageReviews = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_reviews');
             $canManageHomePage = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_home_page');
             $canManageTheme = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_theme');
@@ -672,12 +678,21 @@
                 </li>
                 <?php endif; ?>
                 <?php if ($canManageProducts): ?>
+                <!-- DEBUG: Menu Produtos/Categorias - canManageProducts = true -->
                 <li>
-                    <a href="<?= $basePath ?>/admin/produtos" class="<?= $isActive('/admin/produtos') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/produtos" class="<?= $isActive('/admin/produtos') && !$isActive('/admin/categorias') ? 'active' : '' ?>">
                         <i class="bi bi-box-seam icon"></i>
                         <span>Produtos</span>
                     </a>
                 </li>
+                <li>
+                    <a href="<?= $basePath ?>/admin/categorias" class="<?= $isActive('/admin/categorias') ? 'active' : '' ?>" style="padding-left: 2.5rem;">
+                        <i class="bi bi-tags icon"></i>
+                        <span>Categorias</span>
+                    </a>
+                </li>
+                <?php else: ?>
+                <!-- DEBUG: Menu Produtos/Categorias - canManageProducts = false (usuário: <?= $currentUserId ?: 'não logado' ?>) -->
                 <?php endif; ?>
                 <?php if ($canManageReviews): ?>
                 <li>
