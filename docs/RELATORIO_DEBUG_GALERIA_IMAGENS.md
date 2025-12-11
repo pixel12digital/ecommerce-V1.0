@@ -2661,6 +2661,333 @@ error_log("ProductController::processGallery - ℹ️ Arquivo físico preservado
 
 ---
 
+---
+
+## ✅ CORREÇÃO FINAL - Sincronização Completa da Galeria (11 de Dezembro de 2025)
+
+### Problema Identificado
+
+**Comportamento Anterior (INCORRETO):**
+- O método `processGallery()` processava `remove_imagens[]` e `galeria_paths[]` separadamente
+- Se uma imagem não estivesse em `remove_imagens[]` mas também não estivesse em `galeria_paths[]`, ela não era removida
+- Resultado: imagens marcadas para remoção visualmente não eram removidas do banco
+
+**Exemplo do Problema:**
+- Banco tinha: A, B, C
+- Frontend enviava: `galeria_paths[]` = [A, B] e `remove_imagens[]` = [C]
+- Código removia C (via `remove_imagens`)
+- Código verificava A e B (via `galeria_paths`) e via que já existiam, então pulava
+- **Resultado:** A, B permaneciam (correto)
+
+**Mas se o frontend enviasse apenas `galeria_paths[]` = [A, B] sem `remove_imagens[]`:**
+- Código não removia nada (porque `remove_imagens` estava vazio)
+- Código verificava A e B e via que já existiam, então pulava
+- **Resultado:** A, B, C permaneciam (ERRADO - C deveria ser removido)
+
+### Correção Implementada
+
+**Arquivo:** `src/Http/Controllers/Admin/ProductController.php`
+**Método:** `processGallery()` - Refatoração completa
+
+**Nova Lógica (SINCRONIZAÇÃO COMPLETA):**
+
+1. **Tratar `galeria_paths[]` como estado definitivo:**
+   - O array `galeria_paths[]` representa o estado COMPLETO e DEFINITIVO da galeria do produto
+   - Qualquer imagem que não esteja nesse array deve ser removida da galeria
+
+2. **Processo de sincronização:**
+   ```
+   1. Buscar imagens atuais da galeria no banco
+   2. Identificar imagens que devem ser REMOVIDAS (estão no banco mas não estão no POST)
+   3. Remover essas imagens (apenas desvincular do produto, sem apagar arquivo)
+   4. Processar cada caminho em galeria_paths[]:
+      - Se já existe no banco: preservar
+      - Se não existe: inserir
+   5. Verificar se total no banco corresponde ao total enviado
+   ```
+
+3. **Remoção de dependência de `remove_imagens[]`:**
+   - A lógica não depende mais de `remove_imagens[]`
+   - A sincronização é baseada apenas em `galeria_paths[]`
+   - `remove_imagens[]` ainda pode ser enviado pelo frontend (para feedback visual), mas não é mais necessário para o backend
+
+**Código Implementado:**
+
+```php
+// SINCRONIZAÇÃO COMPLETA DA GALERIA
+// O array galeria_paths[] representa o estado DEFINITIVO da galeria do produto
+// Qualquer imagem que não esteja nesse array deve ser removida da galeria (mas não da biblioteca)
+
+if (isset($_POST['galeria_paths']) && is_array($_POST['galeria_paths'])) {
+    $galleryPaths = array_map('trim', $_POST['galeria_paths']);
+    $galleryPaths = array_filter($galleryPaths, function($path) {
+        return !empty($path);
+    });
+    
+    // 1. Buscar imagens atuais da galeria no banco
+    $currentImages = /* SELECT ... */;
+    
+    // 2. Identificar imagens que devem ser REMOVIDAS
+    $pathsToKeep = array_flip($galleryPaths);
+    $imagesToRemove = [];
+    foreach ($currentImages as $currentImg) {
+        if (!isset($pathsToKeep[$currentImg['caminho_arquivo']])) {
+            $imagesToRemove[] = $currentImg;
+        }
+    }
+    
+    // 3. Remover imagens que não estão mais na lista
+    foreach ($imagesToRemove as $imgToRemove) {
+        // DELETE FROM produto_imagens WHERE id = ...
+        // NÃO apagar arquivo físico
+    }
+    
+    // 4. Processar caminhos enviados (adicionar novas ou preservar existentes)
+    foreach ($galleryPaths as $imagePath) {
+        if (!exists_in_database($imagePath)) {
+            // INSERT INTO produto_imagens ...
+        }
+    }
+    
+    // 5. Verificar sincronização
+    // Total no banco deve corresponder ao total enviado
+}
+```
+
+### Comportamento Final
+
+#### ✅ Remover Imagem da Galeria
+
+**Cenário:**
+- Produto tem 3 imagens: A, B, C
+- Usuário clica na lixeira de C
+- Frontend envia: `galeria_paths[]` = [A, B]
+
+**Processo:**
+1. Backend busca imagens atuais: A, B, C
+2. Identifica que C não está em `galeria_paths[]`
+3. Remove C da tabela `produto_imagens` (apenas desvincula)
+4. Verifica A e B: já existem, preserva
+5. **Resultado:** Galeria tem apenas A e B
+
+#### ✅ Adicionar Imagens à Galeria
+
+**Cenário:**
+- Produto tem 2 imagens: A, B
+- Usuário adiciona C e D via biblioteca
+- Frontend envia: `galeria_paths[]` = [A, B, C, D]
+
+**Processo:**
+1. Backend busca imagens atuais: A, B
+2. Identifica que nenhuma precisa ser removida
+3. Verifica A e B: já existem, preserva
+4. Verifica C e D: não existem, insere
+5. **Resultado:** Galeria tem A, B, C, D
+
+#### ✅ Remover Todas as Imagens
+
+**Cenário:**
+- Produto tem 3 imagens: A, B, C
+- Usuário marca todas para remoção
+- Frontend envia: `galeria_paths[]` = [] (vazio)
+
+**Processo:**
+1. Backend busca imagens atuais: A, B, C
+2. Identifica que todas devem ser removidas (nenhuma está em `galeria_paths[]`)
+3. Remove A, B, C da tabela `produto_imagens`
+4. **Resultado:** Galeria vazia, mas arquivos permanecem na biblioteca
+
+### Testes de Validação
+
+#### Teste 1: Remover 1 Imagem da Galeria
+1. Produto com 3 imagens na galeria
+2. Clicar na lixeira de 1 imagem
+3. Salvar produto
+4. **Resultado Esperado:**
+   - ✅ Apenas 2 imagens aparecem na galeria do produto
+   - ✅ Todas as 3 imagens continuam na Biblioteca de Mídia
+   - ✅ Logs mostram: "Imagens removidas: 1"
+
+#### Teste 2: Adicionar Imagens Novas
+1. Produto com 2 imagens na galeria
+2. Adicionar 2 novas imagens via biblioteca
+3. Salvar produto
+4. **Resultado Esperado:**
+   - ✅ 4 imagens aparecem na galeria do produto
+   - ✅ Todas as imagens continuam na Biblioteca de Mídia
+   - ✅ Logs mostram: "Imagens novas inseridas: 2"
+
+#### Teste 3: Remover Todas as Imagens
+1. Produto com 3 imagens na galeria
+2. Marcar todas para remoção (ou limpar `galeria_paths[]`)
+3. Salvar produto
+4. **Resultado Esperado:**
+   - ✅ Galeria vazia na tela do produto
+   - ✅ Todas as imagens continuam na Biblioteca de Mídia
+   - ✅ Logs mostram: "Imagens removidas: 3"
+
+### Arquivos Modificados
+
+1. **`src/Http/Controllers/Admin/ProductController.php`**
+   - Método `processGallery()`: Refatoração completa para sincronização baseada em `galeria_paths[]`
+   - Removida dependência de `remove_imagens[]` (ainda pode ser enviado, mas não é necessário)
+   - Lógica de sincronização: compara banco vs. POST e remove/insere conforme necessário
+
+### Observações Importantes
+
+1. **`remove_imagens[]` não é mais necessário:**
+   - O frontend ainda pode enviar `remove_imagens[]` para feedback visual
+   - Mas o backend não usa mais esse campo para determinar o que remover
+   - A sincronização é baseada apenas em `galeria_paths[]`
+
+2. **Sincronização é determinística:**
+   - O estado final da galeria sempre corresponde exatamente ao array `galeria_paths[]` enviado
+   - Não há ambiguidade ou dependência de múltiplos campos
+
+3. **Arquivos sempre preservados:**
+   - Nenhuma operação de produto apaga arquivos da biblioteca
+   - Apenas vínculos na tabela `produto_imagens` são criados/removidos
+
+---
+
+---
+
+## ✅ CORREÇÃO FINAL - Remoção Imediata (Comportamento WordPress-like) (11 de Dezembro de 2025)
+
+### Problema Identificado
+
+**Comportamento Anterior (INCORRETO):**
+- Ao clicar na lixeira de uma imagem da galeria, apenas o checkbox `remove_imagens[]` era marcado
+- O input hidden `galeria_paths[]` correspondente NÃO era removido
+- Ao salvar, o backend recebia a imagem em `galeria_paths[]` e não a removia
+- Resultado: imagem permanecia na galeria mesmo após salvar
+
+**Exemplo do Problema:**
+- Galeria tem: A, B, C
+- Usuário clica na lixeira de C
+- Frontend marca checkbox `remove_imagens[]` = [C]
+- Frontend mantém `galeria_paths[]` = [A, B, C] (C ainda está presente)
+- Backend recebe `galeria_paths[]` = [A, B, C]
+- Backend compara: banco tem [A, B, C], POST tem [A, B, C]
+- **Resultado:** Nenhuma imagem é removida (ERRADO)
+
+### Correção Implementada
+
+**Arquivo:** `themes/default/admin/products/edit-content.php`
+
+**Nova Lógica (Remoção Imediata - WordPress-like):**
+
+1. **Ao clicar na lixeira de uma imagem existente:**
+   - Buscar o input hidden correspondente em `galeria_paths_container` usando `data-imagem-id`
+   - **Remover o input hidden IMEDIATAMENTE** (não apenas marcar checkbox)
+   - Aplicar feedback visual ("Será removida")
+   - A imagem é desvinculada da galeria imediatamente (comportamento WordPress-like)
+
+2. **Ao clicar no X de uma imagem nova (preview):**
+   - Remover o input hidden e o preview IMEDIATAMENTE
+   - A imagem não será enviada no POST
+
+**Código Implementado:**
+
+```javascript
+// Ao clicar na lixeira de imagem existente
+if (checkbox) {
+    var imagemId = checkbox.value;
+    
+    // Remover input hidden IMEDIATAMENTE
+    var container = document.getElementById('galeria_paths_container');
+    var inputToRemove = container.querySelector('input[data-imagem-id="' + imagemId + '"]');
+    if (inputToRemove) {
+        inputToRemove.remove(); // ✅ Remove IMEDIATAMENTE
+        console.log('[Galeria] ✅ Input removido. Total restante:', remainingInputs);
+    }
+    
+    // Aplicar feedback visual
+    galleryItem.style.opacity = '0.5';
+    galleryItem.style.border = '2px solid #dc3545';
+    // Adicionar indicador "Será removida"
+}
+```
+
+### Comportamento Final
+
+#### ✅ Remover Imagem da Galeria (WordPress-like)
+
+**Cenário:**
+- Produto tem 3 imagens: A, B, C
+- Usuário clica na lixeira de C
+
+**Processo:**
+1. JavaScript encontra input hidden de C em `galeria_paths_container`
+2. **Remove o input hidden IMEDIATAMENTE**
+3. Aplica feedback visual ("Será removida")
+4. Ao salvar, `galeria_paths[]` contém apenas [A, B]
+5. Backend compara: banco tem [A, B, C], POST tem [A, B]
+6. Backend identifica que C não está no POST
+7. Backend remove C da tabela `produto_imagens`
+8. **Resultado:** Galeria tem apenas A e B
+
+**Experiência do Usuário:**
+- ✅ Clicar na lixeira → imagem é desvinculada IMEDIATAMENTE
+- ✅ Visual mostra "Será removida"
+- ✅ Ao salvar → imagem não aparece mais na galeria
+- ✅ Arquivo permanece na biblioteca (pode ser reutilizado)
+
+### Testes de Validação
+
+#### Teste 1: Remover 1 Imagem da Galeria
+1. Produto com 3 imagens na galeria
+2. Clicar na lixeira de 1 imagem
+3. **Verificar console:** Deve mostrar "Input removido. Total restante: 2"
+4. Salvar produto
+5. **Resultado Esperado:**
+   - ✅ Apenas 2 imagens aparecem na galeria do produto
+   - ✅ Todas as 3 imagens continuam na Biblioteca de Mídia
+   - ✅ Logs mostram: "Imagens removidas: 1"
+
+#### Teste 2: Remover Múltiplas Imagens
+1. Produto com 5 imagens na galeria
+2. Clicar na lixeira de 2 imagens diferentes
+3. **Verificar console:** Deve mostrar "Total restante: 3" após cada remoção
+4. Salvar produto
+5. **Resultado Esperado:**
+   - ✅ Apenas 3 imagens aparecem na galeria
+   - ✅ Todas as 5 imagens continuam na Biblioteca de Mídia
+
+#### Teste 3: Remover e Adicionar Novamente
+1. Produto com 3 imagens: A, B, C
+2. Clicar na lixeira de C
+3. Adicionar C novamente via biblioteca
+4. Salvar produto
+5. **Resultado Esperado:**
+   - ✅ Galeria tem A, B, C (C foi readicionada)
+   - ✅ Arquivo C permanece na biblioteca
+
+### Arquivos Modificados
+
+1. **`themes/default/admin/products/edit-content.php`**
+   - Event listener para botão de remoção: agora remove input hidden IMEDIATAMENTE
+   - Função `removeGalleryPreview`: agora remove input hidden IMEDIATAMENTE
+   - Logs detalhados adicionados para debug
+
+### Observações Importantes
+
+1. **Comportamento WordPress-like:**
+   - Imagem é desvinculada IMEDIATAMENTE ao clicar na lixeira
+   - Não precisa salvar para ver o efeito (visual)
+   - Ao salvar, a remoção é confirmada no banco
+
+2. **Sincronização no Backend:**
+   - Backend compara `galeria_paths[]` recebido com banco
+   - Remove imagens que estão no banco mas não no POST
+   - Adiciona imagens que estão no POST mas não no banco
+
+3. **Arquivos sempre preservados:**
+   - Nenhuma operação apaga arquivos da biblioteca
+   - Apenas vínculos são criados/removidos
+
+---
+
 **Última Atualização:** 11 de dezembro de 2025
-**Status:** ✅ Correções implementadas - Arquivos da biblioteca preservados ao remover da galeria/destaque
+**Status:** ✅ Correções implementadas - Remoção imediata (WordPress-like) - Sincronização completa da galeria - Arquivos da biblioteca sempre preservados
 

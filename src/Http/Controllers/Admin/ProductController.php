@@ -1048,64 +1048,68 @@ class ProductController extends Controller
             mkdir($uploadsPath, 0755, true);
         }
 
-        // Remover imagens marcadas
-        if (!empty($_POST['remove_imagens']) && is_array($_POST['remove_imagens'])) {
-            error_log("ProductController::processGallery - Removendo " . count($_POST['remove_imagens']) . " imagens");
-            foreach ($_POST['remove_imagens'] as $imgId) {
-                $imgId = (int)$imgId;
-                error_log("ProductController::processGallery - Tentando remover imagem ID: {$imgId}");
-                
-                // Buscar registro antes de deletar
-                $stmt = $db->prepare("
-                    SELECT tipo, caminho_arquivo FROM produto_imagens 
-                    WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
-                ");
-                $stmt->execute(['id' => $imgId, 'tenant_id' => $tenantId, 'produto_id' => $produtoId]);
-                $img = $stmt->fetch();
-                
-                if ($img) {
-                    if ($img['tipo'] !== 'main') {
-                        // IMPORTANTE: Remover apenas a associação do produto com a imagem (tabela produto_imagens)
-                        // NÃO apagar o arquivo físico da biblioteca de mídia
-                        // O arquivo continua disponível na biblioteca e pode ser reutilizado em outros produtos
-                        $stmt = $db->prepare("
-                            DELETE FROM produto_imagens 
-                            WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
-                        ");
-                        $stmt->execute(['id' => $imgId, 'tenant_id' => $tenantId, 'produto_id' => $produtoId]);
-                        error_log("ProductController::processGallery - ✅ Associação removida (imagem desvinculada do produto): ID {$imgId}, caminho: {$img['caminho_arquivo']}");
-                        error_log("ProductController::processGallery - ℹ️ Arquivo físico preservado na biblioteca de mídia: {$img['caminho_arquivo']}");
-                    } else {
-                        error_log("ProductController::processGallery - Tentativa de remover imagem principal (ID {$imgId}) - ignorado (use remove_featured para remover destaque)");
-                    }
-                } else {
-                    error_log("ProductController::processGallery - Imagem ID {$imgId} não encontrada no banco");
-                }
-            }
-        }
-
-        // Processar caminhos de imagens da biblioteca (prioridade sobre upload)
+        // SINCRONIZAÇÃO COMPLETA DA GALERIA
+        // O array galeria_paths[] representa o estado DEFINITIVO da galeria do produto
+        // Qualquer imagem que não esteja nesse array deve ser removida da galeria (mas não da biblioteca)
+        
         if (isset($_POST['galeria_paths']) && is_array($_POST['galeria_paths'])) {
-            // Log condicional apenas em modo debug
-            $isDebug = defined('APP_DEBUG') && APP_DEBUG;
-            if ($isDebug) {
-                error_log("ProductController::processGallery - INÍCIO - Total de caminhos recebidos no POST: " . count($_POST['galeria_paths']));
-                error_log("ProductController::processGallery - Caminhos recebidos: " . var_export($_POST['galeria_paths'], true));
-            }
+            $galleryPaths = array_map('trim', $_POST['galeria_paths']);
+            $galleryPaths = array_filter($galleryPaths, function($path) {
+                return !empty($path);
+            });
             
-            // Verificar quantas imagens existem no banco ANTES do processamento
+            error_log("ProductController::processGallery - 📋 SINCRONIZAÇÃO DA GALERIA");
+            error_log("ProductController::processGallery -   Total de caminhos recebidos no POST: " . count($galleryPaths));
+            error_log("ProductController::processGallery -   Caminhos: " . var_export($galleryPaths, true));
+            
+            // 1. Buscar imagens atuais da galeria no banco
             $stmt = $db->prepare("
-                SELECT COUNT(*) as total 
+                SELECT id, caminho_arquivo, ordem 
                 FROM produto_imagens 
                 WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+                ORDER BY ordem ASC
             ");
             $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
-            $totalBefore = $stmt->fetch()['total'];
-            if ($isDebug) {
-                error_log("ProductController::processGallery - Total de imagens na galeria ANTES do processamento: {$totalBefore}");
+            $currentImages = $stmt->fetchAll();
+            $totalBefore = count($currentImages);
+            
+            error_log("ProductController::processGallery -   Total de imagens no banco ANTES: {$totalBefore}");
+            
+            // 2. Identificar imagens que devem ser REMOVIDAS (estão no banco mas não estão no POST)
+            $pathsToKeep = array_flip($galleryPaths); // Para busca rápida
+            $imagesToRemove = [];
+            
+            foreach ($currentImages as $currentImg) {
+                $currentPath = $currentImg['caminho_arquivo'];
+                if (!isset($pathsToKeep[$currentPath])) {
+                    $imagesToRemove[] = $currentImg;
+                }
             }
             
-            // Buscar maior ordem atual
+            // 3. Remover imagens que não estão mais na lista (apenas desvincular do produto)
+            if (!empty($imagesToRemove)) {
+                error_log("ProductController::processGallery - 🗑️ Removendo " . count($imagesToRemove) . " imagens que não estão mais na lista");
+                foreach ($imagesToRemove as $imgToRemove) {
+                    // IMPORTANTE: Remover apenas a associação do produto com a imagem (tabela produto_imagens)
+                    // NÃO apagar o arquivo físico da biblioteca de mídia
+                    $stmt = $db->prepare("
+                        DELETE FROM produto_imagens 
+                        WHERE id = :id AND tenant_id = :tenant_id AND produto_id = :produto_id
+                    ");
+                    $stmt->execute([
+                        'id' => $imgToRemove['id'],
+                        'tenant_id' => $tenantId,
+                        'produto_id' => $produtoId
+                    ]);
+                    error_log("ProductController::processGallery - ✅ Associação removida (imagem desvinculada do produto): ID {$imgToRemove['id']}, caminho: {$imgToRemove['caminho_arquivo']}");
+                    error_log("ProductController::processGallery - ℹ️ Arquivo físico preservado na biblioteca de mídia: {$imgToRemove['caminho_arquivo']}");
+                }
+            } else {
+                error_log("ProductController::processGallery - ✅ Nenhuma imagem precisa ser removida");
+            }
+            
+            // 4. Processar caminhos de imagens da biblioteca (adicionar novas ou manter existentes)
+            // Buscar maior ordem atual (após remoções)
             $stmt = $db->prepare("
                 SELECT COALESCE(MAX(ordem), 0) as max_ordem 
                 FROM produto_imagens 
@@ -1114,16 +1118,27 @@ class ProductController extends Controller
             $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
             $result = $stmt->fetch();
             $ordem = ($result['max_ordem'] ?? 0) + 1;
-            if ($isDebug) {
-                error_log("ProductController::processGallery - Próxima ordem a usar: {$ordem}");
+            
+            // Criar mapa de caminhos existentes para busca rápida (após remoções)
+            $existingPaths = [];
+            $stmt = $db->prepare("
+                SELECT caminho_arquivo 
+                FROM produto_imagens 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id AND tipo = 'gallery'
+            ");
+            $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
+            $existingImagesAfterRemoval = $stmt->fetchAll();
+            foreach ($existingImagesAfterRemoval as $existingImg) {
+                $existingPaths[$existingImg['caminho_arquivo']] = true;
             }
 
             $processedCount = 0;
             $skippedCount = 0;
             $errorCount = 0;
+            $isDebug = defined('APP_DEBUG') && APP_DEBUG;
             
-            foreach ($_POST['galeria_paths'] as $index => $imagePath) {
-                $imagePath = trim($imagePath);
+            // Processar cada caminho enviado (manter ordem do array)
+            foreach ($galleryPaths as $index => $imagePath) {
                 
                 // Log sempre (não apenas em debug) para rastrear cada imagem
                 error_log("ProductController::processGallery - [IMAGEM #{$index}] Iniciando processamento: '{$imagePath}'");
@@ -1165,28 +1180,12 @@ class ProductController extends Controller
                     }
                     
                     if (file_exists($filePath)) {
-                        // Verificar se imagem já não está associada a este produto como GALERIA (tipo='gallery')
-                        // IMPORTANTE: Verificar apenas tipo='gallery' para não confundir com imagem principal (tipo='main')
-                        $stmtCheck = $db->prepare("
-                            SELECT id, tipo, caminho_arquivo 
-                            FROM produto_imagens 
-                            WHERE tenant_id = :tenant_id 
-                            AND produto_id = :produto_id 
-                            AND tipo = 'gallery'
-                            AND caminho_arquivo = :caminho
-                            LIMIT 1
-                        ");
-                        $stmtCheck->execute([
-                            'tenant_id' => $tenantId,
-                            'produto_id' => $produtoId,
-                            'caminho' => $imagePath
-                        ]);
-                        $existingRecord = $stmtCheck->fetch();
-                        $exists = $existingRecord !== false;
+                        // Verificar se imagem já está associada a este produto (busca rápida no mapa)
+                        $exists = isset($existingPaths[$imagePath]);
                         
-                        // Log detalhado sobre verificação de existência (sempre, não apenas em debug)
+                        // Log detalhado sobre verificação de existência
                         if ($exists) {
-                            error_log("ProductController::processGallery - 🔍 [IMAGEM #{$index}] Imagem já existe na GALERIA: ID={$existingRecord['id']}, tipo={$existingRecord['tipo']}, caminho={$imagePath}");
+                            error_log("ProductController::processGallery - 🔍 [IMAGEM #{$index}] Imagem já existe na GALERIA, será preservada: {$imagePath}");
                         } else {
                             error_log("ProductController::processGallery - 🔍 [IMAGEM #{$index}] Imagem NÃO existe na galeria, será inserida: {$imagePath}");
                         }
@@ -1225,8 +1224,7 @@ class ProductController extends Controller
                                 $errorCount++;
                             }
                         } else {
-                            // Log sempre para rastrear por que imagens são puladas
-                            error_log("ProductController::processGallery - ⏭️ [IMAGEM #{$index}] JÁ EXISTE no produto (preservada): {$imagePath} (ID existente: {$existingRecord['id']}, tipo: {$existingRecord['tipo']})");
+                            // Imagem já existe, apenas preservar (já foi contabilizada em $skippedCount acima)
                             $skippedCount++;
                         }
                     } else {
@@ -1239,7 +1237,7 @@ class ProductController extends Controller
                 }
             }
             
-            // Verificar quantas imagens existem no banco após processamento
+            // 5. Verificar resultado final da sincronização
             $stmt = $db->prepare("
                 SELECT COUNT(*) as total 
                 FROM produto_imagens 
@@ -1248,25 +1246,25 @@ class ProductController extends Controller
             $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
             $totalAfter = $stmt->fetch()['total'];
             
-            // Log resumo sempre (não apenas em debug)
-            error_log("ProductController::processGallery - 📊 RESUMO FINAL:");
-            error_log("ProductController::processGallery -   Total recebido no POST: " . count($_POST['galeria_paths']));
+            // Log resumo sempre
+            error_log("ProductController::processGallery - 📊 RESUMO FINAL DA SINCRONIZAÇÃO:");
+            error_log("ProductController::processGallery -   Total recebido no POST: " . count($galleryPaths));
             error_log("ProductController::processGallery -   Total ANTES: {$totalBefore}");
+            error_log("ProductController::processGallery -   Imagens removidas: " . count($imagesToRemove));
             error_log("ProductController::processGallery -   Imagens novas inseridas: {$processedCount}");
             error_log("ProductController::processGallery -   Imagens já existentes (preservadas): {$skippedCount}");
             error_log("ProductController::processGallery -   Imagens com erro: {$errorCount}");
             error_log("ProductController::processGallery -   Total APÓS: {$totalAfter}");
             
-            // Logs resumidos (sempre) e detalhados (apenas em debug)
+            // Verificar se sincronização está correta
+            if ($totalAfter == count($galleryPaths)) {
+                error_log("ProductController::processGallery - ✅ SINCRONIZAÇÃO CONCLUÍDA: Total no banco ({$totalAfter}) corresponde ao total enviado (" . count($galleryPaths) . ")");
+            } else {
+                error_log("ProductController::processGallery - ⚠️ ATENÇÃO: Total no banco ({$totalAfter}) difere do total enviado (" . count($galleryPaths) . ")");
+            }
+            
+            // Logs detalhados (apenas em debug)
             if ($isDebug) {
-                error_log("ProductController::processGallery - RESUMO DO PROCESSAMENTO:");
-                error_log("ProductController::processGallery - Total de caminhos recebidos no POST: " . count($_POST['galeria_paths']));
-                error_log("ProductController::processGallery - Total de imagens ANTES: {$totalBefore}");
-                error_log("ProductController::processGallery - Imagens novas processadas: {$processedCount}");
-                error_log("ProductController::processGallery - Imagens já existentes (preservadas): {$skippedCount}");
-                error_log("ProductController::processGallery - Imagens com erro: {$errorCount}");
-                error_log("ProductController::processGallery - Total de imagens na galeria APÓS processamento: {$totalAfter}");
-                
                 // Listar todas as imagens da galeria após processamento
                 $stmt = $db->prepare("
                     SELECT id, caminho_arquivo, ordem 
@@ -1276,26 +1274,14 @@ class ProductController extends Controller
                 ");
                 $stmt->execute(['tenant_id' => $tenantId, 'produto_id' => $produtoId]);
                 $allImages = $stmt->fetchAll();
-                error_log("ProductController::processGallery - Lista completa de imagens na galeria:");
+                error_log("ProductController::processGallery - Lista completa de imagens na galeria após sincronização:");
                 foreach ($allImages as $img) {
                     error_log("ProductController::processGallery -   - ID: {$img['id']}, Ordem: {$img['ordem']}, Caminho: {$img['caminho_arquivo']}");
                 }
             }
-            
-            // Logs importantes sempre (mesmo sem debug)
-            if ($processedCount > 0) {
-                error_log("ProductController::processGallery - ✅ Processadas {$processedCount} imagens novas para produto {$produtoId}");
-            }
-            
-            if ($errorCount > 0) {
-                error_log("ProductController::processGallery - ⚠️ {$errorCount} imagens com erro ao processar");
-            }
-            
-            if ($totalAfter < count($_POST['galeria_paths'])) {
-                error_log("ProductController::processGallery - ⚠️ ATENÇÃO: Total no banco ({$totalAfter}) é menor que total enviado (" . count($_POST['galeria_paths']) . ")");
-            }
         } else {
-            error_log("ProductController::processGallery - Campo galeria_paths não foi enviado no POST ou não é array. POST keys: " . implode(', ', array_keys($_POST)));
+            error_log("ProductController::processGallery - ⚠️ Campo galeria_paths não foi enviado no POST ou não é array. POST keys: " . implode(', ', array_keys($_POST)));
+            error_log("ProductController::processGallery - ℹ️ Se não houver galeria_paths, a galeria não será modificada (mantém estado atual)");
         }
         
         // Processar upload de novas imagens (se não veio da biblioteca)

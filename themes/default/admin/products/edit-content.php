@@ -724,16 +724,22 @@ function setMainFromGallery(imageId) {
             
             // Log para debug: verificar quantos inputs de galeria estão sendo enviados
             var galeriaInputs = document.querySelectorAll('#galeria_paths_container input[name="galeria_paths[]"]');
+            console.log('[Form Submit] 📋 VERIFICAÇÃO ANTES DO SUBMIT:');
             console.log('[Form Submit] Total de inputs de galeria que serão enviados:', galeriaInputs.length);
             var galeriaPaths = [];
             galeriaInputs.forEach(function(input) {
+                var imageId = input.getAttribute('data-imagem-id') || 'nova';
                 galeriaPaths.push(input.value);
+                console.log('[Form Submit]   - Caminho:', input.value, '(ID:', imageId + ')');
             });
             console.log('[Form Submit] Caminhos de galeria:', galeriaPaths);
             
-            // Verificar se há imagens marcadas para remoção
+            // Verificar se há imagens marcadas para remoção (para log, mas não é mais necessário)
             var removeInputs = document.querySelectorAll('input[name="remove_imagens[]"]:checked');
-            console.log('[Form Submit] Imagens marcadas para remoção:', removeInputs.length);
+            console.log('[Form Submit] Imagens marcadas para remoção (checkbox):', removeInputs.length);
+            if (removeInputs.length > 0) {
+                console.log('[Form Submit] ⚠️ ATENÇÃO: Há checkboxes marcados, mas inputs hidden já foram removidos');
+            }
         });
     }
 })();
@@ -998,35 +1004,99 @@ window.removeFeaturedImage = function() {
                 // Encontrar o checkbox dentro do label
                 var checkbox = btnRemove.querySelector('input[type="checkbox"][name="remove_imagens[]"]');
                 if (checkbox) {
-                    // SEMPRE marcar como checked (não alternar) - se clicou, quer remover
-                    checkbox.checked = true;
-                    
                     var imagemId = checkbox.value;
-                    console.log('[Galeria] ✅ Checkbox de remoção MARCADO para imagem ID:', imagemId);
+                    console.log('[Galeria] 🔴 Processando remoção da imagem ID:', imagemId);
                     
                     // Encontrar o item da galeria correspondente
                     var galleryItem = btnRemove.closest('.gallery-item');
-                    if (galleryItem) {
-                        // Marcar para remoção - adicionar estilo visual
-                        galleryItem.style.opacity = '0.5';
-                        galleryItem.style.border = '2px solid #dc3545';
-                        galleryItem.style.transition = 'all 0.3s ease';
+                    if (!galleryItem) {
+                        console.warn('[Galeria] ⚠️ Item da galeria (.gallery-item) não encontrado');
+                        return;
+                    }
+                    
+                    // IMPORTANTE: Remover o input hidden correspondente de galeria_paths[] IMEDIATAMENTE
+                    // Comportamento WordPress-like: imagem é desvinculada imediatamente
+                    var container = document.getElementById('galeria_paths_container');
+                    if (!container) {
+                        console.error('[Galeria] ❌ Container #galeria_paths_container não encontrado');
+                        return;
+                    }
+                    
+                    // Listar todos os inputs antes da remoção (para debug)
+                    var allInputsBefore = container.querySelectorAll('input[name="galeria_paths[]"]');
+                    console.log('[Galeria] 📋 Inputs antes da remoção:', allInputsBefore.length);
+                    allInputsBefore.forEach(function(input, idx) {
+                        var id = input.getAttribute('data-imagem-id') || 'nova';
+                        console.log('[Galeria]   [' + idx + '] ID:', id, 'Caminho:', input.value);
+                    });
+                    
+                    // Buscar o input hidden que tem data-imagem-id correspondente
+                    var inputToRemove = container.querySelector('input[data-imagem-id="' + imagemId + '"]');
+                    if (inputToRemove) {
+                        var imagePath = inputToRemove.value;
+                        console.log('[Galeria] ✅ Input encontrado! Removendo de galeria_paths[] - ID:', imagemId, 'Caminho:', imagePath);
                         
-                        // Adicionar indicador visual "Será removida"
-                        var existingIndicator = galleryItem.querySelector('.removal-indicator');
-                        if (!existingIndicator) {
-                            var indicator = document.createElement('div');
-                            indicator.className = 'removal-indicator';
-                            indicator.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; font-weight: bold; z-index: 100; pointer-events: none;';
-                            indicator.textContent = 'Será removida';
-                            galleryItem.style.position = 'relative';
-                            galleryItem.appendChild(indicator);
+                        // Remover o input hidden
+                        inputToRemove.remove();
+                        
+                        // Verificar se foi removido
+                        var verifyRemoval = container.querySelector('input[data-imagem-id="' + imagemId + '"]');
+                        if (verifyRemoval) {
+                            console.error('[Galeria] ❌ ERRO: Input ainda existe após remoção!');
+                        } else {
+                            console.log('[Galeria] ✅ Input removido com sucesso!');
                         }
                         
-                        console.log('[Galeria] ✅ Item da galeria marcado para remoção visual - ID:', imagemId);
+                        // Atualizar contador
+                        var remainingInputs = container.querySelectorAll('input[name="galeria_paths[]"]').length;
+                        console.log('[Galeria] ✅ Total restante em galeria_paths[]:', remainingInputs);
+                        
+                        // Listar inputs restantes (para debug)
+                        var allInputsAfter = container.querySelectorAll('input[name="galeria_paths[]"]');
+                        console.log('[Galeria] 📋 Inputs após remoção:', allInputsAfter.length);
+                        allInputsAfter.forEach(function(input, idx) {
+                            var id = input.getAttribute('data-imagem-id') || 'nova';
+                            console.log('[Galeria]   [' + idx + '] ID:', id, 'Caminho:', input.value);
+                        });
                     } else {
-                        console.warn('[Galeria] ⚠️ Item da galeria (.gallery-item) não encontrado');
+                        console.error('[Galeria] ❌ Input hidden NÃO encontrado para imagem ID:', imagemId);
+                        console.log('[Galeria] 🔍 Tentando buscar por seletor alternativo...');
+                        
+                        // Tentar buscar todos os inputs e verificar manualmente
+                        var allInputs = container.querySelectorAll('input[name="galeria_paths[]"]');
+                        console.log('[Galeria] Total de inputs encontrados:', allInputs.length);
+                        allInputs.forEach(function(input, idx) {
+                            var id = input.getAttribute('data-imagem-id');
+                            console.log('[Galeria]   Input [' + idx + ']: data-imagem-id =', id, 'value =', input.value);
+                            if (id == imagemId) {
+                                console.log('[Galeria] ✅ ENCONTRADO! Removendo...');
+                                input.remove();
+                            }
+                        });
                     }
+                    
+                    // Marcar checkbox como checked (para compatibilidade, mas não é mais necessário)
+                    checkbox.checked = true;
+                    console.log('[Galeria] ✅ Checkbox de remoção MARCADO para imagem ID:', imagemId);
+                    
+                    // Marcar para remoção visual - adicionar estilo visual
+                    galleryItem.style.opacity = '0.5';
+                    galleryItem.style.border = '2px solid #dc3545';
+                    galleryItem.style.transition = 'all 0.3s ease';
+                    
+                    // Adicionar indicador visual "Será removida"
+                    var existingIndicator = galleryItem.querySelector('.removal-indicator');
+                    if (!existingIndicator) {
+                        var indicator = document.createElement('div');
+                        indicator.className = 'removal-indicator';
+                        indicator.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; font-weight: bold; z-index: 100; pointer-events: none;';
+                        indicator.textContent = 'Será removida';
+                        galleryItem.style.position = 'relative';
+                        galleryItem.appendChild(indicator);
+                    }
+                    
+                    console.log('[Galeria] ✅ Item da galeria marcado para remoção visual - ID:', imagemId);
+                    console.log('[Galeria] ✅ Imagem desvinculada IMEDIATAMENTE da galeria (comportamento WordPress-like)');
                 } else {
                     console.error('[Galeria] ❌ Checkbox não encontrado dentro do botão de remoção. HTML:', btnRemove.innerHTML);
                 }
@@ -1061,45 +1131,47 @@ window.removeFeaturedImage = function() {
         if (input) {
             // Verificar se é imagem existente (tem data-imagem-id) ou nova
             if (input.hasAttribute('data-imagem-id')) {
-                // É imagem existente - marcar checkbox de remoção
+                // É imagem existente - remover input hidden IMEDIATAMENTE (comportamento WordPress-like)
                 var imagemId = input.getAttribute('data-imagem-id');
-                console.log('[Galeria] Imagem existente encontrada, ID:', imagemId);
+                console.log('[Galeria] 🔴 Imagem existente encontrada, removendo IMEDIATAMENTE - ID:', imagemId);
                 
-                // Buscar checkbox de remoção correspondente
+                // Remover o input hidden de galeria_paths[] IMEDIATAMENTE
+                input.remove();
+                console.log('[Galeria] ✅ Input hidden removido de galeria_paths[] - ID:', imagemId);
+                
+                // Marcar checkbox de remoção (para compatibilidade, mas não é mais necessário)
                 var removeCheckbox = document.querySelector('input[name="remove_imagens[]"][value="' + imagemId + '"]');
                 if (removeCheckbox) {
                     removeCheckbox.checked = true;
-                    console.log('[Galeria] Checkbox de remoção marcado para imagem ID:', imagemId);
-                    
-                    // Remover visualmente o preview (opcional - pode manter até salvar)
-                    previewItem.style.opacity = '0.5';
-                    previewItem.style.border = '2px solid #dc3545';
-                    
-                    // Adicionar indicador visual de que será removida
-                    var indicator = document.createElement('div');
-                    indicator.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem; border-radius: 4px; font-size: 0.875rem; z-index: 10;';
-                    indicator.textContent = 'Será removida';
-                    previewItem.appendChild(indicator);
-                } else {
-                    console.warn('[Galeria] Checkbox de remoção não encontrado para imagem ID:', imagemId);
-                    // Criar checkbox se não existir (fallback)
-                    var newCheckbox = document.createElement('input');
-                    newCheckbox.type = 'checkbox';
-                    newCheckbox.name = 'remove_imagens[]';
-                    newCheckbox.value = imagemId;
-                    newCheckbox.checked = true;
-                    newCheckbox.style.display = 'none';
-                    document.querySelector('form[method="POST"]').appendChild(newCheckbox);
-                    console.log('[Galeria] Checkbox de remoção criado dinamicamente');
+                    console.log('[Galeria] ✅ Checkbox de remoção marcado para imagem ID:', imagemId);
                 }
+                
+                // Remover visualmente o preview IMEDIATAMENTE (comportamento WordPress-like)
+                previewItem.style.opacity = '0.5';
+                previewItem.style.border = '2px solid #dc3545';
+                previewItem.style.transition = 'all 0.3s ease';
+                
+                // Adicionar indicador visual de que será removida
+                var existingIndicator = previewItem.querySelector('.removal-indicator');
+                if (!existingIndicator) {
+                    var indicator = document.createElement('div');
+                    indicator.className = 'removal-indicator';
+                    indicator.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem; border-radius: 4px; font-size: 0.875rem; font-weight: bold; z-index: 10; pointer-events: none;';
+                    indicator.textContent = 'Será removida';
+                    previewItem.style.position = 'relative';
+                    previewItem.appendChild(indicator);
+                }
+                
+                console.log('[Galeria] ✅ Imagem desvinculada IMEDIATAMENTE da galeria (comportamento WordPress-like)');
             } else {
-                // É imagem nova - remover input e preview
-                console.log('[Galeria] Imagem nova encontrada, removendo input e preview');
+                // É imagem nova - remover input e preview IMEDIATAMENTE
+                console.log('[Galeria] 🔴 Imagem nova encontrada, removendo input e preview IMEDIATAMENTE');
                 input.remove();
                 previewItem.remove();
+                console.log('[Galeria] ✅ Imagem nova removida completamente');
             }
         } else {
-            console.warn('[Galeria] Input hidden não encontrado para URL:', url);
+            console.warn('[Galeria] ⚠️ Input hidden não encontrado para URL:', url);
             // Remover preview mesmo assim
             previewItem.remove();
         }
