@@ -18,6 +18,9 @@ class ProductController extends Controller
         $q = $_GET['q'] ?? '';
         $status = $_GET['status'] ?? '';
         $somenteComImagem = isset($_GET['somente_com_imagem']) && $_GET['somente_com_imagem'] == '1';
+        $categoriaId = isset($_GET['categoria_id']) && $_GET['categoria_id'] !== '' 
+            ? (int)$_GET['categoria_id'] 
+            : null;
         $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $perPage = 20;
         $offset = ($currentPage - 1) * $perPage;
@@ -25,27 +28,27 @@ class ProductController extends Controller
         // Parâmetros de ordenação
         $sort = $_GET['sort'] ?? '';
         $direction = strtolower($_GET['direction'] ?? 'asc');
-        $orderBy = 'data_criacao DESC'; // Padrão
+        $orderBy = 'produtos.data_criacao DESC'; // Padrão
         
         // Validar e aplicar ordenação por nome
         if ($sort === 'name' && in_array($direction, ['asc', 'desc'])) {
-            $orderBy = 'nome ' . strtoupper($direction);
+            $orderBy = 'produtos.nome ' . strtoupper($direction);
         }
 
-        // Construir query com filtros
-        $where = ['tenant_id = :tenant_id'];
+        // Construir query com filtros (qualificar colunas com nome da tabela para evitar ambiguidade)
+        $where = ['produtos.tenant_id = :tenant_id'];
         $params = [];
 
         if (!empty($q)) {
             // Se for numérico, pode ser ID ou SKU
             if (is_numeric($q)) {
-                $where[] = '(id = :q_id OR nome LIKE :q_nome OR sku LIKE :q_sku)';
+                $where[] = '(produtos.id = :q_id OR produtos.nome LIKE :q_nome OR produtos.sku LIKE :q_sku)';
                 $params['q_id'] = (int)$q;
                 $params['q_nome'] = '%' . $q . '%';
                 $params['q_sku'] = '%' . $q . '%';
             } else {
                 // Buscar apenas por nome ou SKU
-                $where[] = '(nome LIKE :q_nome OR sku LIKE :q_sku)';
+                $where[] = '(produtos.nome LIKE :q_nome OR produtos.sku LIKE :q_sku)';
                 $params['q_nome'] = '%' . $q . '%';
                 $params['q_sku'] = '%' . $q . '%';
             }
@@ -53,45 +56,68 @@ class ProductController extends Controller
 
         // Só filtrar por status se não estiver vazio e não for "todos"
         if (!empty($status) && $status !== 'todos') {
-            $where[] = 'status = :status';
+            $where[] = 'produtos.status = :status';
             $params['status'] = $status;
         }
 
         // Filtro "Somente produtos com imagem"
         if ($somenteComImagem) {
-            $where[] = 'imagem_principal IS NOT NULL AND imagem_principal != \'\'';
+            $where[] = 'produtos.imagem_principal IS NOT NULL AND produtos.imagem_principal != \'\'';
+        }
+
+        // Construir JOIN e filtro de categoria se necessário
+        $joinClause = '';
+        $useDistinct = false;
+        if ($categoriaId !== null) {
+            $joinClause = 'LEFT JOIN produto_categorias pc ON pc.produto_id = produtos.id AND pc.tenant_id = :tenant_id_pc';
+            $where[] = 'pc.categoria_id = :categoria_id';
+            $params['categoria_id'] = $categoriaId;
+            $useDistinct = true;
         }
 
         $whereClause = implode(' AND ', $where);
 
         // Contar total
-        $stmt = $db->prepare("
-            SELECT COUNT(*) as total 
+        $distinctClause = $useDistinct ? 'COUNT(DISTINCT produtos.id)' : 'COUNT(*)';
+        $countSql = "
+            SELECT {$distinctClause} as total 
             FROM produtos 
+            {$joinClause}
             WHERE {$whereClause}
-        ");
+        ";
+        $stmt = $db->prepare($countSql);
         $stmt->bindValue(':tenant_id', $tenantId, \PDO::PARAM_INT);
+        if ($categoriaId !== null) {
+            $stmt->bindValue(':tenant_id_pc', $tenantId, \PDO::PARAM_INT);
+        }
         foreach ($params as $key => $value) {
-            // Se for q_id, usar PARAM_INT, senão PARAM_STR
-            $paramType = ($key === 'q_id') ? \PDO::PARAM_INT : \PDO::PARAM_STR;
+            // Se for q_id ou categoria_id, usar PARAM_INT, senão PARAM_STR
+            $paramType = ($key === 'q_id' || $key === 'categoria_id') ? \PDO::PARAM_INT : \PDO::PARAM_STR;
             $stmt->bindValue(':' . $key, $value, $paramType);
         }
         $stmt->execute();
         $total = $stmt->fetch()['total'];
 
         // Buscar produtos
-        $stmt = $db->prepare("
-            SELECT * FROM produtos 
+        $distinctSelect = $useDistinct ? 'DISTINCT ' : '';
+        $selectSql = "
+            SELECT {$distinctSelect}produtos.* 
+            FROM produtos 
+            {$joinClause}
             WHERE {$whereClause}
             ORDER BY {$orderBy}
             LIMIT :limit OFFSET :offset
-        ");
+        ";
+        $stmt = $db->prepare($selectSql);
         
         // Bind dos parâmetros WHERE
         $stmt->bindValue(':tenant_id', $tenantId, \PDO::PARAM_INT);
+        if ($categoriaId !== null) {
+            $stmt->bindValue(':tenant_id_pc', $tenantId, \PDO::PARAM_INT);
+        }
         foreach ($params as $key => $value) {
-            // Se for q_id, usar PARAM_INT, senão PARAM_STR
-            $paramType = ($key === 'q_id') ? \PDO::PARAM_INT : \PDO::PARAM_STR;
+            // Se for q_id ou categoria_id, usar PARAM_INT, senão PARAM_STR
+            $paramType = ($key === 'q_id' || $key === 'categoria_id') ? \PDO::PARAM_INT : \PDO::PARAM_STR;
             $stmt->bindValue(':' . $key, $value, $paramType);
         }
         
@@ -127,30 +153,42 @@ class ProductController extends Controller
                 $produto['imagem_principal_data'] = $imagem ? $imagem : null;
             }
 
-            // Buscar categorias do produto
-            $stmtCat = $db->prepare("
-                SELECT c.nome 
-                FROM categorias c
-                INNER JOIN produto_categorias pc ON pc.categoria_id = c.id
-                WHERE pc.tenant_id = :tenant_id AND pc.produto_id = :produto_id
-                ORDER BY c.nome ASC
-                LIMIT 5
-            ");
-            $stmtCat->execute([
-                'tenant_id' => $tenantId,
-                'produto_id' => $produto['id']
-            ]);
-            $categorias = $stmtCat->fetchAll();
-            $produto['categorias'] = array_column($categorias, 'nome');
+            // Buscar categorias do produto usando método unificado
+            $categoriasData = $this->getCategoriasDoProduto($produto['id'], $tenantId);
+            $produto['categorias'] = $categoriasData['nomes'];
+            $produto['categoria_ids'] = $categoriasData['ids'];
         }
 
         $totalPages = ceil($total / $perPage);
+
+        // Buscar todas as categorias do tenant para o modal de categorias rápidas
+        $stmt = $db->prepare("
+            SELECT id, nome, slug, categoria_pai_id
+            FROM categorias
+            WHERE tenant_id = :tenant_id
+            ORDER BY nome ASC
+        ");
+        $stmt->execute(['tenant_id' => $tenantId]);
+        $categoriasFlat = $stmt->fetchAll();
+        $todasCategorias = $this->buildCategorySelectOptions($categoriasFlat);
+
+        // Buscar lista simples de categorias para o filtro (flat, sem hierarquia)
+        $stmt = $db->prepare("
+            SELECT id, nome
+            FROM categorias
+            WHERE tenant_id = :tenant_id
+            ORDER BY nome ASC
+        ");
+        $stmt->execute(['tenant_id' => $tenantId]);
+        $categoriasFiltro = $stmt->fetchAll();
 
         $tenant = TenantContext::tenant();
         $this->viewWithLayout('admin/layouts/store', 'admin/products/index-content', [
             'tenant' => $tenant,
             'pageTitle' => 'Produtos',
             'produtos' => $produtos,
+            'todasCategorias' => $todasCategorias,
+            'categoriasFiltro' => $categoriasFiltro,
             'paginacao' => [
                 'total' => $total,
                 'totalPages' => $totalPages,
@@ -162,7 +200,8 @@ class ProductController extends Controller
             'filtros' => [
                 'q' => $q,
                 'status' => $status,
-                'somente_com_imagem' => $somenteComImagem
+                'somente_com_imagem' => $somenteComImagem,
+                'categoria_id' => $categoriaId
             ],
             'ordenacao' => [
                 'sort' => $sort,
@@ -189,15 +228,18 @@ class ProductController extends Controller
         $tenantId = TenantContext::id();
         $db = Database::getConnection();
 
-        // Buscar todas as categorias do tenant
+        // Buscar todas as categorias do tenant com hierarquia
         $stmt = $db->prepare("
-            SELECT id, nome, slug
+            SELECT id, nome, slug, categoria_pai_id
             FROM categorias
             WHERE tenant_id = :tenant_id
             ORDER BY nome ASC
         ");
         $stmt->execute(['tenant_id' => $tenantId]);
-        $categorias = $stmt->fetchAll();
+        $categoriasFlat = $stmt->fetchAll();
+        
+        // Construir lista hierárquica para exibição
+        $categorias = $this->buildCategorySelectOptions($categoriasFlat);
 
         $tenant = TenantContext::tenant();
         
@@ -451,15 +493,18 @@ class ProductController extends Controller
         $categoriasProduto = $stmt->fetchAll();
         $categoriasProdutoIds = array_column($categoriasProduto, 'id');
 
-        // Buscar todas as categorias do tenant para o formulário
+        // Buscar todas as categorias do tenant para o formulário (com hierarquia)
         $stmt = $db->prepare("
-            SELECT id, nome, slug
+            SELECT id, nome, slug, categoria_pai_id
             FROM categorias
             WHERE tenant_id = :tenant_id
             ORDER BY nome ASC
         ");
         $stmt->execute(['tenant_id' => $tenantId]);
-        $todasCategorias = $stmt->fetchAll();
+        $categoriasFlat = $stmt->fetchAll();
+        
+        // Construir lista hierárquica para exibição
+        $todasCategorias = $this->buildCategorySelectOptions($categoriasFlat);
 
         // Buscar tags (somente leitura por enquanto)
         $stmt = $db->prepare("
@@ -1493,6 +1538,525 @@ class ProductController extends Controller
             return '/ecommerce-v1.0/public';
         }
         return '';
+    }
+
+    /**
+     * Constrói árvore hierárquica de categorias
+     */
+    private function buildCategoryTree(array $categorias): array
+    {
+        if (empty($categorias)) {
+            return [];
+        }
+
+        $tree = [];
+        $indexed = [];
+
+        // Indexar todas as categorias
+        foreach ($categorias as $cat) {
+            if (!isset($cat['id'])) {
+                continue; // Pular categorias sem ID
+            }
+            $indexed[$cat['id']] = $cat;
+            $indexed[$cat['id']]['filhos'] = [];
+        }
+
+        // Construir árvore
+        foreach ($indexed as $id => $cat) {
+            $categoriaPaiId = $cat['categoria_pai_id'] ?? null;
+            if ($categoriaPaiId === null) {
+                $tree[] = &$indexed[$id];
+            } else {
+                if (isset($indexed[$categoriaPaiId])) {
+                    $indexed[$categoriaPaiId]['filhos'][] = &$indexed[$id];
+                }
+            }
+        }
+
+        return $tree;
+    }
+
+    /**
+     * Constrói opções hierárquicas para select/checkboxes (com indentação)
+     */
+    private function buildCategorySelectOptions(array $categorias): array
+    {
+        // Se não houver categorias, retornar array vazio
+        if (empty($categorias)) {
+            return [];
+        }
+
+        $tree = $this->buildCategoryTree($categorias);
+        $options = [];
+        
+        $this->flattenTreeForSelect($tree, $options, 0);
+        
+        return $options;
+    }
+
+    /**
+     * Achatamento recursivo da árvore para select/checkboxes
+     */
+    private function flattenTreeForSelect(array $tree, array &$options, int $level): void
+    {
+        if (empty($tree)) {
+            return;
+        }
+
+        foreach ($tree as $cat) {
+            if (!isset($cat['id']) || !isset($cat['nome'])) {
+                continue; // Pular itens inválidos
+            }
+
+            $prefix = str_repeat('-- ', $level);
+            $options[] = [
+                'id' => $cat['id'],
+                'nome' => $prefix . $cat['nome'],
+                'nome_original' => $cat['nome'],
+                'slug' => $cat['slug'] ?? '',
+                'level' => $level,
+                'categoria_pai_id' => $cat['categoria_pai_id'] ?? null
+            ];
+
+            // Processar filhos recursivamente
+            if (!empty($cat['filhos']) && is_array($cat['filhos'])) {
+                $this->flattenTreeForSelect($cat['filhos'], $options, $level + 1);
+            }
+        }
+    }
+
+    /**
+     * Alterna o status do produto (ativo/inativo)
+     */
+    public function toggleStatus(int $id): void
+    {
+        // Iniciar sessão se necessário
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar produto
+        $stmt = $db->prepare("
+            SELECT id, status FROM produtos 
+            WHERE id = :id AND tenant_id = :tenant_id 
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'id' => $id,
+            'tenant_id' => $tenantId
+        ]);
+        $produto = $stmt->fetch();
+
+        if (!$produto) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Produto não encontrado']);
+                exit;
+            }
+            http_response_code(404);
+            $this->view('errors/404', ['message' => 'Produto não encontrado']);
+            return;
+        }
+
+        // Alternar status: publish <-> draft
+        $novoStatus = ($produto['status'] === 'publish') ? 'draft' : 'publish';
+
+        // Atualizar no banco
+        $stmt = $db->prepare("
+            UPDATE produtos 
+            SET status = :status, updated_at = NOW()
+            WHERE id = :id AND tenant_id = :tenant_id
+        ");
+        $stmt->execute([
+            'status' => $novoStatus,
+            'id' => $id,
+            'tenant_id' => $tenantId
+        ]);
+
+        // Preparar resposta
+        $label = \App\Support\LangHelper::productStatusLabel($novoStatus);
+        $badgeClass = $novoStatus === 'publish' ? 'publish' : 'draft';
+        $labelHtml = '<span class="admin-status-badge ' . $badgeClass . '">' . htmlspecialchars($label) . '</span>';
+
+        if ($this->isAjaxRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'novo_status' => $novoStatus,
+                'label_html' => $labelHtml
+            ]);
+            exit;
+        }
+
+        // Se não for AJAX, redirecionar
+        $_SESSION['product_edit_message'] = 'Status do produto atualizado com sucesso!';
+        $_SESSION['product_edit_message_type'] = 'success';
+        header('Location: ' . $this->getBasePath() . '/admin/produtos');
+        exit;
+    }
+
+    /**
+     * Atualiza categorias do produto rapidamente (via modal)
+     */
+    public function updateCategoriesQuick(int $id): void
+    {
+        // Logs sempre ativos (não só para produto 354)
+        error_log("=== updateCategoriesQuick chamado === Produto ID: {$id}");
+        error_log("POST recebido em updateCategoriesQuick: " . var_export($_POST, true));
+        error_log("HTTP_X_REQUESTED_WITH: " . ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? 'N/A'));
+        error_log("HTTP_ACCEPT: " . ($_SERVER['HTTP_ACCEPT'] ?? 'N/A'));
+        error_log("isAjaxRequest(): " . ($this->isAjaxRequest() ? 'SIM' : 'NAO'));
+        
+        // Iniciar sessão se necessário
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        error_log("Tenant ID obtido: {$tenantId}");
+        $db = Database::getConnection();
+
+        // Buscar produto
+        $stmt = $db->prepare("
+            SELECT id FROM produtos 
+            WHERE id = :id AND tenant_id = :tenant_id 
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'id' => $id,
+            'tenant_id' => $tenantId
+        ]);
+        $produto = $stmt->fetch();
+
+        if (!$produto) {
+            error_log("ERRO: Produto ID {$id} não encontrado para tenant {$tenantId}");
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Produto não encontrado']);
+                exit;
+            }
+            http_response_code(404);
+            $this->view('errors/404', ['message' => 'Produto não encontrado']);
+            return;
+        }
+
+        try {
+            $db->beginTransaction();
+            error_log("Transação iniciada para produto {$id}");
+
+            // Receber categorias do POST
+            // Com categorias[]=7, PHP cria $_POST['categorias'] como array automaticamente
+            // Mas mantemos fallback para caso venha como string única
+            $categoriaIds = [];
+            if (!empty($_POST['categorias'])) {
+                if (is_array($_POST['categorias'])) {
+                    $categoriaIds = array_map('intval', $_POST['categorias']);
+                } else {
+                    // Se veio como string única (fallback), converter para array
+                    $categoriaIds = [(int)$_POST['categorias']];
+                }
+            }
+            
+            error_log("Categorias recebidas (brutas): " . json_encode($_POST['categorias'] ?? null));
+            error_log("Tipo recebido: " . gettype($_POST['categorias'] ?? null));
+            error_log("Categorias após normalização: " . json_encode($categoriaIds));
+
+            // Validar que todas as categorias pertencem ao tenant
+            if (!empty($categoriaIds)) {
+                $placeholders = implode(',', array_fill(0, count($categoriaIds), '?'));
+                $stmt = $db->prepare("
+                    SELECT id FROM categorias 
+                    WHERE id IN ({$placeholders}) AND tenant_id = ?
+                ");
+                $stmt->execute(array_merge($categoriaIds, [$tenantId]));
+                $validCategoriaIds = array_column($stmt->fetchAll(), 'id');
+                
+                error_log("Categorias válidas para tenant {$tenantId}: " . json_encode($validCategoriaIds));
+            } else {
+                $validCategoriaIds = [];
+                error_log("Nenhuma categoria recebida no POST ou array vazio");
+            }
+
+            // Remover todas as categorias atuais do produto
+            $stmt = $db->prepare("
+                DELETE FROM produto_categorias 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $id
+            ]);
+            
+            $deletedRows = $stmt->rowCount();
+            error_log("DELETE produto_categorias executado para produto {$id}, tenant {$tenantId}. Linhas removidas: {$deletedRows}");
+
+            // Inserir novas categorias
+            $insertedCount = 0;
+            if (!empty($validCategoriaIds)) {
+                $stmt = $db->prepare("
+                    INSERT INTO produto_categorias (tenant_id, produto_id, categoria_id, created_at)
+                    VALUES (?, ?, ?, NOW())
+                ");
+                
+                foreach ($validCategoriaIds as $categoriaId) {
+                    $result = $stmt->execute([$tenantId, $id, $categoriaId]);
+                    if ($result) {
+                        $insertedCount++;
+                        error_log("INSERT produto_categorias OK - Produto {$id}, Categoria {$categoriaId}, Tenant {$tenantId}");
+                    } else {
+                        error_log("ERRO INSERT produto_categorias - Produto {$id}, Categoria {$categoriaId}, Tenant {$tenantId}");
+                    }
+                }
+            }
+            
+            error_log("Total de categorias inseridas para produto {$id}: {$insertedCount}");
+            
+            // Se houver categorias válidas mas nenhuma foi inserida, lançar exception
+            if (!empty($validCategoriaIds) && $insertedCount === 0) {
+                throw new \RuntimeException("Nenhuma categoria foi inserida para o produto {$id}, mesmo havendo categorias válidas.");
+            }
+            
+            // Verificar vínculos DEPOIS de inserir (para debug)
+            $stmtAfter = $db->prepare("
+                SELECT * FROM produto_categorias 
+                WHERE produto_id = :produto_id AND tenant_id = :tenant_id
+            ");
+            $stmtAfter->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
+            $vinculosDepois = $stmtAfter->fetchAll();
+            error_log("Vínculos DEPOIS do INSERT: " . count($vinculosDepois));
+            foreach ($vinculosDepois as $v) {
+                error_log("  - produto_id: {$v['produto_id']}, tenant_id: {$v['tenant_id']}, categoria_id: {$v['categoria_id']}");
+            }
+
+            $db->commit();
+            error_log("Transação commitada com sucesso para produto {$id}");
+
+            // Buscar categorias atualizadas usando método unificado (garante consistência com a listagem)
+            // Isso garante que o que retornamos é exatamente o que está no banco depois do INSERT
+            $categoriasData = $this->getCategoriasDoProduto($id, $tenantId);
+            error_log("Categorias buscadas após INSERT - IDs: " . json_encode($categoriasData['ids']) . ", Nomes: " . json_encode($categoriasData['nomes']));
+
+            if ($this->isAjaxRequest()) {
+                error_log("Retornando resposta JSON para requisição AJAX");
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'categorias_labels_html' => $categoriasData['labels_html'],
+                    'categoria_ids' => $categoriasData['ids'],
+                    'categorias_nomes' => $categoriasData['nomes']
+                ]);
+                exit;
+            }
+            
+            error_log("Retornando redirecionamento (não é AJAX)");
+
+            $_SESSION['product_edit_message'] = 'Categorias atualizadas com sucesso!';
+            $_SESSION['product_edit_message_type'] = 'success';
+            header('Location: ' . $this->getBasePath() . '/admin/produtos');
+            exit;
+        } catch (\Exception $e) {
+            $db->rollBack();
+            error_log("ERRO em updateCategoriesQuick - Produto {$id}: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Erro ao atualizar categorias: ' . $e->getMessage()
+                ]);
+                exit;
+            }
+
+            $_SESSION['product_edit_message'] = 'Erro ao atualizar categorias: ' . $e->getMessage();
+            $_SESSION['product_edit_message_type'] = 'error';
+            header('Location: ' . $this->getBasePath() . '/admin/produtos');
+            exit;
+        }
+    }
+
+    /**
+     * Exclui um produto
+     */
+    public function destroy(int $id): void
+    {
+        // Iniciar sessão se necessário
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        try {
+            $db->beginTransaction();
+
+            // Buscar produto
+            $stmt = $db->prepare("
+                SELECT id, nome FROM produtos 
+                WHERE id = :id AND tenant_id = :tenant_id 
+                LIMIT 1
+            ");
+            $stmt->execute([
+                'id' => $id,
+                'tenant_id' => $tenantId
+            ]);
+            $produto = $stmt->fetch();
+
+            if (!$produto) {
+                throw new \Exception('Produto não encontrado');
+            }
+
+            // Remover vínculos em produto_categorias
+            $stmt = $db->prepare("
+                DELETE FROM produto_categorias 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $id
+            ]);
+
+            // Remover imagens (apenas vínculos, não arquivos físicos)
+            $stmt = $db->prepare("
+                DELETE FROM produto_imagens 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $id
+            ]);
+
+            // Remover vídeos
+            $stmt = $db->prepare("
+                DELETE FROM produto_videos 
+                WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+            ");
+            $stmt->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $id
+            ]);
+
+            // Remover tags (se houver tabela produto_tags)
+            // Nota: Verificar se existe antes de executar
+            try {
+                $stmt = $db->prepare("
+                    DELETE FROM produto_tags 
+                    WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+                ");
+                $stmt->execute([
+                    'tenant_id' => $tenantId,
+                    'produto_id' => $id
+                ]);
+            } catch (\Exception $e) {
+                // Tabela pode não existir, ignorar
+            }
+
+            // Remover o produto
+            $stmt = $db->prepare("
+                DELETE FROM produtos 
+                WHERE id = :id AND tenant_id = :tenant_id
+            ");
+            $stmt->execute([
+                'id' => $id,
+                'tenant_id' => $tenantId
+            ]);
+
+            $db->commit();
+
+            $_SESSION['product_edit_message'] = 'Produto excluído com sucesso!';
+            $_SESSION['product_edit_message_type'] = 'success';
+        } catch (\Exception $e) {
+            $db->rollBack();
+            $_SESSION['product_edit_message'] = 'Erro ao excluir produto: ' . $e->getMessage();
+            $_SESSION['product_edit_message_type'] = 'error';
+        }
+
+        header('Location: ' . $this->getBasePath() . '/admin/produtos');
+        exit;
+    }
+
+    /**
+     * Retorna as categorias de um produto (ids, nomes e HTML dos badges)
+     * Método unificado usado tanto na listagem quanto no retorno JSON
+     * 
+     * @param int $produtoId ID do produto
+     * @param int $tenantId ID do tenant
+     * @return array ['ids' => [], 'nomes' => [], 'labels_html' => '']
+     */
+    private function getCategoriasDoProduto(int $produtoId, int $tenantId): array
+    {
+        $db = Database::getConnection();
+        
+        // Query unificada: começa de produto_categorias e faz JOIN com categorias
+        $stmt = $db->prepare("
+            SELECT c.id, c.nome
+            FROM produto_categorias pc
+            JOIN categorias c
+              ON c.id = pc.categoria_id
+             AND c.tenant_id = pc.tenant_id
+            WHERE pc.produto_id = ?
+              AND pc.tenant_id = ?
+            ORDER BY c.nome ASC
+            LIMIT 5
+        ");
+        $stmt->execute([$produtoId, $tenantId]);
+        $categorias = $stmt->fetchAll();
+        
+        $ids = array_column($categorias, 'id');
+        $nomes = array_column($categorias, 'nome');
+        
+        // Montar HTML de badges no mesmo padrão da listagem
+        $labelsHtml = '';
+        $maxBadges = 2;
+        
+        if (!empty($nomes)) {
+            $total = count($nomes);
+            $mostradas = array_slice($nomes, 0, $maxBadges);
+            
+            $labelsHtml = '<div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">';
+            foreach ($mostradas as $nome) {
+                $labelsHtml .= '<span style="display: inline-block; padding: 0.25rem 0.5rem; background: #e0e0e0; border-radius: 4px; font-size: 0.75rem; color: #555;">' . htmlspecialchars($nome) . '</span>';
+            }
+            
+            if ($total > $maxBadges) {
+                $restantes = $total - $maxBadges;
+                $labelsHtml .= '<span style="display: inline-block; padding: 0.25rem 0.5rem; background: #f0f0f0; border-radius: 4px; font-size: 0.75rem; color: #999;">+' . $restantes . '</span>';
+            }
+            
+            $labelsHtml .= '</div>';
+        } else {
+            $labelsHtml = '<span style="color: #999; font-style: italic; font-size: 0.875rem;">Sem categorias</span>';
+        }
+        
+        return [
+            'ids' => $ids,
+            'nomes' => $nomes,
+            'labels_html' => $labelsHtml
+        ];
+    }
+
+    /**
+     * Verifica se a requisição é AJAX
+     */
+    private function isAjaxRequest(): bool
+    {
+        $isXmlHttpRequest = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+                            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        
+        $isJsonAccept = !empty($_SERVER['HTTP_ACCEPT']) && 
+                        strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false;
+        
+        return $isXmlHttpRequest || $isJsonAccept;
     }
 }
 
