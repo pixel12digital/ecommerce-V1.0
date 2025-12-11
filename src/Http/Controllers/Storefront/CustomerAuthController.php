@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Tenant\TenantContext;
 use App\Services\ThemeConfig;
+use App\Services\CartService;
 
 class CustomerAuthController extends Controller
 {
@@ -28,6 +29,10 @@ class CustomerAuthController extends Controller
         $theme = ThemeConfig::getFullThemeConfig();
         $tenant = TenantContext::tenant();
         
+        // Dados do carrinho para o header
+        $cartTotalItems = CartService::getTotalItems();
+        $cartSubtotal = CartService::getSubtotal();
+        
         $this->view('storefront/customers/login', [
             'loja' => [
                 'nome' => $tenant->name,
@@ -37,6 +42,8 @@ class CustomerAuthController extends Controller
             'message' => $message,
             'messageType' => $messageType,
             'redirectUrl' => $_SESSION['customer_auth_redirect'] ?? '/minha-conta',
+            'cartTotalItems' => $cartTotalItems,
+            'cartSubtotal' => $cartSubtotal,
         ]);
     }
 
@@ -62,9 +69,22 @@ class CustomerAuthController extends Controller
         }
 
         if (!empty($errors)) {
+            // Carregar variáveis necessárias para o layout base
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
+            $cartTotalItems = CartService::getTotalItems();
+            $cartSubtotal = CartService::getSubtotal();
+            
             $this->view('storefront/customers/login', [
+                'loja' => [
+                    'nome' => $tenant->name,
+                    'slug' => $tenant->slug
+                ],
+                'theme' => $theme,
                 'errors' => $errors,
                 'email' => $email,
+                'cartTotalItems' => $cartTotalItems,
+                'cartSubtotal' => $cartSubtotal,
             ]);
             return;
         }
@@ -83,18 +103,44 @@ class CustomerAuthController extends Controller
         $customer = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$customer || empty($customer['password_hash'])) {
+            // Carregar variáveis necessárias para o layout base
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
+            $cartTotalItems = CartService::getTotalItems();
+            $cartSubtotal = CartService::getSubtotal();
+            
             $this->view('storefront/customers/login', [
+                'loja' => [
+                    'nome' => $tenant->name,
+                    'slug' => $tenant->slug
+                ],
+                'theme' => $theme,
                 'errors' => ['E-mail ou senha incorretos'],
                 'email' => $email,
+                'cartTotalItems' => $cartTotalItems,
+                'cartSubtotal' => $cartSubtotal,
             ]);
             return;
         }
 
         // Verificar senha
         if (!password_verify($password, $customer['password_hash'])) {
+            // Carregar variáveis necessárias para o layout base
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
+            $cartTotalItems = CartService::getTotalItems();
+            $cartSubtotal = CartService::getSubtotal();
+            
             $this->view('storefront/customers/login', [
+                'loja' => [
+                    'nome' => $tenant->name,
+                    'slug' => $tenant->slug
+                ],
+                'theme' => $theme,
                 'errors' => ['E-mail ou senha incorretos'],
                 'email' => $email,
+                'cartTotalItems' => $cartTotalItems,
+                'cartSubtotal' => $cartSubtotal,
             ]);
             return;
         }
@@ -124,9 +170,22 @@ class CustomerAuthController extends Controller
             return;
         }
 
+        // Carregar variáveis necessárias para o layout base
+        $theme = ThemeConfig::getFullThemeConfig();
+        $tenant = TenantContext::tenant();
+        $cartTotalItems = CartService::getTotalItems();
+        $cartSubtotal = CartService::getSubtotal();
+
         $this->view('storefront/customers/register', [
+            'loja' => [
+                'nome' => $tenant->name,
+                'slug' => $tenant->slug
+            ],
+            'theme' => $theme,
             'errors' => [],
             'formData' => [],
+            'cartTotalItems' => $cartTotalItems,
+            'cartSubtotal' => $cartSubtotal,
         ]);
     }
 
@@ -168,7 +227,18 @@ class CustomerAuthController extends Controller
         }
 
         if (!empty($errors)) {
+            // Carregar variáveis necessárias para o layout base
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
+            $cartTotalItems = CartService::getTotalItems();
+            $cartSubtotal = CartService::getSubtotal();
+            
             $this->view('storefront/customers/register', [
+                'loja' => [
+                    'nome' => $tenant->name,
+                    'slug' => $tenant->slug
+                ],
+                'theme' => $theme,
                 'errors' => $errors,
                 'formData' => [
                     'name' => $name,
@@ -176,6 +246,8 @@ class CustomerAuthController extends Controller
                     'phone' => $phone,
                     'document' => $document,
                 ],
+                'cartTotalItems' => $cartTotalItems,
+                'cartSubtotal' => $cartSubtotal,
             ]);
             return;
         }
@@ -193,7 +265,18 @@ class CustomerAuthController extends Controller
         ]);
 
         if ($stmt->fetch()) {
+            // Carregar variáveis necessárias para o layout base
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
+            $cartTotalItems = CartService::getTotalItems();
+            $cartSubtotal = CartService::getSubtotal();
+            
             $this->view('storefront/customers/register', [
+                'loja' => [
+                    'nome' => $tenant->name,
+                    'slug' => $tenant->slug
+                ],
+                'theme' => $theme,
                 'errors' => ['Este e-mail já está cadastrado'],
                 'formData' => [
                     'name' => $name,
@@ -201,6 +284,8 @@ class CustomerAuthController extends Controller
                     'phone' => $phone,
                     'document' => $document,
                 ],
+                'cartTotalItems' => $cartTotalItems,
+                'cartSubtotal' => $cartSubtotal,
             ]);
             return;
         }

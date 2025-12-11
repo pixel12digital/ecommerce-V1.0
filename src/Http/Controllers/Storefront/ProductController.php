@@ -181,22 +181,43 @@ class ProductController extends Controller
         $stmt->execute(['tenant_id' => $tenantId]);
         $categoriasFiltro = $stmt->fetchAll();
 
-        // Carregar tema para breadcrumb e header
-        $theme = [
-            'color_primary' => ThemeConfig::getColor('theme_color_primary', '#2E7D32'),
-            'color_secondary' => ThemeConfig::getColor('theme_color_secondary', '#F7931E'),
-            'color_topbar_bg' => ThemeConfig::getColor('theme_color_topbar_bg', '#1a1a1a'),
-            'color_topbar_text' => ThemeConfig::getColor('theme_color_topbar_text', '#ffffff'),
-            'color_header_bg' => ThemeConfig::getColor('theme_color_header_bg', '#ffffff'),
-            'color_header_text' => ThemeConfig::getColor('theme_color_header_text', '#333333'),
-            'logo_url' => ThemeConfig::get('logo_url', ''),
-        ];
+        // Carregar tema completo para breadcrumb e header
+        $theme = ThemeConfig::getFullThemeConfig();
+        
+        // Garantir propriedades básicas se não existirem
+        if (empty($theme['color_primary'])) {
+            $theme['color_primary'] = ThemeConfig::getColor('theme_color_primary', '#2E7D32');
+        }
+        if (empty($theme['color_secondary'])) {
+            $theme['color_secondary'] = ThemeConfig::getColor('theme_color_secondary', '#F7931E');
+        }
+        if (empty($theme['color_topbar_bg'])) {
+            $theme['color_topbar_bg'] = ThemeConfig::getColor('theme_color_topbar_bg', '#1a1a1a');
+        }
+        if (empty($theme['color_topbar_text'])) {
+            $theme['color_topbar_text'] = ThemeConfig::getColor('theme_color_topbar_text', '#ffffff');
+        }
+        if (empty($theme['color_header_bg'])) {
+            $theme['color_header_bg'] = ThemeConfig::getColor('theme_color_header_bg', '#ffffff');
+        }
+        if (empty($theme['color_header_text'])) {
+            $theme['color_header_text'] = ThemeConfig::getColor('theme_color_header_text', '#333333');
+        }
+        if (empty($theme['logo_url'])) {
+            $theme['logo_url'] = ThemeConfig::get('logo_url', '');
+        }
+        if (empty($theme['menu_main'])) {
+            $theme['menu_main'] = ThemeConfig::getMainMenu();
+        }
 
         $totalPages = ceil($total / $perPage);
 
         // Dados do carrinho para o header
         $cartTotalItems = CartService::getTotalItems();
         $cartSubtotal = CartService::getSubtotal();
+        
+        // Dados do tenant para o layout base
+        $tenant = TenantContext::tenant();
 
         $this->view('storefront/products/index', [
             'produtos' => $produtos,
@@ -216,6 +237,10 @@ class ProductController extends Controller
                 'hasPrev' => $currentPage > 1,
                 'hasNext' => $currentPage < $totalPages,
                 'perPage' => $perPage
+            ],
+            'loja' => [
+                'nome' => $tenant->name,
+                'slug' => $tenant->slug
             ],
             'theme' => $theme,
             'cartTotalItems' => $cartTotalItems,

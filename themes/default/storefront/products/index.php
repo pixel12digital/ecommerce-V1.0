@@ -17,10 +17,19 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 }
 
 // Carregar dados necessários para o layout base
-$tenant = \App\Tenant\TenantContext::tenant();
-$loja = ['nome' => $tenant['nome'] ?? 'Loja'];
+// Se $loja não foi passado pelo controller, carregar do tenant
+if (empty($loja) || empty($loja['nome'])) {
+    $tenant = \App\Tenant\TenantContext::tenant();
+    $loja = [
+        'nome' => is_object($tenant) ? $tenant->name : ($tenant['nome'] ?? 'Loja'),
+        'slug' => is_object($tenant) ? $tenant->slug : ($tenant['slug'] ?? '')
+    ];
+}
 
-// Carregar menu_main se não estiver definido
+// Garantir que $theme existe e tem menu_main
+if (empty($theme)) {
+    $theme = [];
+}
 if (empty($theme['menu_main'])) {
     $theme['menu_main'] = \App\Services\ThemeConfig::getMainMenu();
 }

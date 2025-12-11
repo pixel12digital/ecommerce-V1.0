@@ -64,14 +64,19 @@
                 <a href="<?= $basePath ?>/carrinho" class="header-cart">
                     <div class="cart-icon">
                         <i class="bi bi-cart3 icon store-icon-primary"></i>
-                        <?php if ($cartTotalItems > 0): ?>
-                            <span class="cart-badge"><?= $cartTotalItems ?></span>
+                        <?php 
+                        // Usar valores seguros para evitar warnings
+                        $safeCartTotalItems = isset($cartTotalItems) ? (int) $cartTotalItems : 0;
+                        $safeCartSubtotal = isset($cartSubtotal) ? (float) $cartSubtotal : 0.0;
+                        ?>
+                        <?php if ($safeCartTotalItems > 0): ?>
+                            <span class="cart-badge"><?= $safeCartTotalItems ?></span>
                         <?php endif; ?>
                     </div>
-                    <?php if ($cartTotalItems > 0): ?>
+                    <?php if ($safeCartTotalItems > 0): ?>
                         <div class="cart-info">
-                            <span class="cart-count"><?= $cartTotalItems ?> <?= $cartTotalItems === 1 ? 'item' : 'itens' ?></span>
-                            <span class="cart-total">R$ <?= number_format($cartSubtotal, 2, ',', '.') ?></span>
+                            <span class="cart-count"><?= $safeCartTotalItems ?> <?= $safeCartTotalItems === 1 ? 'item' : 'itens' ?></span>
+                            <span class="cart-total">R$ <?= number_format($safeCartSubtotal, 2, ',', '.') ?></span>
                         </div>
                     <?php endif; ?>
                 </a>
