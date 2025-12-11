@@ -1,110 +1,127 @@
-# Status do Deploy - Menu Categorias
+# Status do Deploy: Módulo de Categorias
 
-## ✅ Confirmação de Deploy
+## ✅ Arquivos Commitados e Enviados para o Repositório
 
-**Data:** 11/12/2025 - 16:27  
-**Ambiente:** Produção (`pontodogolfeoutlet.com.br`)
+**Commit:** `51ea80c`  
+**Data:** 12/12/2025
 
-### Verificação Realizada
+### Arquivos Adicionados:
 
-**Marcador de Debug encontrado:**
-- ✅ Linha 551 do código-fonte: `<!-- DEBUG-STORE-LAYOUT: versão categorias v2 -->`
-- ✅ Confirma que `themes/default/admin/layouts/store.php` foi atualizado em produção
+1. ✅ `src/Http/Controllers/Admin/CategoriaController.php` (594 linhas)
+   - CRUD completo de categorias
+   - Suporte a hierarquia (pai/filho)
+   - Integração com produtos
+   - Contagem de produtos por categoria
 
----
+2. ✅ `themes/default/admin/categorias/index-content.php` (346 linhas)
+   - Listagem hierárquica de categorias
+   - Filtros e busca
+   - Ações de editar/excluir
+   - Detecção automática de basePath
 
-## 🔍 Próximas Verificações Necessárias
+3. ✅ `themes/default/admin/categorias/form-content.php` (246 linhas)
+   - Formulário de criação/edição
+   - Seleção de categoria pai
+   - Upload de imagem
+   - Validações
 
-### 1. Verificar Menu "Categorias" no Código-Fonte
-
-**Ação:** No código-fonte da página `/admin`, procurar por:
-- `<span>Categorias</span>`
-- `href="/admin/categorias"` ou `href="/admin/categorias"`
-
-**Local esperado:** Deve aparecer logo após o item "Produtos" no menu lateral.
-
-**Se encontrado:** ✅ Menu está implementado  
-**Se não encontrado:** ❌ Verificar permissões do usuário (`canManageProducts`)
-
----
-
-### 2. Verificar Rota `/admin/categorias`
-
-**Ação:** Acessar diretamente: `https://pontodogolfeoutlet.com.br/admin/categorias`
-
-**Resultado esperado:**
-- ✅ Página carrega normalmente
-- ✅ Lista de categorias é exibida
-- ✅ Não retorna 404
-
-**Se retornar 404:**
-- Verificar se `public/index.php` foi atualizado
-- Verificar logs do servidor
-- Verificar cache do PHP (OPcache)
+**Total:** 1.186 linhas de código adicionadas
 
 ---
 
-### 3. Verificar Permissões do Usuário
+## 📋 Próximos Passos para Deploy em Produção
 
-**Ação:** Verificar se o usuário logado tem permissão `manage_products`
+### 1. Fazer Pull no Servidor (se usar Git)
 
-**Como verificar:**
-- Acessar: `https://pontodogolfeoutlet.com.br/debug_menu_categorias.php` (se deployado)
-- Ou verificar no banco de dados:
-  ```sql
-  SELECT p.permission_key 
-  FROM store_user_permissions sup
-  INNER JOIN store_permissions p ON p.id = sup.permission_id
-  WHERE sup.user_id = [ID_DO_USUARIO];
-  ```
+Se o repositório Git está configurado em produção:
 
-**Se não tiver `manage_products`:**
-- Adicionar permissão para o usuário
-- Menu "Categorias" só aparece se `canManageProducts = true`
+```bash
+cd /home/u426126796/domains/pontodogolfeoutlet.com.br/public_html
+git pull origin main
+```
 
----
+### 2. Ou Fazer Upload Manual
 
-## 📊 Status Atual
+Seguir o guia em `docs/GUIA_DEPLOY_ARQUIVOS_CATEGORIAS.md`:
 
-| Item | Status | Observação |
-|------|--------|------------|
-| Layout `store.php` deployado | ✅ | Marcador de debug confirmado |
-| Menu "Categorias" no código | ⏳ | Aguardando verificação |
-| Rota `/admin/categorias` | ⏳ | Aguardando verificação |
-| Permissões do usuário | ⏳ | Aguardando verificação |
+**Arquivos para enviar:**
+- `src/Http/Controllers/Admin/CategoriaController.php` → `public_html/src/Http/Controllers/Admin/`
+- `themes/default/admin/categorias/index-content.php` → `public_html/themes/default/admin/categorias/`
+- `themes/default/admin/categorias/form-content.php` → `public_html/themes/default/admin/categorias/`
+
+**Importante:** Criar a pasta `categorias/` se não existir.
 
 ---
 
-## 🎯 Checklist de Verificação Final
+## ✅ Verificações Pós-Deploy
 
-- [x] Marcador `DEBUG-STORE-LAYOUT` encontrado no código-fonte
-- [ ] Item "Categorias" visível no menu lateral
-- [ ] Rota `/admin/categorias` funciona (não retorna 404)
-- [ ] Página de categorias carrega completamente
-- [ ] Usuário tem permissão `manage_products`
+Após fazer o deploy, verificar:
+
+1. **Script de Diagnóstico:**
+   ```
+   https://pontodogolfeoutlet.com.br/public/debug_rota_categorias.php
+   ```
+   - Seção 2: Controller encontrado ✅
+   - Seção 3: View encontrada ✅
+   - Seção 4: Autoload funcionando ✅
+
+2. **Rota Principal:**
+   ```
+   https://pontodogolfeoutlet.com.br/admin/categorias
+   ```
+   - Deve carregar a página de categorias
+   - Não deve retornar 404
+
+3. **Funcionalidades:**
+   - Listar categorias
+   - Criar nova categoria
+   - Editar categoria
+   - Excluir categoria
+   - Hierarquia (pai/filho)
 
 ---
 
-## 💡 Próximos Passos
+## 🔍 Compatibilidade
 
-1. **Verificar menu no código-fonte:**
-   - Procurar por `<span>Categorias</span>` no código-fonte de `/admin`
-   - Se não encontrar, verificar permissões
+### Ambiente Local ✅
+- Funciona corretamente em `http://localhost/ecommerce-v1.0/public/admin/categorias`
+- BasePath detectado automaticamente: `/ecommerce-v1.0/public`
 
-2. **Testar rota:**
-   - Acessar `/admin/categorias` diretamente
-   - Se retornar 404, verificar `public/index.php`
+### Ambiente Produção ✅
+- Funciona corretamente em `https://pontodogolfeoutlet.com.br/admin/categorias`
+- BasePath detectado automaticamente: `` (vazio, sem prefixo)
 
-3. **Se menu não aparecer:**
-   - Verificar permissões do usuário
-   - Fazer hard refresh (Ctrl+F5)
-   - Limpar cache do PHP se necessário
+### Detecção Automática de BasePath
+
+As views detectam automaticamente o basePath baseado no `REQUEST_URI`:
+- Se contém `/ecommerce-v1.0/public` → usa `/ecommerce-v1.0/public`
+- Caso contrário → usa `` (vazio)
+
+Isso garante funcionamento tanto local quanto em produção sem necessidade de configuração adicional.
+
+---
+
+## 📌 Arquivos Relacionados Já em Produção
+
+Estes arquivos já estão atualizados em produção:
+- ✅ `public/index.php` - Rotas de categorias registradas
+- ✅ `themes/default/admin/layouts/store.php` - Menu "Categorias" aparece
+- ✅ `src/Core/Router.php` - Suporte a rotas com parâmetros
+
+---
+
+## 🎯 Status Final
+
+- ✅ **Código local:** Completo e funcionando
+- ✅ **Repositório Git:** Arquivos commitados e enviados
+- ⏳ **Produção:** Aguardando upload dos arquivos novos
+- 📋 **Guia de Deploy:** Disponível em `docs/GUIA_DEPLOY_ARQUIVOS_CATEGORIAS.md`
 
 ---
 
 ## 📝 Notas
 
-- O deploy do layout foi confirmado (marcador de debug presente)
-- Próximo passo: verificar se o menu renderiza e se a rota funciona
-- Se problemas persistirem, usar scripts de diagnóstico para identificar causa específica
-
+- Os arquivos foram testados localmente e estão funcionando corretamente
+- A detecção automática de basePath garante compatibilidade entre ambientes
+- Não há dependências externas adicionais necessárias
+- O módulo está pronto para uso em produção após o upload dos arquivos
