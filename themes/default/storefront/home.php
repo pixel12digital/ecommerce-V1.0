@@ -308,6 +308,7 @@ if (!function_exists('media_url')) {
         .pg-category-pills-viewport {
             flex: 1;
             overflow-x: auto;
+            overflow-y: hidden;
             padding-bottom: 8px;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
@@ -328,7 +329,8 @@ if (!function_exists('media_url')) {
         }
         /* Lista de categorias (scroll horizontal) - centralizado quando couber */
         .pg-category-pills-scroll {
-            display: inline-flex;
+            display: flex;
+            flex-wrap: nowrap;
             align-items: center;
             gap: 16px;
             margin: 0 auto;
@@ -342,7 +344,7 @@ if (!function_exists('media_url')) {
             text-decoration: none;
             color: #ffffff;
             min-width: 80px;
-            flex-shrink: 0;
+            flex: 0 0 auto;
             transition: transform 0.2s;
         }
         .pg-category-pill:hover {
@@ -1152,18 +1154,40 @@ if (!function_exists('media_url')) {
             .newsletter-form button {
                 width: 100%;
             }
+            .pg-category-strip {
+                padding: 16px 0;
+            }
             .pg-category-strip-inner {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
                 gap: 12px;
+                padding: 0 16px;
+                max-width: 100%;
             }
             .pg-category-main-button {
                 width: 100%;
                 justify-content: center;
             }
-            .pg-category-pills-scroll {
+            .pg-category-pills-viewport {
                 width: 100%;
+                max-width: 100%;
+                margin-left: 0;
+                margin-right: 0;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+            .pg-category-pills-scroll {
+                display: flex;
+                flex-wrap: nowrap;
+                width: auto;
+                min-width: 100%;
                 gap: 12px;
+                margin: 0;
+                padding: 0 4px;
+            }
+            .pg-category-pill {
+                flex: 0 0 auto;
             }
             .pg-category-pill-circle {
                 width: 64px;
