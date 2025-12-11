@@ -1065,37 +1065,80 @@ window.removeFeaturedImage = function() {
                         // Tentar buscar todos os inputs e verificar manualmente
                         var allInputs = container.querySelectorAll('input[name="galeria_paths[]"]');
                         console.log('[Galeria] Total de inputs encontrados:', allInputs.length);
+                        var inputRemoved = false;
                         allInputs.forEach(function(input, idx) {
                             var id = input.getAttribute('data-imagem-id');
                             console.log('[Galeria]   Input [' + idx + ']: data-imagem-id =', id, 'value =', input.value);
                             if (id == imagemId) {
                                 console.log('[Galeria] ✅ ENCONTRADO! Removendo...');
                                 input.remove();
+                                inputRemoved = true;
                             }
                         });
+                        
+                        // Se ainda não encontrou o input, buscar pelo caminho da imagem no gallery-item
+                        if (!inputRemoved) {
+                            var galleryImage = galleryItem.querySelector('img');
+                            if (galleryImage && galleryImage.src) {
+                                // Extrair o caminho relativo da URL completa
+                                var imageUrl = galleryImage.src;
+                                var match = imageUrl.match(/\/uploads\/tenants\/\d+\/produtos\/[^"']+/);
+                                if (match) {
+                                    var imagePath = match[0];
+                                    console.log('[Galeria] 🔍 Tentando encontrar input pelo caminho:', imagePath);
+                                    var inputByPath = container.querySelector('input[value="' + imagePath.replace(/"/g, '&quot;') + '"]');
+                                    if (inputByPath) {
+                                        console.log('[Galeria] ✅ Input encontrado pelo caminho! Removendo...');
+                                        inputByPath.remove();
+                                        inputRemoved = true;
+                                    }
+                                }
+                            }
+                        }
                     }
                     
                     // Marcar checkbox como checked (para compatibilidade, mas não é mais necessário)
                     checkbox.checked = true;
                     console.log('[Galeria] ✅ Checkbox de remoção MARCADO para imagem ID:', imagemId);
                     
-                    // Marcar para remoção visual - adicionar estilo visual
-                    galleryItem.style.opacity = '0.5';
-                    galleryItem.style.border = '2px solid #dc3545';
-                    galleryItem.style.transition = 'all 0.3s ease';
+                    // COMPORTAMENTO WORDPRESS-LIKE: Remover o elemento visual IMEDIATAMENTE
+                    // A imagem deve desaparecer da galeria assim que o usuário clica para remover
+                    console.log('[Galeria] 🗑️ Removendo elemento visual da galeria IMEDIATAMENTE - ID:', imagemId);
                     
-                    // Adicionar indicador visual "Será removida"
-                    var existingIndicator = galleryItem.querySelector('.removal-indicator');
-                    if (!existingIndicator) {
-                        var indicator = document.createElement('div');
-                        indicator.className = 'removal-indicator';
-                        indicator.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 53, 69, 0.9); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; font-weight: bold; z-index: 100; pointer-events: none;';
-                        indicator.textContent = 'Será removida';
-                        galleryItem.style.position = 'relative';
-                        galleryItem.appendChild(indicator);
-                    }
+                    // Adicionar animação de fade-out antes de remover
+                    galleryItem.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    galleryItem.style.opacity = '0';
+                    galleryItem.style.transform = 'scale(0.8)';
                     
-                    console.log('[Galeria] ✅ Item da galeria marcado para remoção visual - ID:', imagemId);
+                    // Remover o elemento após a animação
+                    setTimeout(function() {
+                        if (galleryItem && galleryItem.parentNode) {
+                            galleryItem.remove();
+                            console.log('[Galeria] ✅ Elemento visual removido da galeria - ID:', imagemId);
+                            
+                            // Verificar se ainda há imagens na galeria
+                            var galleryContainer = document.querySelector('.product-gallery__list');
+                            if (galleryContainer) {
+                                var remainingItems = galleryContainer.querySelectorAll('.gallery-item').length;
+                                console.log('[Galeria] 📊 Total de imagens restantes na galeria:', remainingItems);
+                                
+                                // Se não houver mais imagens, mostrar mensagem
+                                if (remainingItems === 0) {
+                                    var gallerySection = galleryContainer.closest('.info-section');
+                                    if (gallerySection) {
+                                        var emptyMessage = gallerySection.querySelector('p');
+                                        if (!emptyMessage || emptyMessage.textContent.indexOf('Nenhuma imagem') === -1) {
+                                            var msg = document.createElement('p');
+                                            msg.style.cssText = 'color: #666; margin-bottom: 1rem;';
+                                            msg.textContent = 'Nenhuma imagem na galeria.';
+                                            galleryContainer.appendChild(msg);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }, 300);
+                    
                     console.log('[Galeria] ✅ Imagem desvinculada IMEDIATAMENTE da galeria (comportamento WordPress-like)');
                 } else {
                     console.error('[Galeria] ❌ Checkbox não encontrado dentro do botão de remoção. HTML:', btnRemove.innerHTML);
