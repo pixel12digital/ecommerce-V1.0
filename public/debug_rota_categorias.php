@@ -19,11 +19,27 @@ echo "pre{background:#f5f5f5;padding:10px;border-radius:4px;overflow-x:auto;}";
 echo "</style></head><body>";
 
 echo "<h1>Diagnóstico: Rota /admin/categorias retorna 404</h1>";
+echo "<p><strong>Data/Hora:</strong> " . date('Y-m-d H:i:s') . "</p>";
+echo "<p><strong>REQUEST_URI:</strong> " . htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'N/A') . "</p>";
+echo "<p><strong>SCRIPT_NAME:</strong> " . htmlspecialchars($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "</p>";
+echo "<p><strong>DOCUMENT_ROOT:</strong> " . htmlspecialchars($_SERVER['DOCUMENT_ROOT'] ?? 'N/A') . "</p>";
 echo "<hr>";
 
-// 1. Verificar se o arquivo index.php tem a rota
-echo "<h2>1. Verificar Rota em public/index.php</h2>";
-$indexPath = __DIR__ . '/index.php';
+    // 0. Informações do index.php
+    echo "<h2>0. Informações do index.php</h2>";
+    $indexPath = __DIR__ . '/index.php';
+    if (file_exists($indexPath)) {
+        echo "<p class='success'>✅ Arquivo encontrado: {$indexPath}</p>";
+        echo "<p><strong>Hash MD5:</strong> " . md5_file($indexPath) . "</p>";
+        echo "<p><strong>Última modificação:</strong> " . date('Y-m-d H:i:s', filemtime($indexPath)) . "</p>";
+        echo "<p><strong>Tamanho:</strong> " . filesize($indexPath) . " bytes</p>";
+    } else {
+        echo "<p class='error'>❌ Arquivo não encontrado: {$indexPath}</p>";
+    }
+    echo "<hr>";
+    
+    // 1. Verificar se o arquivo index.php tem a rota
+    echo "<h2>1. Verificar Rota em public/index.php</h2>";
 if (!file_exists($indexPath)) {
     echo "<p class='error'>❌ Arquivo index.php não encontrado: {$indexPath}</p>";
 } else {
@@ -162,8 +178,81 @@ try {
     echo "<p class='error'>❌ Erro ao analisar index.php: " . htmlspecialchars($e->getMessage()) . "</p>";
 }
 
-// 6. Testar se o Router consegue processar a rota
-echo "<h2>6. Testar Router com Rota /admin/categorias</h2>";
+// 6. Simular Router e verificar rotas registradas
+echo "<h2>6. Simular Router e Verificar Rotas Registradas</h2>";
+try {
+    // Inicializar tenant context
+    $config = require __DIR__ . '/../config/app.php';
+    $mode = $config['mode'] ?? 'single';
+    
+    if ($mode === 'single') {
+        $defaultTenantId = $config['default_tenant_id'] ?? 1;
+        \App\Tenant\TenantContext::setFixedTenant($defaultTenantId);
+    } else {
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        \App\Tenant\TenantContext::resolveFromHost($host);
+    }
+    
+    // Criar router e simular registro de rotas
+    $router = new \App\Core\Router();
+    
+    // Tentar registrar rota manualmente
+    try {
+        $router->get('/admin/categorias', 'App\Http\Controllers\Admin\CategoriaController@index', []);
+        echo "<p class='success'>✅ Router consegue registrar a rota manualmente</p>";
+        
+        // Verificar se método getRoutes existe
+        if (method_exists($router, 'getRoutes')) {
+            $rotas = $router->getRoutes();
+            echo "<p class='info'>Total de rotas registradas no teste: " . count($rotas) . "</p>";
+            
+            // Filtrar rotas de categorias
+            $rotasCategorias = array_filter($rotas, function($rota) {
+                return strpos($rota['path'], 'categorias') !== false;
+            });
+            
+            if (!empty($rotasCategorias)) {
+                echo "<h3>Rotas de Categorias no Router:</h3>";
+                echo "<pre>";
+                foreach ($rotasCategorias as $rota) {
+                    echo "Método: {$rota['method']}, Path: {$rota['path']}\n";
+                }
+                echo "</pre>";
+            }
+        }
+    } catch (\Exception $e) {
+        echo "<p class='error'>❌ Erro ao registrar rota: " . htmlspecialchars($e->getMessage()) . "</p>";
+    }
+    
+    echo "<p class='info'>ℹ️ Para testar o dispatch completo, seria necessário autenticação. Mas o Router está funcionando.</p>";
+    
+} catch (\Exception $e) {
+    echo "<p class='error'>❌ Erro ao testar Router: " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+}
+
+// 7. Verificar logs de erro do PHP
+echo "<h2>7. Verificar Logs de Erro (Últimas Entradas)</h2>";
+$logFile = ini_get('error_log');
+if ($logFile && file_exists($logFile)) {
+    echo "<p class='info'>Arquivo de log: {$logFile}</p>";
+    $logContent = file_get_contents($logFile);
+    $logLines = explode("\n", $logContent);
+    $logLines = array_filter($logLines, function($line) {
+        return strpos($line, 'DEBUG') !== false || strpos($line, 'categorias') !== false;
+    });
+    $logLines = array_slice($logLines, -20); // Últimas 20 linhas
+    
+    if (!empty($logLines)) {
+        echo "<h3>Últimas entradas de log relacionadas:</h3>";
+        echo "<pre>" . htmlspecialchars(implode("\n", $logLines)) . "</pre>";
+    } else {
+        echo "<p class='warning'>⚠️ Nenhuma entrada de log DEBUG encontrada. Verifique se error_log está configurado.</p>";
+    }
+} else {
+    echo "<p class='warning'>⚠️ Arquivo de log não encontrado ou não configurado.</p>";
+    echo "<p>Verifique a configuração de error_log no PHP.</p>";
+}
 try {
     // Inicializar tenant context
     $config = require __DIR__ . '/../config/app.php';

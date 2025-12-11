@@ -47,6 +47,7 @@ use App\Http\Controllers\Admin\HomeConfigController;
 use App\Http\Controllers\Admin\HomeCategoriesController;
 use App\Http\Controllers\Admin\HomeSectionsController;
 use App\Http\Controllers\Admin\HomeBannersController;
+use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\MediaLibraryController;
@@ -120,6 +121,11 @@ if (!in_array($uri, $publicRoutes) && strpos($uri, '/admin/platform/login') !== 
 
 $router = new Router();
 
+// DEBUG: Log de requisição
+error_log('[DEBUG INDEX] REQUEST_URI = ' . ($_SERVER['REQUEST_URI'] ?? ''));
+error_log('[DEBUG INDEX] SCRIPT_NAME = ' . ($_SERVER['SCRIPT_NAME'] ?? ''));
+error_log('[DEBUG INDEX] PHP_SELF = ' . ($_SERVER['PHP_SELF'] ?? ''));
+
 // Rotas públicas de autenticação
 $router->get('/admin/platform/login', PlatformAuthController::class . '@showLogin');
 $router->post('/admin/platform/login', PlatformAuthController::class . '@login');
@@ -173,6 +179,45 @@ $router->post('/admin/produtos/{id}', AdminProductController::class . '@update',
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'
 ]);
+$router->post('/admin/produtos/{id}/toggle-status', AdminProductController::class . '@toggleStatus', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/produtos/{id}/atualizar-categorias', AdminProductController::class . '@updateCategoriesQuick', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/produtos/{id}/excluir', AdminProductController::class . '@destroy', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+
+// Rotas Admin - Categorias
+$router->get('/admin/categorias', CategoriaController::class . '@index', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->get('/admin/categorias/criar', CategoriaController::class . '@create', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/categorias/criar', CategoriaController::class . '@store', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->get('/admin/categorias/{id}/editar', CategoriaController::class . '@edit', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/categorias/{id}/editar', CategoriaController::class . '@update', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/categorias/{id}/excluir', CategoriaController::class . '@destroy', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+error_log('[DEBUG INDEX] Todas as rotas de categorias registradas');
 
 // Rotas Admin - Tema
 $router->get('/admin/tema', ThemeController::class . '@edit', [
@@ -452,13 +497,28 @@ $router->get('/minha-conta/perfil', CustomerController::class . '@profile', [Cus
 $router->post('/minha-conta/perfil', CustomerController::class . '@updateProfile', [CustomerAuthMiddleware::class]);
 
 // Executar router
+error_log('[DEBUG INDEX] Antes de dispatch - Method: ' . $method . ', URI: ' . $uri);
+error_log('[DEBUG INDEX] Total de rotas antes do dispatch: ' . (method_exists($router, 'getRoutes') ? count($router->getRoutes()) : 'N/A'));
 try {
     $router->dispatch($method, $uri);
+    error_log('[DEBUG INDEX] Dispatch concluído com sucesso');
 } catch (\Throwable $e) {
     http_response_code(500);
     echo "<h1>Erro Interno</h1>";
-    if (($_ENV['APP_DEBUG'] ?? false) === 'true' || ($_ENV['APP_DEBUG'] ?? false) === true) {
-        echo "<pre>" . htmlspecialchars($e->getMessage()) . "\n" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+    
+    // Detectar ambiente local (localhost ou 127.0.0.1)
+    $isLocal = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1']) 
+               || strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false
+               || ($_ENV['APP_DEBUG'] ?? false) === 'true' 
+               || ($_ENV['APP_DEBUG'] ?? false) === true;
+    
+    if ($isLocal) {
+        echo "<pre style='background: #f5f5f5; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; overflow: auto;'>";
+        echo "<strong>Mensagem:</strong>\n" . htmlspecialchars($e->getMessage()) . "\n\n";
+        echo "<strong>Arquivo:</strong> " . htmlspecialchars($e->getFile()) . "\n";
+        echo "<strong>Linha:</strong> " . $e->getLine() . "\n\n";
+        echo "<strong>Stack Trace:</strong>\n" . htmlspecialchars($e->getTraceAsString());
+        echo "</pre>";
     } else {
         echo "<p>Ocorreu um erro. Entre em contato com o administrador.</p>";
     }

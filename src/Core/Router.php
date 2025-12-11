@@ -25,6 +25,20 @@ class Router
             'handler' => $handler,
             'middlewares' => $middlewares,
         ];
+        
+        // DEBUG: Log de registro de rota (apenas para /admin/categorias)
+        if (strpos($path, '/admin/categorias') !== false) {
+            error_log('[DEBUG ROUTER] Rota registrada: ' . $method . ' ' . $path);
+        }
+    }
+    
+    /**
+     * Método público para debug - retorna rotas registradas
+     * ATENÇÃO: Apenas para debug, remover em produção
+     */
+    public function getRoutes(): array
+    {
+        return $this->routes;
     }
 
     public function dispatch(string $method, string $uri): void
@@ -72,6 +86,27 @@ class Router
                     call_user_func_array($route['handler'], $matches);
                 }
                 return;
+            }
+        }
+
+        // DEBUG: Log de 404
+        error_log('[DEBUG ROUTER] 404 para URI: ' . $uri);
+        error_log('[DEBUG ROUTER] Método: ' . $method);
+        error_log('[DEBUG ROUTER] Total de rotas registradas: ' . count($this->routes));
+        
+        // Listar rotas registradas para debug
+        $rotasDebug = [];
+        foreach ($this->routes as $route) {
+            if ($route['method'] === $method) {
+                $rotasDebug[] = $route['path'];
+            }
+        }
+        error_log('[DEBUG ROUTER] Rotas GET registradas: ' . implode(', ', $rotasDebug));
+        
+        // Verificar se há rota similar
+        foreach ($this->routes as $route) {
+            if ($route['method'] === $method && strpos($route['path'], 'categorias') !== false) {
+                error_log('[DEBUG ROUTER] Rota com "categorias" encontrada: ' . $route['path']);
             }
         }
 
