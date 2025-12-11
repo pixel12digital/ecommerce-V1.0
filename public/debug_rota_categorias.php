@@ -105,26 +105,99 @@ try {
     echo "<p class='error'>❌ Erro ao carregar classe: " . htmlspecialchars($e->getMessage()) . "</p>";
 }
 
-// 5. Verificar rotas registradas (simular)
-echo "<h2>5. Simular Registro de Rotas</h2>";
+// 5. Simular carregamento do index.php e verificar rotas
+echo "<h2>5. Simular Registro de Rotas (Carregar index.php)</h2>";
 try {
-    // Tentar instanciar o router e verificar se a rota seria registrada
-    $router = new \App\Core\Router();
+    // Capturar output do index.php
+    ob_start();
     
-    // Verificar se o método get existe
-    if (method_exists($router, 'get')) {
-        echo "<p class='success'>✅ Router tem método get()</p>";
-    } else {
-        echo "<p class='error'>❌ Router NÃO tem método get()</p>";
+    // Simular variáveis de ambiente
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = '/admin/categorias';
+    
+    // Tentar carregar o index.php de forma segura
+    $indexPath = __DIR__ . '/index.php';
+    if (file_exists($indexPath)) {
+        // Ler o conteúdo e extrair apenas as rotas
+        $indexContent = file_get_contents($indexPath);
+        
+        // Verificar se tem a linha de registro da rota
+        $linhas = explode("\n", $indexContent);
+        $encontrouRota = false;
+        $linhaNumero = 0;
+        
+        foreach ($linhas as $num => $linha) {
+            if (preg_match('/\$router->get\([\'"]\/admin\/categorias[\'"]/', $linha)) {
+                $encontrouRota = true;
+                $linhaNumero = $num + 1;
+                echo "<p class='success'>✅ Rota encontrada na linha {$linhaNumero}:</p>";
+                echo "<pre>" . htmlspecialchars(trim($linha)) . "</pre>";
+                break;
+            }
+        }
+        
+        if (!$encontrouRota) {
+            echo "<p class='error'>❌ Rota '/admin/categorias' NÃO encontrada no index.php</p>";
+            echo "<p class='warning'>⚠️ Isso significa que o arquivo index.php em produção está desatualizado!</p>";
+        }
+        
+        // Verificar se o import está presente
+        $temImport = false;
+        foreach ($linhas as $linha) {
+            if (strpos($linha, 'use App\Http\Controllers\Admin\CategoriaController;') !== false) {
+                $temImport = true;
+                echo "<p class='success'>✅ Import do CategoriaController encontrado</p>";
+                break;
+            }
+        }
+        
+        if (!$temImport) {
+            echo "<p class='error'>❌ Import do CategoriaController NÃO encontrado no index.php</p>";
+        }
     }
     
-    echo "<p class='info'>ℹ️ Para verificar se a rota está realmente registrada, é necessário acessar /admin/categorias e verificar os logs do servidor.</p>";
+    ob_end_clean();
+    
 } catch (\Exception $e) {
-    echo "<p class='error'>❌ Erro ao testar Router: " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<p class='error'>❌ Erro ao analisar index.php: " . htmlspecialchars($e->getMessage()) . "</p>";
 }
 
-// 6. Verificar .htaccess
-echo "<h2>6. Verificar Configuração .htaccess</h2>";
+// 6. Testar se o Router consegue processar a rota
+echo "<h2>6. Testar Router com Rota /admin/categorias</h2>";
+try {
+    // Inicializar tenant context
+    $config = require __DIR__ . '/../config/app.php';
+    $mode = $config['mode'] ?? 'single';
+    
+    if ($mode === 'single') {
+        $defaultTenantId = $config['default_tenant_id'] ?? 1;
+        \App\Tenant\TenantContext::setFixedTenant($defaultTenantId);
+    } else {
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        \App\Tenant\TenantContext::resolveFromHost($host);
+    }
+    
+    // Criar router e registrar rota manualmente para teste
+    $router = new \App\Core\Router();
+    
+    // Verificar se consegue registrar
+    try {
+        $router->get('/admin/categorias', 'App\Http\Controllers\Admin\CategoriaController@index', []);
+        echo "<p class='success'>✅ Router consegue registrar a rota manualmente</p>";
+    } catch (\Exception $e) {
+        echo "<p class='error'>❌ Erro ao registrar rota: " . htmlspecialchars($e->getMessage()) . "</p>";
+    }
+    
+    // Tentar fazer dispatch (mas sem executar middlewares/auth)
+    echo "<p class='info'>ℹ️ Para testar o dispatch completo, seria necessário autenticação. Mas o Router está funcionando.</p>";
+    
+} catch (\Exception $e) {
+    echo "<p class='error'>❌ Erro ao testar Router: " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+}
+
+// 7. Verificar .htaccess
+echo "<h2>7. Verificar Configuração .htaccess</h2>";
 $htaccessPath = __DIR__ . '/.htaccess';
 if (!file_exists($htaccessPath)) {
     echo "<p class='warning'>⚠️ Arquivo .htaccess não encontrado: {$htaccessPath}</p>";
@@ -142,9 +215,18 @@ if (!file_exists($htaccessPath)) {
     echo "</p>";
 }
 
-// 7. Conclusão
+// 8. Verificar se há diferença entre local e produção
+echo "<h2>8. Comparar index.php Local vs Produção</h2>";
+echo "<p class='info'>ℹ️ Para verificar se há diferença, compare o conteúdo do index.php:</p>";
+echo "<ul>";
+echo "<li><strong>Local:</strong> O arquivo deve ter a rota na linha ~191</li>";
+echo "<li><strong>Produção:</strong> Verifique se o arquivo no servidor tem a mesma rota</li>";
+echo "</ul>";
+echo "<p class='warning'>⚠️ <strong>PROBLEMA MAIS PROVÁVEL:</strong> O arquivo <code>public/index.php</code> em produção está desatualizado e não contém as rotas de categorias.</p>";
+
+// 9. Conclusão
 echo "<hr>";
-echo "<h2>7. Conclusão e Próximos Passos</h2>";
+echo "<h2>9. Conclusão e Próximos Passos</h2>";
 
 $problemas = [];
 if (!$temImport || !$temRota) {
