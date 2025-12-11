@@ -80,6 +80,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         
         /* Header */
         .header {
+            position: relative; /* Necessário para posicionar o menu mobile */
             background: <?= htmlspecialchars($theme['color_header_bg']) ?>;
             color: <?= htmlspecialchars($theme['color_header_text']) ?>;
             padding: 1rem 2rem;
@@ -264,9 +265,17 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             padding: 1rem;
             z-index: 1000;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
         }
         .mobile-menu.active {
             display: block;
+        }
+        /* Garantir que o menu mobile não aparece no desktop */
+        @media (min-width: 992px) {
+            .mobile-menu {
+                display: none !important;
+            }
         }
         .mobile-menu ul {
             list-style: none;
@@ -1299,12 +1308,71 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
     <?php include __DIR__ . '/../partials/footer.php'; ?>
     
     <script>
+        /**
+         * Função para abrir/fechar o menu mobile
+         * Centralizada no layout base para funcionar em todas as páginas
+         */
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
-            if (menu) {
-                menu.classList.toggle('active');
+            const button = document.querySelector('.menu-toggle');
+            
+            if (!menu || !button) {
+                console.warn('Menu mobile ou botão não encontrado');
+                return;
+            }
+            
+            const isOpen = menu.classList.toggle('active');
+            
+            // Atualizar aria-expanded para acessibilidade
+            button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            
+            // Opcional: bloquear scroll do body quando o menu está aberto
+            if (isOpen) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
             }
         }
+        
+        // Fechar menu mobile ao clicar em um link (melhor UX)
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) {
+                const menuLinks = mobileMenu.querySelectorAll('a');
+                menuLinks.forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        // Fechar o menu após um pequeno delay para permitir navegação
+                        setTimeout(function() {
+                            const menu = document.getElementById('mobileMenu');
+                            const button = document.querySelector('.menu-toggle');
+                            if (menu && menu.classList.contains('active')) {
+                                menu.classList.remove('active');
+                                if (button) {
+                                    button.setAttribute('aria-expanded', 'false');
+                                }
+                                document.body.style.overflow = '';
+                            }
+                        }, 100);
+                    });
+                });
+            }
+            
+            // Fechar menu ao pressionar ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const menu = document.getElementById('mobileMenu');
+                    const button = document.querySelector('.menu-toggle');
+                    if (menu && menu.classList.contains('active')) {
+                        menu.classList.remove('active');
+                        if (button) {
+                            button.setAttribute('aria-expanded', 'false');
+                        }
+                        document.body.style.overflow = '';
+                        button.focus(); // Retornar foco para o botão
+                    }
+                }
+            });
+        });
         
         // Menu de Categorias
         document.addEventListener('DOMContentLoaded', function () {

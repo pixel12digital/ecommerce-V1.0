@@ -78,7 +78,9 @@
             </div>
             
             <!-- Botão Mobile Menu (oculto no desktop) -->
-            <button class="menu-toggle" onclick="toggleMobileMenu()"><i class="bi bi-list icon"></i></button>
+            <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Abrir menu" aria-expanded="false" type="button">
+                <i class="bi bi-list icon"></i>
+            </button>
         </div>
         
         <!-- Menu Mobile (oculto no desktop) -->
