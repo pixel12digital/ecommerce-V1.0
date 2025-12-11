@@ -6,106 +6,55 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 }
 $errors = $errors ?? [];
 $formData = $formData ?? [];
+
+// Carregar dados necessários para o layout base
+if (empty($loja) || empty($loja['nome'])) {
+    $tenant = \App\Tenant\TenantContext::tenant();
+    $loja = ['nome' => $tenant['nome'] ?? 'Loja'];
+}
+
+// Carregar menu_main se não estiver definido
+if (empty($theme['menu_main'])) {
+    $theme['menu_main'] = \App\Services\ThemeConfig::getMainMenu();
+}
+
+// Carregar configurações adicionais do tema se necessário
+if (empty($theme['topbar_text'])) {
+    $theme['topbar_text'] = \App\Services\ThemeConfig::get('topbar_text', 'Frete grátis acima de R$ 299 | Troca garantida em até 7 dias | Outlet de golfe');
+}
+if (empty($theme['newsletter_title'])) {
+    $theme['newsletter_title'] = \App\Services\ThemeConfig::get('newsletter_title', 'Receba nossas ofertas');
+}
+if (empty($theme['newsletter_subtitle'])) {
+    $theme['newsletter_subtitle'] = \App\Services\ThemeConfig::get('newsletter_subtitle', 'Cadastre-se e receba promoções exclusivas');
+}
+if (empty($theme['footer_phone'])) {
+    $theme['footer_phone'] = \App\Services\ThemeConfig::get('footer_phone', '');
+}
+if (empty($theme['footer_whatsapp'])) {
+    $theme['footer_whatsapp'] = \App\Services\ThemeConfig::get('footer_whatsapp', '');
+}
+if (empty($theme['footer_email'])) {
+    $theme['footer_email'] = \App\Services\ThemeConfig::get('footer_email', '');
+}
+if (empty($theme['footer_address'])) {
+    $theme['footer_address'] = \App\Services\ThemeConfig::get('footer_address', '');
+}
+if (empty($theme['footer_social_instagram'])) {
+    $theme['footer_social_instagram'] = \App\Services\ThemeConfig::get('footer_social_instagram', '');
+}
+if (empty($theme['footer_social_facebook'])) {
+    $theme['footer_social_facebook'] = \App\Services\ThemeConfig::get('footer_social_facebook', '');
+}
+if (empty($theme['footer_social_youtube'])) {
+    $theme['footer_social_youtube'] = \App\Services\ThemeConfig::get('footer_social_youtube', '');
+}
+
+// Capturar conteúdo principal em $content
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro - Minha Conta</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            color: #333;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-        .register-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 500px;
-        }
-        .register-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .register-header h1 {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-        .register-header p {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #333;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #2E7D32;
-        }
-        .btn-primary {
-            width: 100%;
-            padding: 0.75rem;
-            background: #2E7D32;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-primary:hover {
-            background: #1B5E20;
-        }
-        .alert-error {
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ef5350;
-        }
-        .register-footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #eee;
-        }
-        .register-footer a {
-            color: #2E7D32;
-            text-decoration: none;
-        }
-        .register-footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
+
+<div class="auth-page-wrapper">
     <div class="register-container">
         <div class="register-header">
             <h1><i class="bi bi-person-plus"></i> Cadastro</h1>
@@ -160,7 +109,107 @@ $formData = $formData ?? [];
             <p><a href="<?= $basePath ?>">← Voltar para a loja</a></p>
         </div>
     </div>
-</body>
-</html>
+</div>
 
+<?php
+$content = ob_get_clean();
 
+// CSS específico da página de registro
+$additionalStyles = '
+    .auth-page-wrapper {
+        min-height: 60vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+    .register-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 500px;
+    }
+    .register-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .register-header h1 {
+        font-size: 1.5rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    .register-header p {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #333;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--pg-color-primary);
+    }
+    .btn-primary {
+        width: 100%;
+        padding: 0.75rem;
+        background: var(--pg-color-primary);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-primary:hover {
+        background: var(--pg-color-primary);
+        opacity: 0.9;
+    }
+    .alert-error {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        background: #ffebee;
+        color: #c62828;
+        border: 1px solid #ef5350;
+    }
+    .register-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+    .register-footer a {
+        color: var(--pg-color-primary);
+        text-decoration: none;
+    }
+    .register-footer a:hover {
+        text-decoration: underline;
+    }
+';
+
+// Scripts adicionais
+$additionalScripts = '';
+
+// Configurar variáveis para o layout base
+$pageTitle = 'Criar Conta – ' . htmlspecialchars($loja['nome']);
+$showCategoryStrip = false;
+$showNewsletter = false;
+
+// Incluir o layout base
+include __DIR__ . '/../layouts/base.php';
