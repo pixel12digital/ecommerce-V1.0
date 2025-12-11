@@ -178,8 +178,10 @@ try {
     echo "<p class='error'>❌ Erro ao analisar index.php: " . htmlspecialchars($e->getMessage()) . "</p>";
 }
 
-// 6. Simular Router e verificar rotas registradas
+// 6. Simular Router e verificar rotas registradas (carregando index.php completo)
 echo "<h2>6. Simular Router e Verificar Rotas Registradas</h2>";
+echo "<p class='info'>ℹ️ Tentando carregar o Router do index.php e verificar rotas registradas...</p>";
+
 try {
     // Inicializar tenant context
     $config = require __DIR__ . '/../config/app.php';
@@ -193,38 +195,94 @@ try {
         \App\Tenant\TenantContext::resolveFromHost($host);
     }
     
-    // Criar router e simular registro de rotas
+    // Criar router
     $router = new \App\Core\Router();
     
-    // Tentar registrar rota manualmente
+    // Tentar carregar e executar apenas a parte de registro de rotas do index.php
+    // Isso é complexo, então vamos simular manualmente algumas rotas principais
+    echo "<h3>6.1. Teste de Registro Manual</h3>";
     try {
         $router->get('/admin/categorias', 'App\Http\Controllers\Admin\CategoriaController@index', []);
         echo "<p class='success'>✅ Router consegue registrar a rota manualmente</p>";
-        
-        // Verificar se método getRoutes existe
-        if (method_exists($router, 'getRoutes')) {
-            $rotas = $router->getRoutes();
-            echo "<p class='info'>Total de rotas registradas no teste: " . count($rotas) . "</p>";
-            
-            // Filtrar rotas de categorias
-            $rotasCategorias = array_filter($rotas, function($rota) {
-                return strpos($rota['path'], 'categorias') !== false;
-            });
-            
-            if (!empty($rotasCategorias)) {
-                echo "<h3>Rotas de Categorias no Router:</h3>";
-                echo "<pre>";
-                foreach ($rotasCategorias as $rota) {
-                    echo "Método: {$rota['method']}, Path: {$rota['path']}\n";
-                }
-                echo "</pre>";
-            }
-        }
     } catch (\Exception $e) {
         echo "<p class='error'>❌ Erro ao registrar rota: " . htmlspecialchars($e->getMessage()) . "</p>";
     }
     
-    echo "<p class='info'>ℹ️ Para testar o dispatch completo, seria necessário autenticação. Mas o Router está funcionando.</p>";
+    // Verificar se método getRoutes existe
+    echo "<h3>6.2. Listar Rotas Registradas</h3>";
+    if (method_exists($router, 'getRoutes')) {
+        $rotas = $router->getRoutes();
+        echo "<p class='info'>Total de rotas registradas no teste manual: " . count($rotas) . "</p>";
+        
+        // Filtrar rotas de categorias
+        $rotasCategorias = array_filter($rotas, function($rota) {
+            return strpos($rota['path'], 'categorias') !== false;
+        });
+        
+        if (!empty($rotasCategorias)) {
+            echo "<h4>Rotas de Categorias no Router:</h4>";
+            echo "<pre>";
+            foreach ($rotasCategorias as $rota) {
+                echo "Método: {$rota['method']}, Path: {$rota['path']}\n";
+            }
+            echo "</pre>";
+        } else {
+            echo "<p class='warning'>⚠️ Nenhuma rota de categorias encontrada no Router (esperado, pois só registramos uma manualmente)</p>";
+        }
+        
+        // Listar todas as rotas GET para referência
+        $rotasGET = array_filter($rotas, function($rota) {
+            return $rota['method'] === 'GET';
+        });
+        if (count($rotasGET) > 0) {
+            echo "<h4>Exemplo de Rotas GET Registradas (teste manual):</h4>";
+            echo "<pre>";
+            foreach (array_slice($rotasGET, 0, 10) as $rota) {
+                echo "GET {$rota['path']}\n";
+            }
+            if (count($rotasGET) > 10) {
+                echo "... (total: " . count($rotasGET) . " rotas GET)\n";
+            }
+            echo "</pre>";
+        }
+    } else {
+        echo "<p class='warning'>⚠️ Método getRoutes() não disponível no Router</p>";
+    }
+    
+    // Tentar simular dispatch (sem executar middlewares)
+    echo "<h3>6.3. Teste de Matching de Rota</h3>";
+    echo "<p class='info'>ℹ️ Testando se o Router consegue fazer match da URI '/admin/categorias'...</p>";
+    
+    // Criar um router novo para teste de matching
+    $routerTest = new \App\Core\Router();
+    $routerTest->get('/admin/categorias', 'App\Http\Controllers\Admin\CategoriaController@index', []);
+    
+    // Usar reflection para acessar método privado parseUri
+    $reflection = new ReflectionClass($routerTest);
+    $parseUriMethod = $reflection->getMethod('parseUri');
+    $parseUriMethod->setAccessible(true);
+    
+    $uriTest = '/admin/categorias';
+    $uriParsed = $parseUriMethod->invoke($routerTest, $uriTest);
+    echo "<p class='info'>URI original: <code>{$uriTest}</code></p>";
+    echo "<p class='info'>URI após parseUri: <code>{$uriParsed}</code></p>";
+    
+    // Verificar regex pattern
+    $pathToRegexMethod = $reflection->getMethod('pathToRegex');
+    $pathToRegexMethod->setAccessible(true);
+    $pattern = $pathToRegexMethod->invoke($routerTest, '/admin/categorias');
+    echo "<p class='info'>Pattern regex gerado: <code>" . htmlspecialchars($pattern) . "</code></p>";
+    
+    // Testar match
+    $match = preg_match($pattern, $uriParsed);
+    if ($match) {
+        echo "<p class='success'>✅ Pattern faz match com a URI processada!</p>";
+    } else {
+        echo "<p class='error'>❌ Pattern NÃO faz match com a URI processada!</p>";
+        echo "<p class='warning'>⚠️ Isso pode indicar problema no matching do Router</p>";
+    }
+    
+    echo "<p class='info'>ℹ️ <strong>Nota:</strong> O dispatch completo requer autenticação e middlewares. Este teste verifica apenas o matching básico.</p>";
     
 } catch (\Exception $e) {
     echo "<p class='error'>❌ Erro ao testar Router: " . htmlspecialchars($e->getMessage()) . "</p>";
@@ -248,41 +306,12 @@ if ($logFile && file_exists($logFile)) {
         echo "<pre>" . htmlspecialchars(implode("\n", $logLines)) . "</pre>";
     } else {
         echo "<p class='warning'>⚠️ Nenhuma entrada de log DEBUG encontrada. Verifique se error_log está configurado.</p>";
+        echo "<p class='info'>ℹ️ Para ver logs em tempo real, acesse <code>/admin/produtos</code> e <code>/admin/categorias</code> e depois verifique os logs novamente.</p>";
     }
 } else {
     echo "<p class='warning'>⚠️ Arquivo de log não encontrado ou não configurado.</p>";
     echo "<p>Verifique a configuração de error_log no PHP.</p>";
-}
-try {
-    // Inicializar tenant context
-    $config = require __DIR__ . '/../config/app.php';
-    $mode = $config['mode'] ?? 'single';
-    
-    if ($mode === 'single') {
-        $defaultTenantId = $config['default_tenant_id'] ?? 1;
-        \App\Tenant\TenantContext::setFixedTenant($defaultTenantId);
-    } else {
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        \App\Tenant\TenantContext::resolveFromHost($host);
-    }
-    
-    // Criar router e registrar rota manualmente para teste
-    $router = new \App\Core\Router();
-    
-    // Verificar se consegue registrar
-    try {
-        $router->get('/admin/categorias', 'App\Http\Controllers\Admin\CategoriaController@index', []);
-        echo "<p class='success'>✅ Router consegue registrar a rota manualmente</p>";
-    } catch (\Exception $e) {
-        echo "<p class='error'>❌ Erro ao registrar rota: " . htmlspecialchars($e->getMessage()) . "</p>";
-    }
-    
-    // Tentar fazer dispatch (mas sem executar middlewares/auth)
-    echo "<p class='info'>ℹ️ Para testar o dispatch completo, seria necessário autenticação. Mas o Router está funcionando.</p>";
-    
-} catch (\Exception $e) {
-    echo "<p class='error'>❌ Erro ao testar Router: " . htmlspecialchars($e->getMessage()) . "</p>";
-    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+    echo "<p class='info'>ℹ️ No painel Hostinger: Avançado → Logs de erro</p>";
 }
 
 // 7. Verificar .htaccess
@@ -304,48 +333,111 @@ if (!file_exists($htaccessPath)) {
     echo "</p>";
 }
 
-// 8. Verificar se há diferença entre local e produção
-echo "<h2>8. Comparar index.php Local vs Produção</h2>";
-echo "<p class='info'>ℹ️ Para verificar se há diferença, compare o conteúdo do index.php:</p>";
-echo "<ul>";
-echo "<li><strong>Local:</strong> O arquivo deve ter a rota na linha ~191</li>";
-echo "<li><strong>Produção:</strong> Verifique se o arquivo no servidor tem a mesma rota</li>";
-echo "</ul>";
-echo "<p class='warning'>⚠️ <strong>PROBLEMA MAIS PROVÁVEL:</strong> O arquivo <code>public/index.php</code> em produção está desatualizado e não contém as rotas de categorias.</p>";
+// 8. Verificar processamento de URI
+echo "<h2>8. Verificar Processamento de URI</h2>";
+echo "<p class='info'>ℹ️ Simulando o processamento de URI que acontece no index.php...</p>";
 
-// 9. Conclusão
+$uriOriginal = '/admin/categorias';
+$uri = $uriOriginal;
+
+// Simular processamento do index.php
+$uri = parse_url($uri, PHP_URL_PATH);
+$scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
+$scriptDir = rtrim($scriptDir, '/');
+
+if ($scriptDir !== '' && $scriptDir !== '/') {
+    if (strpos($uri, $scriptDir) === 0) {
+        $uri = substr($uri, strlen($scriptDir));
+    }
+}
+
+if (strpos($uri, '/ecommerce-v1.0/public') === 0) {
+    $uri = substr($uri, strlen('/ecommerce-v1.0/public'));
+} elseif (strpos($uri, '/public') === 0 && $uri !== '/public' && $uri !== '/public/') {
+    $uri = substr($uri, strlen('/public'));
+}
+
+$uri = rtrim($uri, '/') ?: '/';
+
+echo "<p><strong>URI Original:</strong> <code>{$uriOriginal}</code></p>";
+echo "<p><strong>SCRIPT_NAME:</strong> <code>" . htmlspecialchars($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "</code></p>";
+echo "<p><strong>scriptDir calculado:</strong> <code>{$scriptDir}</code></p>";
+echo "<p><strong>URI após processamento:</strong> <code>{$uri}</code></p>";
+
+if ($uri === '/admin/categorias') {
+    echo "<p class='success'>✅ URI processada corretamente: <code>{$uri}</code></p>";
+} else {
+    echo "<p class='error'>❌ URI processada incorretamente! Esperado: <code>/admin/categorias</code>, Obtido: <code>{$uri}</code></p>";
+    echo "<p class='warning'>⚠️ <strong>PROBLEMA IDENTIFICADO:</strong> O processamento de URI está modificando incorretamente a rota!</p>";
+}
+
+// 9. Conclusão e Diagnóstico
 echo "<hr>";
-echo "<h2>9. Conclusão e Próximos Passos</h2>";
+echo "<h2>9. Conclusão e Diagnóstico</h2>";
 
 $problemas = [];
+$warnings = [];
+
+// Verificar arquivos
 if (!$temImport || !$temRota) {
     $problemas[] = "Arquivo public/index.php não contém a rota /admin/categorias ou o import do controller";
+} else {
+    echo "<p class='success'>✅ Arquivo <code>public/index.php</code> contém rotas de categorias</p>";
 }
+
 if (!file_exists($controllerPath)) {
     $problemas[] = "Controller CategoriaController não existe";
+} else {
+    echo "<p class='success'>✅ Controller existe e pode ser carregado</p>";
 }
+
 if (!file_exists($viewPath)) {
     $problemas[] = "View admin/categorias/index-content.php não existe";
+} else {
+    echo "<p class='success'>✅ View existe</p>";
+}
+
+// Verificar URI processada
+if (isset($uri) && $uri !== '/admin/categorias') {
+    $warnings[] = "URI processada diferente do esperado: <code>{$uri}</code> (esperado: <code>/admin/categorias</code>)";
 }
 
 if (empty($problemas)) {
-    echo "<p class='success'>✅ Todos os arquivos necessários estão presentes no código.</p>";
-    echo "<p class='warning'><strong>PROBLEMA PROVÁVEL:</strong> O arquivo <code>public/index.php</code> não foi atualizado em produção.</p>";
-    echo "<p><strong>Solução:</strong></p>";
+    echo "<p class='success'>✅ <strong>Todos os arquivos necessários estão presentes.</strong></p>";
+    
+    if (!empty($warnings)) {
+        echo "<p class='warning'><strong>⚠️ AVISOS:</strong></p>";
+        echo "<ul>";
+        foreach ($warnings as $warning) {
+            echo "<li class='warning'>{$warning}</li>";
+        }
+        echo "</ul>";
+    }
+    
+    echo "<h3>Próximos Passos:</h3>";
     echo "<ol>";
-    echo "<li>Fazer deploy do arquivo <code>public/index.php</code> atualizado para produção</li>";
-    echo "<li>Fazer deploy do controller <code>src/Http/Controllers/Admin/CategoriaController.php</code></li>";
-    echo "<li>Fazer deploy da view <code>themes/default/admin/categorias/index-content.php</code></li>";
-    echo "<li>Limpar cache do PHP (OPcache) se houver</li>";
-    echo "<li>Testar novamente acessando <code>/admin/categorias</code></li>";
+    echo "<li><strong>Verificar logs do PHP</strong> ao acessar <code>/admin/categorias</code> em produção</li>";
+    echo "<li><strong>Comparar logs</strong> entre <code>/admin/produtos</code> (funciona) e <code>/admin/categorias</code> (404)</li>";
+    echo "<li><strong>Verificar se a rota está na lista</strong> do log <code>[DEBUG ROUTER] Rotas GET registradas</code></li>";
+    echo "<li>Se a rota estiver na lista mas ainda retornar 404, o problema é no <strong>matching do Router</strong></li>";
+    echo "<li>Se a rota NÃO estiver na lista, verificar se o código de registro está sendo executado</li>";
     echo "</ol>";
 } else {
-    echo "<p class='error'><strong>Problemas identificados:</strong></p>";
+    echo "<p class='error'><strong>❌ Problemas identificados:</strong></p>";
     echo "<ul>";
     foreach ($problemas as $problema) {
         echo "<li class='error'>{$problema}</li>";
     }
     echo "</ul>";
+    
+    if (!empty($warnings)) {
+        echo "<p class='warning'><strong>⚠️ AVISOS:</strong></p>";
+        echo "<ul>";
+        foreach ($warnings as $warning) {
+            echo "<li class='warning'>{$warning}</li>";
+        }
+        echo "</ul>";
+    }
 }
 
 echo "</body></html>";

@@ -76,38 +76,43 @@ error_log('[DEBUG ROUTER] Rotas GET registradas: ' . implode(', ', $rotasDebug))
 
 ## 📋 Passo a Passo de Investigação
 
-### PASSO 1: Verificar Hash do index.php
+### PASSO 1: Verificar Hash do index.php ✅ CONCLUÍDO
 
-**Ação:**
-1. Acessar: `https://pontodogolfeoutlet.com.br/debug_index_hash.php`
-2. Anotar o hash MD5 mostrado
-3. No local, executar:
-   ```bash
-   # Linux/Mac
-   md5sum public/index.php
-   
-   # Windows PowerShell
-   Get-FileHash public/index.php -Algorithm MD5
-   ```
-4. Comparar os hashes
+**Status:** ✅ **CONFIRMADO** - Hash do `index.php` em produção é idêntico ao local
 
-**Resultado:**
-- ✅ **Hashes iguais:** Arquivo está atualizado, problema é outro
-- ❌ **Hashes diferentes:** Arquivo NÃO foi atualizado → Fazer upload manual
+**Resultado da verificação:**
+- **Hash produção:** `58bbcb654ebf6e217c39eff386e4423d`
+- **Hash local:** `58BBCB654EBF6E217C39EFF386E4423D` (idêntico)
+- **Conclusão:** ✅ Arquivo `index.php` está atualizado em produção
+
+**Rotas confirmadas no `index.php` de produção:**
+- ✅ Import do `CategoriaController` encontrado
+- ✅ Todas as 6 rotas de categorias presentes
+
+**⚠️ IMPORTANTE:** A causa raiz anterior (arquivo desatualizado) foi descartada. O problema 404 persiste mesmo com o arquivo correto.
 
 ---
 
-### PASSO 2: Verificar Conteúdo do index.php
+### PASSO 2: Executar Script de Diagnóstico Completo
 
 **Ação:**
-1. Acessar: `https://pontodogolfeoutlet.com.br/debug_rota_categorias.php`
-2. Verificar se mostra:
-   - ✅ Import do `CategoriaController` encontrado
-   - ✅ Rota `/admin/categorias` encontrada
-   - ✅ Trecho das rotas exibido
+1. Acessar: `https://pontodogolfeoutlet.com.br/public/debug_rota_categorias.php`
+2. Verificar todas as seções do relatório gerado
 
-**Se não encontrar:**
-- Arquivo está desatualizado → Fazer upload manual
+**O que o script verifica:**
+- ✅ Hash MD5 do `index.php` (já confirmado como atualizado)
+- ✅ Import do `CategoriaController` no código
+- ✅ Presença das rotas no `index.php`
+- ✅ Existência do Controller e View
+- ✅ Teste de autoload do Controller
+- ✅ Simulação de Router e matching de rotas
+- ✅ Processamento de URI (simulação do que acontece no `index.php`)
+- ✅ Logs de erro do PHP (últimas entradas)
+
+**Seção mais importante:** Seção 6.3 - Teste de Matching de Rota
+- Verifica se o Router consegue fazer match da URI `/admin/categorias`
+- Mostra o pattern regex gerado
+- Indica se há problema no matching
 
 ---
 
@@ -168,11 +173,101 @@ error_log('[DEBUG ROUTER] Rotas GET registradas: ' . implode(', ', $rotasDebug))
 
 Após executar os passos acima, coletar:
 
-1. **Hash MD5 do index.php em produção** (do `debug_index_hash.php`)
-2. **Hash MD5 do index.php local** (comando terminal)
-3. **Saída completa do `debug_rota_categorias.php`**
+1. ✅ **Hash MD5 do index.php em produção** - `58bbcb654ebf6e217c39eff386e4423d` (CONFIRMADO)
+2. ✅ **Hash MD5 do index.php local** - `58BBCB654EBF6E217C39EFF386E4423D` (CONFIRMADO)
+3. **Saída completa do `debug_rota_categorias.php`** (especialmente seções 6.3 e 8)
 4. **Logs do PHP** para `/admin/produtos` e `/admin/categorias`
 5. **Lista de rotas GET registradas** (do log `[DEBUG ROUTER] Rotas GET registradas`)
+
+### O que copiar do `debug_rota_categorias.php`:
+
+**Seção 6.3 - Teste de Matching de Rota:**
+- URI original
+- URI após parseUri
+- Pattern regex gerado
+- Resultado do match (✅ ou ❌)
+
+**Seção 8 - Verificar Processamento de URI:**
+- URI Original
+- SCRIPT_NAME
+- scriptDir calculado
+- URI após processamento
+- Se a URI foi processada corretamente
+
+**Seção 7 - Logs de Erro:**
+- Últimas entradas de log relacionadas (se houver)
+
+---
+
+## 🔍 Como Interpretar a Saída do debug_rota_categorias.php
+
+### Cenário A: Rota encontrada, mas matching falha
+
+**Se o script mostrar:**
+- ✅ "Rota '/admin/categorias' encontrada no index.php"
+- ✅ "Router consegue registrar a rota manualmente"
+- ❌ "Pattern NÃO faz match com a URI processada"
+
+**Causa provável:** Problema na lógica de matching do Router (regex, trailing slash, prefixo, etc.)
+
+**Solução:** Verificar o método `pathToRegex()` do Router e comparar com rotas que funcionam (ex: `/admin/produtos`)
+
+---
+
+### Cenário B: URI processada incorretamente
+
+**Se o script mostrar:**
+- ✅ "Rota encontrada no index.php"
+- ❌ "URI processada incorretamente! Esperado: `/admin/categorias`, Obtido: `[outro valor]`"
+
+**Causa provável:** O processamento de prefixos no `index.php` está removendo/modificando a URI incorretamente
+
+**Solução:** Ajustar a lógica de processamento de URI no `index.php` (linhas 81-100)
+
+---
+
+### Cenário C: Rota não encontrada no index.php
+
+**Se o script mostrar:**
+- ❌ "Rota '/admin/categorias' NÃO encontrada no index.php"
+- ❌ "Import do CategoriaController NÃO encontrado"
+
+**Causa provável:** Arquivo `index.php` em produção está desatualizado (mas isso já foi descartado pelo hash)
+
+**Solução:** Verificar se há cache do PHP (OPcache) ou se o arquivo foi modificado após o deploy
+
+---
+
+### Cenário D: Erro ao carregar Router ou Controller
+
+**Se o script mostrar:**
+- ❌ "Erro ao testar Router: [mensagem de erro]"
+- ❌ "Classe CategoriaController NÃO pode ser carregada via autoload"
+
+**Causa provável:** Problema no autoload do Composer ou arquivos faltando
+
+**Solução:** Verificar se `vendor/autoload.php` está presente e se o controller existe no caminho correto
+
+---
+
+### Cenário E: Tudo OK no script, mas 404 persiste
+
+**Se o script mostrar:**
+- ✅ Todas as verificações passam
+- ✅ Matching funciona
+- ✅ URI processada corretamente
+
+**Mas ainda assim `/admin/categorias` retorna 404:**
+
+**Causa provável:** 
+- Cache do PHP (OPcache) servindo código antigo
+- Requisição não está passando pelo `index.php` (problema no `.htaccess`)
+- Alguma rota anterior está capturando a requisição antes de chegar em `/admin/categorias`
+
+**Solução:** 
+- Limpar OPcache
+- Verificar logs do PHP ao acessar `/admin/categorias` (ver se logs `[DEBUG INDEX]` aparecem)
+- Verificar ordem de registro das rotas no `index.php`
 
 ---
 

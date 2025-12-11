@@ -4,9 +4,10 @@
 
 **Problema Principal:** Menu "Categorias" não aparece em produção e rota `/admin/categorias` retorna 404.
 
-**Status:** 🔴 **NÃO RESOLVIDO** - Aguardando deploy dos arquivos atualizados em produção.
+**Status:** 🟡 **EM INVESTIGAÇÃO** - Arquivo `index.php` confirmado atualizado em produção (hash: `58bbcb654ebf6e217c39eff386e4423d`). Problema persiste, investigando causa raiz.
 
-**Data:** 11/12/2025
+**Data:** 11/12/2025  
+**Atualização:** 12/12/2025 - Hash do `index.php` em produção confirmado como idêntico ao local.
 
 ---
 
@@ -500,24 +501,48 @@ $productsJsPath = admin_asset_path_products('js/products.js');
 
 ---
 
-## 🚨 Status Atual
+## 🚨 Status Atual (Atualizado em 12/12/2025)
 
-- 🔴 **Menu "Categorias":** Não aparece (arquivo `store.php` precisa deploy)
-- 🔴 **Rota `/admin/categorias`:** Retorna 404 (arquivo `index.php` precisa deploy)
-- 🔴 **Scripts de diagnóstico:** Retornam 404 (não foram deployados)
-- ✅ **Código local:** Está correto e completo
-- ⏳ **Aguardando:** Deploy dos arquivos atualizados em produção
+- ✅ **Menu "Categorias":** Aparece no menu lateral (arquivo `store.php` atualizado)
+- 🟡 **Rota `/admin/categorias`:** Retorna 404 (mesmo com `index.php` atualizado)
+- ✅ **Arquivo `index.php`:** Confirmado atualizado em produção (hash: `58bbcb654ebf6e217c39eff386e4423d`)
+- ✅ **Rotas no código:** Confirmadas presentes no `index.php` de produção
+- ✅ **Código local:** Hash idêntico ao de produção
+- 🔍 **Investigando:** Causa raiz do 404 (não é mais arquivo desatualizado)
+
+### Verificação de Hash Realizada
+
+**Data:** 12/12/2025  
+**Script usado:** `public/debug_index_hash.php`  
+**Hash produção:** `58bbcb654ebf6e217c39eff386e4423d`  
+**Hash local:** `58BBCB654EBF6E217C39EFF386E4423D` (idêntico)  
+**Conclusão:** ✅ Arquivo `index.php` está atualizado em produção
+
+**Rotas confirmadas no `index.php` de produção:**
+- ✅ `$router->get('/admin/categorias', ...)`
+- ✅ `$router->get('/admin/categorias/criar', ...)`
+- ✅ `$router->post('/admin/categorias/criar', ...)`
+- ✅ `$router->get('/admin/categorias/{id}/editar', ...)`
+- ✅ `$router->post('/admin/categorias/{id}/editar', ...)`
+- ✅ `$router->post('/admin/categorias/{id}/excluir', ...)`
 
 ---
 
-## 💡 Conclusão
+## 💡 Conclusão Atualizada
 
-Todos os problemas identificados têm a mesma causa raiz: **arquivos não foram deployados em produção**.
+**Causa raiz anterior (arquivo desatualizado) foi descartada.**
 
-O código está correto no repositório, mas o servidor de produção está usando versões antigas dos arquivos que não contêm:
-- Rotas de categorias no `index.php`
-- Item "Categorias" no menu do `store.php` (ou versão antiga)
-- Scripts de diagnóstico
+O arquivo `public/index.php` está atualizado em produção e contém todas as rotas de categorias. O problema 404 persiste, indicando que a causa é outra:
 
-**Ação necessária:** Fazer deploy completo de todos os arquivos modificados/criados para produção.
+**Possíveis causas restantes:**
+1. **Problema no matching do Router** - A rota está registrada mas não faz match com a URI processada
+2. **Processamento incorreto da URI** - O código de processamento de prefixos está modificando a URI incorretamente
+3. **Cache do PHP (OPcache)** - Cache pode estar servindo versão antiga do código
+4. **Problema no `.htaccess`** - Rewrite rules podem estar interferindo
+5. **Ordem de registro de rotas** - Alguma rota anterior pode estar capturando a requisição
+
+**Próximos passos:**
+- Executar `debug_rota_categorias.php` em produção
+- Verificar logs do PHP ao acessar `/admin/categorias`
+- Comparar comportamento entre `/admin/produtos` (funciona) e `/admin/categorias` (404)
 
