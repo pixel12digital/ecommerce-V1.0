@@ -25,7 +25,11 @@
                             <div class="pg-category-pill-circle">
                                 <?php if ($pill['icone_path']): ?>
                                     <img src="<?= media_url($pill['icone_path']) ?>" 
-                                         alt="<?= htmlspecialchars($pill['label'] ?: $pill['categoria_nome']) ?>">
+                                         alt="<?= htmlspecialchars($pill['label'] ?: $pill['categoria_nome']) ?>"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="pg-category-pill-placeholder" style="display: none;">
+                                        <i class="bi bi-image icon"></i>
+                                    </div>
                                 <?php else: ?>
                                     <div class="pg-category-pill-placeholder">
                                         <i class="bi bi-image icon"></i>
@@ -56,14 +60,56 @@
         <div class="pg-category-menu-body">
             <ul class="pg-category-menu-list">
                 <?php if (!empty($allCategories)): ?>
-                    <?php foreach ($allCategories as $cat): ?>
+                    <?php
+                    // Separar categorias pai e filhas
+                    $categoriasPai = [];
+                    $categoriasFilhas = [];
+                    foreach ($allCategories as $cat) {
+                        if (empty($cat['categoria_pai_id'])) {
+                            $categoriasPai[] = $cat;
+                        } else {
+                            $categoriasFilhas[$cat['categoria_pai_id']][] = $cat;
+                        }
+                    }
+                    ?>
+                    <?php foreach ($categoriasPai as $catPai): ?>
+                        <?php
+                        $catPaiId = $catPai['categoria_id'] ?? $catPai['id'] ?? null;
+                        $catPaiSlug = $catPai['categoria_slug'] ?? '';
+                        // Se não tem slug (ex: "Sem Categoria"), usar query string especial
+                        $catPaiUrl = $catPaiSlug ? ($basePath . '/produtos?categoria=' . htmlspecialchars($catPaiSlug)) : ($basePath . '/produtos');
+                        ?>
                         <li>
-                            <a href="<?= $basePath ?>/produtos?categoria=<?= htmlspecialchars($cat['categoria_slug']) ?>" 
+                            <a href="<?= $catPaiUrl ?>" 
                                class="pg-category-menu-link">
-                                <?= htmlspecialchars($cat['label'] ?? $cat['categoria_nome']) ?>
+                                <?= htmlspecialchars($catPai['label'] ?? $catPai['categoria_nome']) ?>
                             </a>
+                            <?php if ($catPaiId && !empty($categoriasFilhas[$catPaiId])): ?>
+                                <ul class="pg-category-menu-sublist">
+                                    <?php foreach ($categoriasFilhas[$catPaiId] as $catFilha): ?>
+                                        <li>
+                                            <a href="<?= $basePath ?>/produtos?categoria=<?= htmlspecialchars($catFilha['categoria_slug']) ?>" 
+                                               class="pg-category-menu-link pg-category-menu-sublink">
+                                                <?= htmlspecialchars($catFilha['label'] ?? $catFilha['categoria_nome']) ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
+                    <?php if (empty($categoriasPai) && !empty($categoriasFilhas)): ?>
+                        <?php foreach ($categoriasFilhas as $filhas): ?>
+                            <?php foreach ($filhas as $catFilha): ?>
+                                <li>
+                                    <a href="<?= $basePath ?>/produtos?categoria=<?= htmlspecialchars($catFilha['categoria_slug']) ?>" 
+                                       class="pg-category-menu-link">
+                                        <?= htmlspecialchars($catFilha['label'] ?? $catFilha['categoria_nome']) ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 <?php else: ?>
                     <li><p style="padding: 8px 10px; color: #666; font-size: 15px;">Nenhuma categoria disponível.</p></li>
                 <?php endif; ?>

@@ -120,8 +120,21 @@ class HomeController extends Controller
         $stmt->execute();
         $categoryPills = $stmt->fetchAll();
 
-        // Buscar todas as categorias para o menu (usando as mesmas pills por enquanto)
-        $allCategories = $categoryPills;
+        // Buscar todas as categorias para o menu (categorias com produtos visíveis)
+        // Critério: categoria tem produtos visíveis OU alguma subcategoria tem produtos visíveis
+        $allCategories = $this->getCategoriesWithVisibleProducts($db, $tenantId, $ocultarEstoqueZero);
+        
+        // Adicionar "Sem Categoria" se houver produtos sem categoria visíveis
+        $produtosSemCategoria = $this->getProdutosSemCategoriaCount($db, $tenantId, $ocultarEstoqueZero);
+        if ($produtosSemCategoria > 0) {
+            array_unshift($allCategories, [
+                'categoria_id' => null,
+                'categoria_nome' => 'Sem Categoria',
+                'categoria_slug' => 'sem-categoria',
+                'categoria_pai_id' => null,
+                'label' => 'Sem Categoria',
+            ]);
+        }
 
         // Buscar seções de categorias
         $stmt = $db->prepare("
@@ -226,6 +239,130 @@ class HomeController extends Controller
             'cartTotalItems' => $cartTotalItems,
             'cartSubtotal' => $cartSubtotal,
         ]);
+    }
+
+    /**
+     * Busca todas as categorias que têm produtos visíveis no catálogo
+     * Inclui categorias pai se elas têm produtos visíveis OU se alguma subcategoria tem produtos visíveis
+     * 
+     * @param \PDO $db Conexão com o banco
+     * @param int $tenantId ID do tenant
+     * @param string $ocultarEstoqueZero Configuração de ocultar estoque zero ('0' ou '1')
+     * @return array Lista de categorias com produtos visíveis (incluindo hierarquia)
+     */
+    private function getCategoriesWithVisibleProducts(\PDO $db, int $tenantId, string $ocultarEstoqueZero): array
+    {
+        // Condição de estoque (mesma regra do catálogo)
+        $estoqueCondition = '';
+        if ($ocultarEstoqueZero === '1') {
+            $estoqueCondition = " AND (p.gerencia_estoque = 0 OR (p.gerencia_estoque = 1 AND p.quantidade_estoque > 0))";
+        }
+
+        // Buscar categorias que têm produtos visíveis diretamente
+        // OU que têm subcategorias com produtos visíveis
+        $sql = "
+            SELECT DISTINCT
+                c.id,
+                c.nome as categoria_nome,
+                c.slug as categoria_slug,
+                c.categoria_pai_id,
+                COALESCE(cp.nome, '') as categoria_pai_nome,
+                COALESCE(cp.slug, '') as categoria_pai_slug
+            FROM categorias c
+            LEFT JOIN categorias cp ON cp.id = c.categoria_pai_id AND cp.tenant_id = :tenant_id_pai
+            INNER JOIN produto_categorias pc ON pc.categoria_id = c.id AND pc.tenant_id = :tenant_id_pc
+            INNER JOIN produtos p ON p.id = pc.produto_id AND p.tenant_id = :tenant_id_prod
+            WHERE c.tenant_id = :tenant_id_cat
+            AND p.status = 'publish'
+            AND p.exibir_no_catalogo = 1
+            {$estoqueCondition}
+            
+            UNION
+            
+            -- Categorias pai que têm subcategorias com produtos visíveis
+            SELECT DISTINCT
+                cp.id,
+                cp.nome as categoria_nome,
+                cp.slug as categoria_slug,
+                cp.categoria_pai_id,
+                COALESCE(cpp.nome, '') as categoria_pai_nome,
+                COALESCE(cpp.slug, '') as categoria_pai_slug
+            FROM categorias cp
+            LEFT JOIN categorias cpp ON cpp.id = cp.categoria_pai_id AND cpp.tenant_id = :tenant_id_pai2
+            INNER JOIN categorias c ON c.categoria_pai_id = cp.id AND c.tenant_id = :tenant_id_sub
+            INNER JOIN produto_categorias pc ON pc.categoria_id = c.id AND pc.tenant_id = :tenant_id_pc2
+            INNER JOIN produtos p ON p.id = pc.produto_id AND p.tenant_id = :tenant_id_prod2
+            WHERE cp.tenant_id = :tenant_id_cat2
+            AND cp.categoria_pai_id IS NULL
+            AND p.status = 'publish'
+            AND p.exibir_no_catalogo = 1
+            {$estoqueCondition}
+            
+            ORDER BY categoria_pai_id IS NULL DESC, categoria_nome ASC
+        ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':tenant_id_pai', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_pc', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_prod', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_cat', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_pai2', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_sub', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_pc2', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_prod2', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_cat2', $tenantId, \PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $categorias = $stmt->fetchAll();
+        
+        // Formatar para o formato esperado pelo menu
+        $formatted = [];
+        foreach ($categorias as $cat) {
+            $formatted[] = [
+                'categoria_id' => $cat['id'],
+                'categoria_nome' => $cat['categoria_nome'],
+                'categoria_slug' => $cat['categoria_slug'],
+                'categoria_pai_id' => $cat['categoria_pai_id'],
+                'label' => $cat['categoria_nome'], // Para compatibilidade com o template
+            ];
+        }
+        
+        return $formatted;
+    }
+
+    /**
+     * Conta produtos sem categoria que são visíveis no catálogo
+     * 
+     * @param \PDO $db Conexão com o banco
+     * @param int $tenantId ID do tenant
+     * @param string $ocultarEstoqueZero Configuração de ocultar estoque zero ('0' ou '1')
+     * @return int Número de produtos sem categoria visíveis
+     */
+    private function getProdutosSemCategoriaCount(\PDO $db, int $tenantId, string $ocultarEstoqueZero): int
+    {
+        $estoqueCondition = '';
+        if ($ocultarEstoqueZero === '1') {
+            $estoqueCondition = " AND (gerencia_estoque = 0 OR (gerencia_estoque = 1 AND quantidade_estoque > 0))";
+        }
+
+        $sql = "
+            SELECT COUNT(DISTINCT p.id) as total
+            FROM produtos p
+            LEFT JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id
+            WHERE p.tenant_id = :tenant_id_prod
+            AND p.status = 'publish'
+            AND p.exibir_no_catalogo = 1
+            AND pc.produto_id IS NULL
+            {$estoqueCondition}
+        ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':tenant_id', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_prod', $tenantId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetch();
+        
+        return (int)($result['total'] ?? 0);
     }
 }
 

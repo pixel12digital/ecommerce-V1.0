@@ -564,6 +564,20 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         .pg-category-menu-link:focus {
             box-shadow: inset 0 0 0 2px var(--cor-primaria, <?= htmlspecialchars($theme['color_primary']) ?>);
         }
+        .pg-category-menu-sublist {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            padding-left: 20px;
+        }
+        .pg-category-menu-sublink {
+            font-size: 14px;
+            color: #666;
+            padding: 8px 20px;
+        }
+        .pg-category-menu-sublink:hover {
+            background-color: #f8f8f8;
+        }
         
         /* Newsletter - Fase 10 */
         .newsletter {
