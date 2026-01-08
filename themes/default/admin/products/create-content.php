@@ -165,6 +165,68 @@ if (!function_exists('media_url')) {
             </div>
         </div>
 
+        <!-- Seção: Dimensões e Frete -->
+        <div class="info-section">
+            <h2 class="section-title">Dimensões e Frete</h2>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+                Essas informações são necessárias para o cálculo automático de frete. Preencha com os valores da embalagem do produto.
+            </p>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Peso (kg)</label>
+                    <input type="number" name="peso" id="peso" 
+                           value="<?= htmlspecialchars($formData['peso'] ?? '') ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Peso do produto em quilogramas (ex: 0.5)
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Comprimento (cm)</label>
+                    <input type="number" name="comprimento" id="comprimento" 
+                           value="<?= htmlspecialchars($formData['comprimento'] ?? '') ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Comprimento da embalagem em centímetros
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Largura (cm)</label>
+                    <input type="number" name="largura" id="largura" 
+                           value="<?= htmlspecialchars($formData['largura'] ?? '') ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Largura da embalagem em centímetros
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Altura (cm)</label>
+                    <input type="number" name="altura" id="altura" 
+                           value="<?= htmlspecialchars($formData['altura'] ?? '') ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Altura da embalagem em centímetros
+                    </small>
+                </div>
+            </div>
+        </div>
+
         <!-- Seção: Descrições -->
         <div class="info-section">
             <h2 class="section-title">Descrições</h2>
@@ -184,21 +246,42 @@ if (!function_exists('media_url')) {
 
         <!-- Seção: Categorias -->
         <div class="info-section">
-            <h2 class="section-title">Categorias</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 class="section-title" style="margin: 0;">Categorias</h2>
+                <a href="<?= $basePath ?>/admin/categorias" 
+                   style="font-size: 0.875rem; color: #023A8D; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
+                   onmouseover="this.style.textDecoration='underline'"
+                   onmouseout="this.style.textDecoration='none'">
+                    <i class="bi bi-gear icon"></i>
+                    Gerenciar categorias
+                </a>
+            </div>
             
             <div class="form-group">
                 <label>Selecione as categorias deste produto</label>
                 <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; background: #f9f9f9;">
                     <?php 
                     $categoriasSelecionadas = $formData['categorias'] ?? [];
-                    foreach ($categorias as $categoria): 
+                    if (!empty($categorias) && is_array($categorias)):
+                        foreach ($categorias as $categoria): 
+                            if (!isset($categoria['id']) || !isset($categoria['nome'])) {
+                                continue; // Pular itens inválidos
+                            }
+                            $indent = ($categoria['level'] ?? 0) * 20;
                     ?>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; padding-left: <?= $indent + 12 ?>px;" 
+                               onmouseover="this.style.background='#f0f0f0'" 
+                               onmouseout="this.style.background='transparent'">
                             <input type="checkbox" name="categorias[]" value="<?= $categoria['id'] ?>" 
                                    <?= in_array($categoria['id'], $categoriasSelecionadas) ? 'checked' : '' ?>>
-                            <span><?= htmlspecialchars($categoria['nome']) ?></span>
+                            <span style="font-weight: <?= ($categoria['level'] ?? 0) > 0 ? 'normal' : '600' ?>; color: <?= ($categoria['level'] ?? 0) > 0 ? '#666' : '#333' ?>;">
+                                <?= htmlspecialchars($categoria['nome']) ?>
+                            </span>
                         </label>
-                    <?php endforeach; ?>
+                    <?php 
+                        endforeach;
+                    endif; 
+                    ?>
                     <?php if (empty($categorias)): ?>
                         <p style="color: #999; font-style: italic;">Nenhuma categoria cadastrada. Crie categorias primeiro.</p>
                     <?php endif; ?>
@@ -548,6 +631,7 @@ function addNewVideoField() {
         }
     };
 })();
+
 </script>
 
 <style>

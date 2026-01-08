@@ -212,10 +212,6 @@
                     <span class="info-value">#<?= $produto['id'] ?></span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">ID Original WP</span>
-                    <span class="info-value"><?= $produto['id_original_wp'] ?? '-' ?></span>
-                </div>
-                <div class="info-item">
                     <span class="info-label">Nome</span>
                     <span class="info-value"><?= htmlspecialchars($produto['nome']) ?></span>
                 </div>

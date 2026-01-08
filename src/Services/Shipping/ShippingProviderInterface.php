@@ -7,8 +7,12 @@ interface ShippingProviderInterface
     /**
      * Calcula opções de frete para o pedido.
      *
-     * @param array $pedido Dados do pedido (itens, subtotal, etc.)
-     * @param array $endereco Endereço de entrega (cep, cidade, estado, etc.)
+     * @param array $pedido Dados do pedido:
+     *   - 'subtotal' => float (subtotal do pedido)
+     *   - 'itens' => array (cada item contém: produto_id, quantidade, preco_unitario, peso, comprimento, largura, altura)
+     * @param array $endereco Endereço de entrega:
+     *   - 'cep' => string (CEP de destino)
+     *   - 'zipcode' => string (CEP de destino, formato alternativo)
      * @param array $config Configurações do gateway (do config_json)
      * @return array Lista de opções de frete no formato:
      * [

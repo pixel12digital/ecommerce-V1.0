@@ -318,6 +318,12 @@ class ProductController extends Controller
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
 
+            // Processar dimensões e peso (opcionais)
+            $peso = !empty($_POST['peso']) ? (float)$_POST['peso'] : null;
+            $comprimento = !empty($_POST['comprimento']) ? (float)$_POST['comprimento'] : null;
+            $largura = !empty($_POST['largura']) ? (float)$_POST['largura'] : null;
+            $altura = !empty($_POST['altura']) ? (float)$_POST['altura'] : null;
+
             if (empty($nome)) {
                 throw new \Exception('Nome do produto é obrigatório');
             }
@@ -330,12 +336,14 @@ class ProductController extends Controller
                     tenant_id, nome, slug, sku, status, exibir_no_catalogo,
                     preco, preco_regular, preco_promocional, data_promocao_inicio, data_promocao_fim,
                     quantidade_estoque, status_estoque, gerencia_estoque, permite_pedidos_falta,
-                    descricao_curta, descricao, created_at, updated_at
+                    descricao_curta, descricao, peso, comprimento, largura, altura,
+                    created_at, updated_at
                 ) VALUES (
                     :tenant_id, :nome, :slug, :sku, :status, :exibir_no_catalogo,
                     :preco, :preco_regular, :preco_promocional, :data_promocao_inicio, :data_promocao_fim,
                     :quantidade_estoque, :status_estoque, :gerencia_estoque, :permite_pedidos_falta,
-                    :descricao_curta, :descricao, NOW(), NOW()
+                    :descricao_curta, :descricao, :peso, :comprimento, :largura, :altura,
+                    NOW(), NOW()
                 )
             ");
             $stmt->execute([
@@ -355,7 +363,11 @@ class ProductController extends Controller
                 'gerencia_estoque' => $gerenciaEstoque,
                 'permite_pedidos_falta' => $permitePedidosFalta,
                 'descricao_curta' => $descricaoCurta,
-                'descricao' => $descricao
+                'descricao' => $descricao,
+                'peso' => $peso,
+                'comprimento' => $comprimento,
+                'largura' => $largura,
+                'altura' => $altura
             ]);
 
             $produtoId = $db->lastInsertId();
@@ -650,6 +662,12 @@ class ProductController extends Controller
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
 
+            // Processar dimensões e peso (opcionais)
+            $peso = !empty($_POST['peso']) ? (float)$_POST['peso'] : null;
+            $comprimento = !empty($_POST['comprimento']) ? (float)$_POST['comprimento'] : null;
+            $largura = !empty($_POST['largura']) ? (float)$_POST['largura'] : null;
+            $altura = !empty($_POST['altura']) ? (float)$_POST['altura'] : null;
+
             // Preço principal: usar preco_promocional se existir, senão preco_regular
             $precoPrincipal = $precoPromocional ?? $precoRegular;
 
@@ -671,6 +689,10 @@ class ProductController extends Controller
                     permite_pedidos_falta = :permite_pedidos_falta,
                     descricao_curta = :descricao_curta,
                     descricao = :descricao,
+                    peso = :peso,
+                    comprimento = :comprimento,
+                    largura = :largura,
+                    altura = :altura,
                     updated_at = NOW()
                 WHERE id = :id AND tenant_id = :tenant_id
             ");
@@ -691,6 +713,10 @@ class ProductController extends Controller
                 'permite_pedidos_falta' => $permitePedidosFalta,
                 'descricao_curta' => $descricaoCurta,
                 'descricao' => $descricao,
+                'peso' => $peso,
+                'comprimento' => $comprimento,
+                'largura' => $largura,
+                'altura' => $altura,
                 'id' => $id,
                 'tenant_id' => $tenantId
             ]);

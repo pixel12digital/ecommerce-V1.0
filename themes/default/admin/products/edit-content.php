@@ -228,6 +228,68 @@ if (!function_exists('media_url')) {
             </div>
         </div>
 
+        <!-- Seção: Dimensões e Frete -->
+        <div class="info-section">
+            <h2 class="section-title">Dimensões e Frete</h2>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+                Essas informações são necessárias para o cálculo automático de frete. Preencha com os valores da embalagem do produto.
+            </p>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Peso (kg)</label>
+                    <input type="number" name="peso" id="peso" 
+                           value="<?= $produto['peso'] ? number_format($produto['peso'], 2, '.', '') : '' ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Peso do produto em quilogramas (ex: 0.5)
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Comprimento (cm)</label>
+                    <input type="number" name="comprimento" id="comprimento" 
+                           value="<?= $produto['comprimento'] ? number_format($produto['comprimento'], 2, '.', '') : '' ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Comprimento da embalagem em centímetros
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Largura (cm)</label>
+                    <input type="number" name="largura" id="largura" 
+                           value="<?= $produto['largura'] ? number_format($produto['largura'], 2, '.', '') : '' ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Largura da embalagem em centímetros
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Altura (cm)</label>
+                    <input type="number" name="altura" id="altura" 
+                           value="<?= $produto['altura'] ? number_format($produto['altura'], 2, '.', '') : '' ?>" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           class="dimension-input">
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Altura da embalagem em centímetros
+                    </small>
+                </div>
+            </div>
+        </div>
+
         <!-- Seção: Descrições -->
         <div class="info-section">
             <h2 class="section-title">Descrições</h2>
@@ -1526,6 +1588,7 @@ window.removeFeaturedImage = function() {
         }
     };
 })();
+
 </script>
 
 <style>

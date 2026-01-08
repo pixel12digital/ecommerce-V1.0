@@ -14,7 +14,7 @@ class ShippingService
      * @param int $tenantId ID do tenant
      * @param string $cep CEP de destino
      * @param float $subtotal Subtotal do pedido
-     * @param array $itens Array de itens do carrinho
+     * @param array $itens Array de itens do carrinho (formato: ['produto_id' => ['quantidade' => int, 'preco_unitario' => float]])
      * @return array Array de opções de frete
      */
     public static function calcularFrete(int $tenantId, string $cep, float $subtotal, array $itens): array
@@ -22,9 +22,12 @@ class ShippingService
         $provider = self::getProvider($tenantId);
         $config = self::getProviderConfig($tenantId, 'shipping');
 
+        // Buscar dimensões e peso dos produtos
+        $itensComDimensoes = self::enriquecerItensComDimensoes($tenantId, $itens);
+
         $pedido = [
             'subtotal' => $subtotal,
-            'itens' => $itens,
+            'itens' => $itensComDimensoes,
         ];
 
         $endereco = [
@@ -33,6 +36,58 @@ class ShippingService
         ];
 
         return $provider->calcularOpcoesFrete($pedido, $endereco, $config);
+    }
+
+    /**
+     * Enriquece os itens do carrinho com dimensões e peso dos produtos
+     * 
+     * @param int $tenantId ID do tenant
+     * @param array $itens Itens do carrinho
+     * @return array Itens enriquecidos com dimensões
+     */
+    private static function enriquecerItensComDimensoes(int $tenantId, array $itens): array
+    {
+        if (empty($itens)) {
+            return [];
+        }
+
+        $db = Database::getConnection();
+        $produtoIds = array_keys($itens);
+        $placeholders = implode(',', array_fill(0, count($produtoIds), '?'));
+
+        $stmt = $db->prepare("
+            SELECT id, peso, comprimento, largura, altura, preco
+            FROM produtos
+            WHERE id IN ({$placeholders}) AND tenant_id = ?
+        ");
+        $stmt->execute(array_merge($produtoIds, [$tenantId]));
+        $produtos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Criar mapa de produtos por ID
+        $produtosMap = [];
+        foreach ($produtos as $produto) {
+            $produtosMap[$produto['id']] = $produto;
+        }
+
+        // Enriquecer itens com dimensões
+        $itensEnriquecidos = [];
+        foreach ($itens as $produtoId => $item) {
+            $produto = $produtosMap[$produtoId] ?? null;
+            
+            $itemEnriquecido = [
+                'produto_id' => $produtoId,
+                'quantidade' => $item['quantidade'] ?? 1,
+                'preco_unitario' => $item['preco_unitario'] ?? ($produto['preco'] ?? 0),
+                'peso' => $produto['peso'] ?? null,
+                'comprimento' => $produto['comprimento'] ?? null,
+                'largura' => $produto['largura'] ?? null,
+                'altura' => $produto['altura'] ?? null,
+            ];
+
+            $itensEnriquecidos[] = $itemEnriquecido;
+        }
+
+        return $itensEnriquecidos;
     }
 
     /**
