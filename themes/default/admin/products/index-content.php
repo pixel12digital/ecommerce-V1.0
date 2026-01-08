@@ -205,7 +205,36 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
                                        title="Ver produto na loja">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="<?= $basePath ?>/admin/produtos/<?= $produto['id'] ?>" 
+                                    <?php
+                                    // Construir URL de edição preservando contexto de navegação
+                                    $editUrl = $basePath . '/admin/produtos/' . $produto['id'];
+                                    $editParams = [];
+                                    if ($paginacao['currentPage'] > 1) {
+                                        $editParams['page'] = $paginacao['currentPage'];
+                                    }
+                                    if (!empty($filtros['q'])) {
+                                        $editParams['q'] = $filtros['q'];
+                                    }
+                                    if (!empty($filtros['status'])) {
+                                        $editParams['status'] = $filtros['status'];
+                                    }
+                                    if (!empty($filtros['categoria_id'])) {
+                                        $editParams['categoria_id'] = $filtros['categoria_id'];
+                                    }
+                                    if (!empty($filtros['somente_com_imagem'])) {
+                                        $editParams['somente_com_imagem'] = '1';
+                                    }
+                                    if (!empty($ordenacao['sort'])) {
+                                        $editParams['sort'] = $ordenacao['sort'];
+                                    }
+                                    if (!empty($ordenacao['direction'])) {
+                                        $editParams['direction'] = $ordenacao['direction'];
+                                    }
+                                    if (!empty($editParams)) {
+                                        $editUrl .= '?' . http_build_query($editParams);
+                                    }
+                                    ?>
+                                    <a href="<?= htmlspecialchars($editUrl) ?>" 
                                        class="btn-action btn-action-edit" 
                                        title="Editar produto">
                                         <i class="bi bi-pencil"></i>
@@ -236,30 +265,143 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
                 if (!empty($ordenacao['sort'])) $queryParams[] = 'sort=' . urlencode($ordenacao['sort']);
                 if (!empty($ordenacao['direction'])) $queryParams[] = 'direction=' . urlencode($ordenacao['direction']);
                 $queryString = !empty($queryParams) ? '&' . implode('&', $queryParams) : '';
+                
+                $currentPage = $paginacao['currentPage'];
+                $totalPages = $paginacao['totalPages'];
+                
+                // Calcular páginas para exibir (máximo 7 números visíveis)
+                $pagesToShow = [];
+                $maxVisible = 7;
+                
+                if ($totalPages <= $maxVisible) {
+                    // Se tem poucas páginas, mostrar todas
+                    for ($i = 1; $i <= $totalPages; $i++) {
+                        $pagesToShow[] = $i;
+                    }
+                } else {
+                    // Sempre mostrar primeira página
+                    $pagesToShow[] = 1;
+                    
+                    // Calcular início e fim do range central
+                    $start = max(2, $currentPage - 2);
+                    $end = min($totalPages - 1, $currentPage + 2);
+                    
+                    // Se há gap entre primeira página e range central, adicionar ellipsis
+                    if ($start > 2) {
+                        $pagesToShow[] = 'ellipsis-start';
+                    }
+                    
+                    // Adicionar páginas do range central
+                    for ($i = $start; $i <= $end; $i++) {
+                        $pagesToShow[] = $i;
+                    }
+                    
+                    // Se há gap entre range central e última página, adicionar ellipsis
+                    if ($end < $totalPages - 1) {
+                        $pagesToShow[] = 'ellipsis-end';
+                    }
+                    
+                    // Sempre mostrar última página
+                    if ($totalPages > 1) {
+                        $pagesToShow[] = $totalPages;
+                    }
+                }
                 ?>
-                <?php if ($paginacao['hasPrev']): ?>
-                    <a href="?page=<?= $paginacao['currentPage'] - 1 ?><?= $queryString ?>">
-                        <i class="bi bi-chevron-left icon"></i>
-                        Anterior
-                    </a>
-                <?php else: ?>
-                    <span class="disabled">Anterior</span>
-                <?php endif; ?>
                 
-                <span class="admin-pagination-info">
-                    Página <?= $paginacao['currentPage'] ?> de <?= $paginacao['totalPages'] ?>
-                    (<?= $paginacao['total'] ?> produtos)
-                </span>
+                <div class="admin-pagination-controls">
+                    <?php if ($paginacao['hasPrev']): ?>
+                        <a href="?page=<?= $currentPage - 1 ?><?= $queryString ?>" class="admin-pagination-btn">
+                            <i class="bi bi-chevron-left icon"></i>
+                            Anterior
+                        </a>
+                    <?php else: ?>
+                        <span class="admin-pagination-btn disabled">
+                            <i class="bi bi-chevron-left icon"></i>
+                            Anterior
+                        </span>
+                    <?php endif; ?>
+                    
+                    <div class="admin-pagination-numbers">
+                        <?php foreach ($pagesToShow as $pageNum): ?>
+                            <?php if ($pageNum === 'ellipsis-start' || $pageNum === 'ellipsis-end'): ?>
+                                <span class="admin-pagination-ellipsis">...</span>
+                            <?php elseif ($pageNum == $currentPage): ?>
+                                <span class="admin-pagination-number active"><?= $pageNum ?></span>
+                            <?php else: ?>
+                                <a href="?page=<?= $pageNum ?><?= $queryString ?>" class="admin-pagination-number">
+                                    <?= $pageNum ?>
+                                </a>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <?php if ($paginacao['hasNext']): ?>
+                        <a href="?page=<?= $currentPage + 1 ?><?= $queryString ?>" class="admin-pagination-btn">
+                            Próxima
+                            <i class="bi bi-chevron-right icon"></i>
+                        </a>
+                    <?php else: ?>
+                        <span class="admin-pagination-btn disabled">
+                            Próxima
+                            <i class="bi bi-chevron-right icon"></i>
+                        </span>
+                    <?php endif; ?>
+                </div>
                 
-                <?php if ($paginacao['hasNext']): ?>
-                    <a href="?page=<?= $paginacao['currentPage'] + 1 ?><?= $queryString ?>">
-                        Próxima
-                        <i class="bi bi-chevron-right icon"></i>
-                    </a>
-                <?php else: ?>
-                    <span class="disabled">Próxima</span>
-                <?php endif; ?>
+                <div class="admin-pagination-info">
+                    <span>
+                        Página <?= $currentPage ?> de <?= $totalPages ?>
+                        (<?= $paginacao['total'] ?> produtos)
+                    </span>
+                    <div class="admin-pagination-goto">
+                        <label for="goto-page-input">Ir para página:</label>
+                        <input type="number" 
+                               id="goto-page-input" 
+                               min="1" 
+                               max="<?= $totalPages ?>" 
+                               value="<?= $currentPage ?>"
+                               style="width: 60px; padding: 0.25rem 0.5rem; margin: 0 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                        <button type="button" 
+                                class="admin-btn admin-btn-secondary" 
+                                onclick="goToPage()"
+                                style="padding: 0.375rem 0.75rem; font-size: 0.875rem;">
+                            Ir
+                        </button>
+                    </div>
+                </div>
             </div>
+            
+            <script>
+            function goToPage() {
+                const input = document.getElementById('goto-page-input');
+                const page = parseInt(input.value);
+                const maxPage = <?= $totalPages ?>;
+                
+                if (isNaN(page) || page < 1) {
+                    alert('Por favor, digite um número válido.');
+                    input.focus();
+                    return;
+                }
+                
+                if (page > maxPage) {
+                    alert('A página máxima é ' + maxPage + '.');
+                    input.value = maxPage;
+                    input.focus();
+                    return;
+                }
+                
+                const queryString = '<?= $queryString ?>';
+                const url = '?page=' + page + queryString;
+                window.location.href = url;
+            }
+            
+            // Permitir Enter no input
+            document.getElementById('goto-page-input')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    goToPage();
+                }
+            });
+            </script>
         <?php endif; ?>
     <?php else: ?>
         <div class="admin-empty-message">
@@ -600,6 +742,143 @@ $productsJsPath = admin_asset_path_products('js/products.js');
 
 .admin-btn-danger:hover {
     background: #c82333;
+}
+
+/* Paginação melhorada */
+.admin-pagination {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.admin-pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.admin-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: white;
+    color: var(--pg-admin-primary);
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.admin-pagination-btn:hover:not(.disabled) {
+    background: var(--pg-admin-primary);
+    color: white;
+    border-color: var(--pg-admin-primary);
+}
+
+.admin-pagination-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f5f5f5;
+    color: #999;
+}
+
+.admin-pagination-numbers {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.admin-pagination-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.5rem;
+    background: white;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.admin-pagination-number:hover {
+    background: var(--pg-admin-primary);
+    color: white;
+    border-color: var(--pg-admin-primary);
+}
+
+.admin-pagination-number.active {
+    background: var(--pg-admin-primary);
+    color: white;
+    border-color: var(--pg-admin-primary);
+    font-weight: 600;
+    cursor: default;
+}
+
+.admin-pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.5rem;
+    color: #999;
+    font-size: 0.875rem;
+}
+
+.admin-pagination-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.admin-pagination-goto {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-pagination-goto label {
+    font-weight: 500;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .admin-pagination-controls {
+        flex-direction: column;
+    }
+    
+    .admin-pagination-numbers {
+        order: -1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .admin-pagination-info {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
 }
 </style>
 

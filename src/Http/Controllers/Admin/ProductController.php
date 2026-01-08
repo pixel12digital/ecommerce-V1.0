@@ -523,6 +523,17 @@ class ProductController extends Controller
         ]);
         $tags = $stmt->fetchAll();
 
+        // Capturar contexto de navegação (página, filtros, ordenação) para preservar ao voltar
+        $navigationContext = [
+            'page' => isset($_GET['page']) ? (int)$_GET['page'] : null,
+            'q' => $_GET['q'] ?? '',
+            'status' => $_GET['status'] ?? '',
+            'categoria_id' => isset($_GET['categoria_id']) && $_GET['categoria_id'] !== '' ? (int)$_GET['categoria_id'] : null,
+            'somente_com_imagem' => isset($_GET['somente_com_imagem']) && $_GET['somente_com_imagem'] == '1',
+            'sort' => $_GET['sort'] ?? '',
+            'direction' => $_GET['direction'] ?? ''
+        ];
+
         $tenant = TenantContext::tenant();
         
         $this->viewWithLayout('admin/layouts/store', 'admin/products/edit-content', [
@@ -537,7 +548,8 @@ class ProductController extends Controller
             'todasCategorias' => $todasCategorias,
             'tags' => $tags,
             'message' => $_SESSION['product_edit_message'] ?? null,
-            'messageType' => $_SESSION['product_edit_message_type'] ?? null
+            'messageType' => $_SESSION['product_edit_message_type'] ?? null,
+            'navigationContext' => $navigationContext
         ]);
 
         // Limpar mensagens da sessão
@@ -737,7 +749,73 @@ class ProductController extends Controller
             $_SESSION['product_edit_message_type'] = 'error';
         }
 
-        header('Location: ' . $this->getBasePath() . '/admin/produtos/' . $id);
+        // Preservar contexto de navegação (página, filtros, ordenação) ao redirecionar
+        $returnTo = $_POST['return_to'] ?? 'edit'; // 'edit' ou 'list'
+        $navigationContext = [
+            'page' => isset($_POST['nav_page']) && $_POST['nav_page'] !== '' ? (int)$_POST['nav_page'] : null,
+            'q' => $_POST['nav_q'] ?? '',
+            'status' => $_POST['nav_status'] ?? '',
+            'categoria_id' => isset($_POST['nav_categoria_id']) && $_POST['nav_categoria_id'] !== '' ? (int)$_POST['nav_categoria_id'] : null,
+            'somente_com_imagem' => isset($_POST['nav_somente_com_imagem']) && $_POST['nav_somente_com_imagem'] == '1',
+            'sort' => $_POST['nav_sort'] ?? '',
+            'direction' => $_POST['nav_direction'] ?? ''
+        ];
+
+        if ($returnTo === 'list') {
+            // Redirecionar para listagem preservando contexto
+            $queryParams = [];
+            if ($navigationContext['page'] !== null && $navigationContext['page'] > 1) {
+                $queryParams['page'] = $navigationContext['page'];
+            }
+            if (!empty($navigationContext['q'])) {
+                $queryParams['q'] = $navigationContext['q'];
+            }
+            if (!empty($navigationContext['status'])) {
+                $queryParams['status'] = $navigationContext['status'];
+            }
+            if ($navigationContext['categoria_id'] !== null) {
+                $queryParams['categoria_id'] = $navigationContext['categoria_id'];
+            }
+            if ($navigationContext['somente_com_imagem']) {
+                $queryParams['somente_com_imagem'] = '1';
+            }
+            if (!empty($navigationContext['sort'])) {
+                $queryParams['sort'] = $navigationContext['sort'];
+            }
+            if (!empty($navigationContext['direction'])) {
+                $queryParams['direction'] = $navigationContext['direction'];
+            }
+            
+            $queryString = !empty($queryParams) ? '?' . http_build_query($queryParams) : '';
+            header('Location: ' . $this->getBasePath() . '/admin/produtos' . $queryString);
+        } else {
+            // Redirecionar para edição preservando contexto
+            $queryParams = [];
+            if ($navigationContext['page'] !== null && $navigationContext['page'] > 1) {
+                $queryParams['page'] = $navigationContext['page'];
+            }
+            if (!empty($navigationContext['q'])) {
+                $queryParams['q'] = $navigationContext['q'];
+            }
+            if (!empty($navigationContext['status'])) {
+                $queryParams['status'] = $navigationContext['status'];
+            }
+            if ($navigationContext['categoria_id'] !== null) {
+                $queryParams['categoria_id'] = $navigationContext['categoria_id'];
+            }
+            if ($navigationContext['somente_com_imagem']) {
+                $queryParams['somente_com_imagem'] = '1';
+            }
+            if (!empty($navigationContext['sort'])) {
+                $queryParams['sort'] = $navigationContext['sort'];
+            }
+            if (!empty($navigationContext['direction'])) {
+                $queryParams['direction'] = $navigationContext['direction'];
+            }
+            
+            $queryString = !empty($queryParams) ? '?' . http_build_query($queryParams) : '';
+            header('Location: ' . $this->getBasePath() . '/admin/produtos/' . $id . $queryString);
+        }
         exit;
     }
 

@@ -26,7 +26,38 @@ if (!function_exists('media_url')) {
 
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <a href="<?= $basePath ?>/admin/produtos" class="admin-btn admin-btn-secondary">
+            <?php
+            // Construir URL de retorno preservando contexto de navegação
+            $backUrl = $basePath . '/admin/produtos';
+            if (isset($navigationContext)) {
+                $backParams = [];
+                if ($navigationContext['page'] !== null && $navigationContext['page'] > 1) {
+                    $backParams['page'] = $navigationContext['page'];
+                }
+                if (!empty($navigationContext['q'])) {
+                    $backParams['q'] = $navigationContext['q'];
+                }
+                if (!empty($navigationContext['status'])) {
+                    $backParams['status'] = $navigationContext['status'];
+                }
+                if ($navigationContext['categoria_id'] !== null) {
+                    $backParams['categoria_id'] = $navigationContext['categoria_id'];
+                }
+                if ($navigationContext['somente_com_imagem']) {
+                    $backParams['somente_com_imagem'] = '1';
+                }
+                if (!empty($navigationContext['sort'])) {
+                    $backParams['sort'] = $navigationContext['sort'];
+                }
+                if (!empty($navigationContext['direction'])) {
+                    $backParams['direction'] = $navigationContext['direction'];
+                }
+                if (!empty($backParams)) {
+                    $backUrl .= '?' . http_build_query($backParams);
+                }
+            }
+            ?>
+            <a href="<?= htmlspecialchars($backUrl) ?>" class="admin-btn admin-btn-secondary">
                 <i class="bi bi-arrow-left icon"></i>
                 Voltar para lista
             </a>
@@ -40,6 +71,32 @@ if (!function_exists('media_url')) {
     </div>
 
     <form method="POST" action="<?= $basePath ?>/admin/produtos/<?= $produto['id'] ?>" enctype="multipart/form-data">
+        <!-- Campos hidden para preservar contexto de navegação -->
+        <input type="hidden" name="return_to" value="edit" id="return_to">
+        <?php if (isset($navigationContext)): ?>
+            <?php if ($navigationContext['page'] !== null): ?>
+                <input type="hidden" name="nav_page" value="<?= $navigationContext['page'] ?>">
+            <?php endif; ?>
+            <?php if (!empty($navigationContext['q'])): ?>
+                <input type="hidden" name="nav_q" value="<?= htmlspecialchars($navigationContext['q']) ?>">
+            <?php endif; ?>
+            <?php if (!empty($navigationContext['status'])): ?>
+                <input type="hidden" name="nav_status" value="<?= htmlspecialchars($navigationContext['status']) ?>">
+            <?php endif; ?>
+            <?php if ($navigationContext['categoria_id'] !== null): ?>
+                <input type="hidden" name="nav_categoria_id" value="<?= $navigationContext['categoria_id'] ?>">
+            <?php endif; ?>
+            <?php if ($navigationContext['somente_com_imagem']): ?>
+                <input type="hidden" name="nav_somente_com_imagem" value="1">
+            <?php endif; ?>
+            <?php if (!empty($navigationContext['sort'])): ?>
+                <input type="hidden" name="nav_sort" value="<?= htmlspecialchars($navigationContext['sort']) ?>">
+            <?php endif; ?>
+            <?php if (!empty($navigationContext['direction'])): ?>
+                <input type="hidden" name="nav_direction" value="<?= htmlspecialchars($navigationContext['direction']) ?>">
+            <?php endif; ?>
+        <?php endif; ?>
+        
         <!-- Seção: Dados Gerais -->
         <div class="info-section">
             <h2 class="section-title">Dados Gerais</h2>
@@ -190,7 +247,16 @@ if (!function_exists('media_url')) {
 
         <!-- Seção: Categorias -->
         <div class="info-section">
-            <h2 class="section-title">Categorias</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 class="section-title" style="margin: 0;">Categorias</h2>
+                <a href="<?= $basePath ?>/admin/categorias" 
+                   style="font-size: 0.875rem; color: #023A8D; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
+                   onmouseover="this.style.textDecoration='underline'"
+                   onmouseout="this.style.textDecoration='none'">
+                    <i class="bi bi-gear icon"></i>
+                    Gerenciar categorias
+                </a>
+            </div>
             
             <div class="form-group">
                 <label>Selecione as categorias deste produto</label>
@@ -198,14 +264,26 @@ if (!function_exists('media_url')) {
                     <?php 
                     $categoriasProdutoIds = $categoriasProdutoIds ?? [];
                     $todasCategorias = $todasCategorias ?? [];
-                    foreach ($todasCategorias as $categoria): 
+                    if (!empty($todasCategorias) && is_array($todasCategorias)):
+                        foreach ($todasCategorias as $categoria): 
+                            if (!isset($categoria['id']) || !isset($categoria['nome'])) {
+                                continue; // Pular itens inválidos
+                            }
+                            $indent = ($categoria['level'] ?? 0) * 20;
                     ?>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; padding-left: <?= $indent + 12 ?>px;" 
+                               onmouseover="this.style.background='#f0f0f0'" 
+                               onmouseout="this.style.background='transparent'">
                             <input type="checkbox" name="categorias[]" value="<?= $categoria['id'] ?>" 
                                    <?= in_array($categoria['id'], $categoriasProdutoIds) ? 'checked' : '' ?>>
-                            <span><?= htmlspecialchars($categoria['nome']) ?></span>
+                            <span style="font-weight: <?= ($categoria['level'] ?? 0) > 0 ? 'normal' : '600' ?>; color: <?= ($categoria['level'] ?? 0) > 0 ? '#666' : '#333' ?>;">
+                                <?= htmlspecialchars($categoria['nome']) ?>
+                            </span>
                         </label>
-                    <?php endforeach; ?>
+                    <?php 
+                        endforeach;
+                    endif; 
+                    ?>
                     <?php if (empty($todasCategorias)): ?>
                         <p style="color: #999; font-style: italic;">Nenhuma categoria cadastrada. Crie categorias primeiro.</p>
                     <?php endif; ?>
@@ -469,16 +547,228 @@ if (!function_exists('media_url')) {
             </div>
         </div>
 
-        <!-- Botão Salvar -->
-        <div style="margin-top: 2rem; text-align: right;">
-            <button type="submit" class="admin-btn admin-btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem; margin-top: 2rem;">
-                <i class="bi bi-check-circle icon"></i>
-                Salvar Alterações
-            </button>
-                <i class="bi bi-check-circle icon"></i> Salvar alterações
-            </button>
+        <!-- Botões de Ação -->
+        <div style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <button type="button" 
+                        class="admin-btn admin-btn-danger js-open-excluir-produto-modal"
+                        data-id="<?= (int)$produto['id'] ?>"
+                        data-nome="<?= htmlspecialchars($produto['nome']) ?>"
+                        style="padding: 0.875rem 1.5rem;">
+                    <i class="bi bi-trash icon"></i>
+                    Excluir Produto
+                </button>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="submit" class="admin-btn admin-btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">
+                    <i class="bi bi-check-circle icon"></i>
+                    Salvar Alterações
+                </button>
+                <button type="submit" class="admin-btn admin-btn-secondary" style="padding: 1rem 2rem; font-size: 1.1rem;" onclick="document.getElementById('return_to').value = 'list'; return true;">
+                    <i class="bi bi-check-circle icon"></i>
+                    Salvar e Voltar
+                </button>
+            </div>
         </div>
     </form>
+</div>
+
+<!-- Modal de Exclusão de Produto (reutilizado da listagem) -->
+<div class="pg-modal-overlay" id="modal-excluir-produto" style="display: none;">
+    <div class="pg-modal-dialog">
+        <div class="pg-modal-content">
+            <div class="pg-modal-header">
+                <h5 class="pg-modal-title">Excluir Produto</h5>
+                <button type="button" class="pg-modal-close" onclick="window.fecharModalExclusaoProduto()" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="pg-modal-body">
+                <p style="margin: 0; color: #333; font-size: 1rem; line-height: 1.6;">
+                    Tem certeza que deseja excluir o produto <strong id="modal-produto-nome"></strong>?
+                </p>
+                <p style="margin: 1rem 0 0 0; color: #d32f2f; font-size: 0.875rem;">
+                    <i class="bi bi-exclamation-triangle icon"></i>
+                    Esta ação não pode ser desfeita.
+                </p>
+            </div>
+            <div class="pg-modal-footer">
+                <form method="POST" id="form-excluir-produto" style="display: inline;">
+                    <button type="button" class="admin-btn admin-btn-secondary" onclick="window.fecharModalExclusaoProduto()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="admin-btn admin-btn-danger">
+                        <i class="bi bi-trash icon"></i>
+                        Excluir Produto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funções para modal de exclusão (compatível com products.js)
+if (typeof window.fecharModalExclusaoProduto === 'undefined') {
+    window.fecharModalExclusaoProduto = function() {
+        var modal = document.getElementById('modal-excluir-produto');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    };
+}
+
+// Abrir modal de exclusão
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+        var deleteBtn = e.target.closest('.js-open-excluir-produto-modal');
+        if (deleteBtn) {
+            e.preventDefault();
+            var produtoId = deleteBtn.getAttribute('data-id');
+            var produtoNome = deleteBtn.getAttribute('data-nome');
+            
+            var modal = document.getElementById('modal-excluir-produto');
+            var modalNome = document.getElementById('modal-produto-nome');
+            var formExcluir = document.getElementById('form-excluir-produto');
+            
+            if (modal && modalNome && formExcluir) {
+                modalNome.textContent = produtoNome;
+                
+                // Obter basePath
+                var basePath = '';
+                var scripts = document.getElementsByTagName('script');
+                for (var i = 0; i < scripts.length; i++) {
+                    var src = scripts[i].src || '';
+                    if (src.indexOf('/admin/js/') !== -1) {
+                        var match = src.match(/^(.+)\/admin\/js\//);
+                        if (match) {
+                            basePath = match[1];
+                            break;
+                        }
+                    }
+                }
+                // Fallback: tentar obter do contexto PHP se disponível
+                if (!basePath && typeof window.basePath !== 'undefined') {
+                    basePath = window.basePath;
+                }
+                
+                formExcluir.action = basePath + '/admin/produtos/' + produtoId + '/excluir';
+                modal.style.display = 'flex';
+            }
+        }
+    });
+    
+    // Fechar modal ao clicar no overlay
+    var modalExcluir = document.getElementById('modal-excluir-produto');
+    if (modalExcluir) {
+        modalExcluir.addEventListener('click', function(e) {
+            if (e.target === this) {
+                window.fecharModalExclusaoProduto();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* Estilos do modal (se não estiverem no CSS global) */
+.pg-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.pg-modal-dialog {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.pg-modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pg-modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--pg-admin-primary);
+    color: white;
+}
+
+.pg-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+}
+
+.pg-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    line-height: 1;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.pg-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.pg-modal-body {
+    padding: 1.5rem;
+}
+
+.pg-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.admin-btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.625rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.2s;
+}
+
+.admin-btn-danger:hover {
+    background: #c82333;
+}
+</style>
 </div>
 
 <script>
