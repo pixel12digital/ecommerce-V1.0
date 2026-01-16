@@ -88,9 +88,17 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             color: #666;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             color: #333;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
         }
         
         /* Top Bar */
@@ -109,6 +117,9 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             color: <?= htmlspecialchars($theme['color_header_text']) ?>;
             padding: 1rem 2rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
         }
         /* Header Container - Layout em uma linha (Desktop) */
         .header-container {
@@ -119,6 +130,8 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             justify-content: space-between;
             gap: 24px;
             flex-wrap: nowrap; /* Impede quebra de linha no desktop */
+            width: 100%;
+            box-sizing: border-box;
         }
         
         /* Logo - Fixo à esquerda */
@@ -318,6 +331,9 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             background-color: var(--cor-primaria, <?= htmlspecialchars($theme['color_primary']) ?>);
             padding: 16px 0;
             width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
         .pg-category-strip-inner {
             max-width: 1200px;
@@ -326,6 +342,8 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             align-items: center;
             gap: 16px;
             padding: 0 16px;
+            width: 100%;
+            box-sizing: border-box;
         }
         /* Botão "Categorias" */
         .pg-category-main-button {
@@ -887,9 +905,18 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         
         /* Responsivo - Mobile */
         @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+                width: 100%;
+                max-width: 100vw;
+                box-sizing: border-box;
+            }
             .header-container {
                 flex-wrap: wrap;
                 gap: 16px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
             }
             .header-logo {
                 flex: 0 0 auto;
@@ -899,6 +926,8 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 flex: 1 1 100%;
                 width: 100%;
                 max-width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
             }
             .header-right {
                 flex: 0 0 auto;
@@ -994,6 +1023,10 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         /* Container principal para conteúdo */
         .pg-main-content {
             min-height: 50vh; /* Garantir altura mínima */
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+            box-sizing: border-box;
         }
         
         /* Breadcrumb (usado em várias páginas) */
@@ -1001,10 +1034,15 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             background: white;
             padding: 1rem 2rem;
             border-bottom: 1px solid #eee;
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
         }
         .breadcrumb-container {
             max-width: 1200px;
             margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
         }
         .breadcrumb a {
             color: <?= htmlspecialchars($theme['color_primary']) ?>;

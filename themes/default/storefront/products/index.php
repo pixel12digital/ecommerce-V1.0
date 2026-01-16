@@ -449,6 +449,8 @@ $additionalStyles = '
         display: grid;
         grid-template-columns: 250px 1fr;
         gap: 2rem;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     /* Sidebar de filtros */
@@ -520,6 +522,9 @@ $additionalStyles = '
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
     }
     .products-header {
         display: flex;
@@ -544,9 +549,13 @@ $additionalStyles = '
         display: flex;
         gap: 8px;
         overflow-x: auto;
+        overflow-y: hidden;
         padding-bottom: 6px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
     }
     .subcat-chips::-webkit-scrollbar {
         height: 0;
@@ -562,6 +571,7 @@ $additionalStyles = '
         color: inherit;
         white-space: nowrap;
         transition: border-color 0.2s, font-weight 0.2s;
+        min-width: 0;
     }
     .subcat-chips .chip:hover {
         border-color: ' . htmlspecialchars($theme['color_primary']) . ';
@@ -575,6 +585,9 @@ $additionalStyles = '
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 1.5rem;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
     }
     .product-card {
         background: white;
@@ -585,6 +598,8 @@ $additionalStyles = '
         display: flex;
         flex-direction: column;
         height: 100%;
+        min-width: 0;
+        width: 100%;
     }
     .product-card:hover {
         transform: translateY(-4px);
@@ -757,6 +772,9 @@ $additionalStyles = '
             grid-template-columns: 1fr;
             margin: 1.5rem auto;
             padding: 0 1rem;
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
         }
         .filters-sidebar {
             display: none;
@@ -772,6 +790,9 @@ $additionalStyles = '
         .products-grid {
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 1rem;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
         }
         .product-image-wrapper {
             height: 180px;
@@ -782,13 +803,19 @@ $additionalStyles = '
         .products-header {
             flex-direction: column;
             align-items: flex-start;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
         }
         .sort-select {
             width: 100%;
+            box-sizing: border-box;
         }
         .subcat-chips {
             width: 100%;
+            max-width: 100%;
             margin-top: 12px;
+            min-width: 0;
         }
         .breadcrumb {
             padding: 0.75rem 1rem;
@@ -796,8 +823,15 @@ $additionalStyles = '
     }
     @media (max-width: 480px) {
         .products-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.75rem;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+        }
+        .product-card {
+            min-width: 0;
+            width: 100%;
         }
         .product-image-wrapper,
         .product-image-placeholder {
