@@ -71,21 +71,54 @@ class ProductController extends Controller
             $where[] = "(p.gerencia_estoque = 0 OR (p.gerencia_estoque = 1 AND p.quantidade_estoque > 0))";
         }
 
-        // Filtro por categoria
-        if ($categoriaId !== null) {
-            $joins[] = "INNER JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id_pc";
-            $joins[] = "INNER JOIN categorias c ON c.id = pc.categoria_id AND c.tenant_id = :tenant_id_c AND c.id = :categoria_id";
-            $params['tenant_id_pc'] = $tenantId;
-            $params['tenant_id_c'] = $tenantId;
-            $params['categoria_id'] = $categoriaId;
-        } elseif (!empty($_GET['categoria'])) {
-            // Filtro por categoria via query string (slug)
-            $categoriaSlug = $_GET['categoria'];
-            $joins[] = "INNER JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id_pc";
-            $joins[] = "INNER JOIN categorias c ON c.id = pc.categoria_id AND c.tenant_id = :tenant_id_c AND c.slug = :categoria_slug";
-            $params['tenant_id_pc'] = $tenantId;
-            $params['tenant_id_c'] = $tenantId;
-            $params['categoria_slug'] = $categoriaSlug;
+        // Filtro por categoria (inclui subcategorias automaticamente)
+        if ($categoriaId !== null || !empty($_GET['categoria'])) {
+            // Buscar categoria por ID ou slug
+            $categoriaInfo = null;
+            if ($categoriaId !== null) {
+                $stmt = $db->prepare("SELECT id, categoria_pai_id FROM categorias WHERE tenant_id = :tenant_id AND id = :categoria_id LIMIT 1");
+                $stmt->execute(['tenant_id' => $tenantId, 'categoria_id' => $categoriaId]);
+                $categoriaInfo = $stmt->fetch();
+            } else {
+                $categoriaSlug = $_GET['categoria'];
+                $stmt = $db->prepare("SELECT id, categoria_pai_id FROM categorias WHERE tenant_id = :tenant_id AND slug = :slug LIMIT 1");
+                $stmt->execute(['tenant_id' => $tenantId, 'slug' => $categoriaSlug]);
+                $categoriaInfo = $stmt->fetch();
+                if ($categoriaInfo) {
+                    $categoriaId = $categoriaInfo['id'];
+                }
+            }
+            
+            if ($categoriaInfo) {
+                // Se $categoriaAtual não foi passada mas temos categoria via GET, buscar dados completos
+                if (!$categoriaAtual && !empty($_GET['categoria'])) {
+                    $stmt = $db->prepare("SELECT * FROM categorias WHERE tenant_id = :tenant_id AND id = :categoria_id LIMIT 1");
+                    $stmt->execute(['tenant_id' => $tenantId, 'categoria_id' => $categoriaInfo['id']]);
+                    $categoriaAtual = $stmt->fetch();
+                }
+                
+                // Buscar subcategorias (filhos diretos)
+                $stmt = $db->prepare("SELECT id FROM categorias WHERE tenant_id = :tenant_id AND categoria_pai_id = :categoria_pai_id");
+                $stmt->execute(['tenant_id' => $tenantId, 'categoria_pai_id' => $categoriaInfo['id']]);
+                $subcategorias = $stmt->fetchAll();
+                $subcategoriaIds = array_column($subcategorias, 'id');
+                
+                // Lista de IDs de categorias para buscar produtos (pai + filhos)
+                $categoriaIds = array_merge([$categoriaInfo['id']], $subcategoriaIds);
+                
+                // Montar IN clause com placeholders
+                $placeholders = [];
+                foreach ($categoriaIds as $idx => $catId) {
+                    $key = "categoria_id_{$idx}";
+                    $placeholders[] = ":{$key}";
+                    $params[$key] = $catId;
+                }
+                
+                // JOIN com produto_categorias usando IN para incluir pai + filhos
+                $joins[] = "INNER JOIN produto_categorias pc ON pc.produto_id = p.id AND pc.tenant_id = :tenant_id_pc";
+                $where[] = "pc.categoria_id IN (" . implode(',', $placeholders) . ")";
+                $params['tenant_id_pc'] = $tenantId;
+            }
         }
 
         // Filtro de busca

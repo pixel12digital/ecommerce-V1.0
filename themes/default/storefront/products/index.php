@@ -152,6 +152,46 @@ if ($resultSemCategoria && (int)($resultSemCategoria['total'] ?? 0) > 0) {
     ]);
 }
 
+// Inicializar variáveis
+$categoriaAtualSlug = $_GET['categoria'] ?? null;
+$subcategoriasParaFiltro = [];
+
+// Buscar categoria atual se não foi passada pelo controller mas existe no GET
+if (!$categoriaAtual && $categoriaAtualSlug) {
+    // Buscar categoria por slug quando vem via GET
+    $stmt = $db->prepare("
+        SELECT id, nome, slug, categoria_pai_id
+        FROM categorias
+        WHERE tenant_id = :tenant_id AND slug = :slug
+        LIMIT 1
+    ");
+    $stmt->execute([
+        'tenant_id' => $tenantId,
+        'slug' => $categoriaAtualSlug
+    ]);
+    $categoriaAtual = $stmt->fetch();
+}
+
+// Se $categoriaAtual já veio do controller, atualizar $categoriaAtualSlug
+if ($categoriaAtual && !$categoriaAtualSlug && !empty($categoriaAtual['slug'])) {
+    $categoriaAtualSlug = $categoriaAtual['slug'];
+}
+
+// Se a categoria atual for "pai" (sem categoria_pai_id), buscar subcategorias
+if ($categoriaAtual && empty($categoriaAtual['categoria_pai_id'])) {
+    $stmt = $db->prepare("
+        SELECT id, nome, slug
+        FROM categorias
+        WHERE tenant_id = :tenant_id AND categoria_pai_id = :pai_id
+        ORDER BY nome ASC
+    ");
+    $stmt->execute([
+        'tenant_id' => $tenantId,
+        'pai_id' => $categoriaAtual['id']
+    ]);
+    $subcategoriasParaFiltro = $stmt->fetchAll();
+}
+
 // Construir URL base para filtros
 $urlBase = $categoriaAtual ? $basePath . '/categoria/' . htmlspecialchars($categoriaAtual['slug']) : $basePath . '/produtos';
 
@@ -201,6 +241,25 @@ ob_start();
                         <option value="<?= htmlspecialchars($cat['slug']) ?>" 
                                 <?= $filtrosAtuais['categoria'] === $cat['slug'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($cat['nome']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Subcategoria (apenas se categoria atual for pai e tiver subcategorias) -->
+            <?php if (!empty($subcategoriasParaFiltro)): ?>
+            <div class="filter-group" style="margin-top: 12px;">
+                <label for="subcategoria">Subcategoria:</label>
+                <select id="subcategoria" onchange="if(this.value) window.location.href=this.value;">
+                    <option value="<?= $basePath ?>/produtos?categoria=<?= urlencode($categoriaAtual['slug']) ?>"
+                        <?= ($categoriaAtualSlug === $categoriaAtual['slug']) ? 'selected' : '' ?>>
+                        Todas
+                    </option>
+                    <?php foreach ($subcategoriasParaFiltro as $sub): ?>
+                        <option value="<?= $basePath ?>/produtos?categoria=<?= urlencode($sub['slug']) ?>"
+                            <?= ($categoriaAtualSlug === $sub['slug']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($sub['nome']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
