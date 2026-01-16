@@ -320,6 +320,22 @@ ob_start();
             </select>
         </div>
         
+        <!-- Chips de Subcategorias -->
+        <?php if (!empty($subcategoriasParaFiltro) && !empty($categoriaAtual)): ?>
+            <div class="subcat-chips">
+                <a class="chip <?= ($categoriaAtualSlug === $categoriaAtual['slug']) ? 'is-active' : '' ?>"
+                   href="<?= $basePath ?>/produtos?categoria=<?= urlencode($categoriaAtual['slug']) ?>">
+                    Todas
+                </a>
+                <?php foreach ($subcategoriasParaFiltro as $sub): ?>
+                    <a class="chip <?= ($categoriaAtualSlug === $sub['slug']) ? 'is-active' : '' ?>"
+                       href="<?= $basePath ?>/produtos?categoria=<?= urlencode($sub['slug']) ?>">
+                        <?= htmlspecialchars($sub['nome']) ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+        
         <?php if (!empty($produtos)): ?>
             <div class="products-grid">
                 <?php foreach ($produtos as $produto): ?>
@@ -521,6 +537,39 @@ $additionalStyles = '
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 0.9rem;
+    }
+    /* Chips de Subcategorias */
+    .subcat-chips {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .subcat-chips::-webkit-scrollbar {
+        height: 0;
+    }
+    .subcat-chips .chip {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 999px;
+        font-size: 14px;
+        text-decoration: none;
+        background: #fff;
+        color: inherit;
+        white-space: nowrap;
+        transition: border-color 0.2s, font-weight 0.2s;
+    }
+    .subcat-chips .chip:hover {
+        border-color: ' . htmlspecialchars($theme['color_primary']) . ';
+    }
+    .subcat-chips .chip.is-active {
+        border-color: ' . htmlspecialchars($theme['color_primary']) . ';
+        font-weight: 600;
+        color: ' . htmlspecialchars($theme['color_primary']) . ';
     }
     .products-grid {
         display: grid;
@@ -736,6 +785,10 @@ $additionalStyles = '
         }
         .sort-select {
             width: 100%;
+        }
+        .subcat-chips {
+            width: 100%;
+            margin-top: 12px;
         }
         .breadcrumb {
             padding: 0.75rem 1rem;
