@@ -40,6 +40,7 @@ use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\OrderController;
 use App\Http\Controllers\Storefront\CustomerAuthController;
+use App\Http\Controllers\Storefront\ShippingController;
 use App\Http\Controllers\Storefront\CustomerController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ThemeController;
@@ -360,6 +361,14 @@ $router->post('/admin/pedidos/{id}/documento-envio', AdminOrderController::class
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_orders'
 ]);
+$router->post('/admin/pedidos/{id}/rastreio', AdminOrderController::class . '@salvarRastreio', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
+]);
+$router->post('/admin/pedidos/{id}/marcar-enviado', AdminOrderController::class . '@marcarEnviado', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
+]);
 
 // Rotas Admin - Clientes
 $router->get('/admin/clientes', AdminCustomerController::class . '@index', [
@@ -395,6 +404,10 @@ $router->get('/admin/configuracoes/gateways', GatewayConfigController::class . '
     CheckPermissionMiddleware::class => 'manage_gateways'
 ]);
 $router->post('/admin/configuracoes/gateways', GatewayConfigController::class . '@store', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_gateways'
+]);
+$router->post('/admin/gateways/correios/test', GatewayConfigController::class . '@testCorreios', [
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_gateways'
 ]);
@@ -472,6 +485,10 @@ $router->post('/carrinho/esvaziar', CartController::class . '@clear');
 // Rotas públicas - Checkout
 $router->get('/checkout', CheckoutController::class . '@index');
 $router->post('/checkout', CheckoutController::class . '@process');
+
+// Rotas públicas - API Shipping
+$router->post('/api/shipping/validate', ShippingController::class . '@validate');
+$router->post('/api/shipping/calculate', ShippingController::class . '@calculate');
 
 // Rotas públicas - Pedidos
 $router->get('/pedido/{numero_pedido}/confirmacao', OrderController::class . '@thankYou');
