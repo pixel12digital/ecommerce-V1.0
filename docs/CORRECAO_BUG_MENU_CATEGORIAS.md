@@ -152,3 +152,4 @@ O `DISTINCT` garante que não há duplicatas.
 3. Validar que não há regressões
 4. Monitorar logs por possíveis erros
 
+

@@ -238,3 +238,5 @@ Após fazer deploy das alterações:
 - Script de diagnóstico: `public/debug_menu_categorias.php`
 - Layout admin: `themes/default/admin/layouts/store.php`
 
+
+

@@ -215,3 +215,5 @@ try {
     die('<h1>Erro: ' . htmlspecialchars($e->getMessage()) . '</h1><pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>');
 }
 
+
+

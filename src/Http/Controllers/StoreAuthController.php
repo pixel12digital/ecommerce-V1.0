@@ -24,10 +24,21 @@ class StoreAuthController extends Controller
                 \App\Tenant\TenantContext::setFixedTenant($defaultTenantId);
             } else {
                 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                // Remover porta do host (localhost:80 -> localhost)
+                $host = preg_replace('/:\d+$/', '', $host);
                 \App\Tenant\TenantContext::resolveFromHost($host);
             }
         } catch (\Exception $e) {
             // Se houver erro ao resolver tenant, continuar mesmo assim (fallback será usado)
+            // Mas em modo single, tentar usar tenant padrão
+            if (($config['mode'] ?? 'single') === 'single') {
+                try {
+                    $defaultTenantId = $config['default_tenant_id'] ?? 1;
+                    \App\Tenant\TenantContext::setFixedTenant($defaultTenantId);
+                } catch (\Exception $e2) {
+                    // Ignorar erro no fallback também
+                }
+            }
         }
 
         $this->view('admin/store/login');
@@ -53,6 +64,8 @@ class StoreAuthController extends Controller
                 \App\Tenant\TenantContext::setFixedTenant($defaultTenantId);
             } else {
                 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                // Remover porta do host (localhost:80 -> localhost)
+                $host = preg_replace('/:\d+$/', '', $host);
                 \App\Tenant\TenantContext::resolveFromHost($host);
             }
         } catch (\Exception $e) {

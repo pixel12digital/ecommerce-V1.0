@@ -305,3 +305,5 @@ https://pontodogolfeoutlet.com.br/debug_categorias.php
 
 **Se problemas persistirem:** Executar scripts de diagnóstico para identificar a causa específica.
 
+
+

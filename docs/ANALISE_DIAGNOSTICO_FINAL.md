@@ -190,3 +190,5 @@ Com base na análise, a hipótese mais provável é:
 
 **Próxima ação:** Verificar logs do PHP ao acessar `/admin/categorias` diretamente e comparar com `/admin/produtos` para identificar a diferença no comportamento.
 
+
+

@@ -78,3 +78,5 @@ $router->get('/admin/categorias', CategoriaController::class . '@index', [
 **Deploy do layout:** ✅ **CORRETO**  
 **Deploy das rotas:** ❌ **FALTANDO** - `public/index.php` precisa ser atualizado
 
+
+

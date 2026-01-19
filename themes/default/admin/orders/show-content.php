@@ -118,6 +118,84 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         </div>
     </div>
     
+    <!-- Envio / Correios -->
+    <div class="card">
+        <h3 class="card-title"><i class="bi bi-truck icon"></i> Envio / Correios</h3>
+        
+        <?php
+        $hasEtiqueta = !empty($pedido['tracking_code']) || !empty($pedido['label_url']) || !empty($pedido['label_pdf_path']);
+        $labelFormat = $pedido['label_format'] ?? 'A4';
+        $labelGeneratedAt = $pedido['label_generated_at'] ?? null;
+        ?>
+        
+        <!-- Status da Etiqueta -->
+        <?php if ($hasEtiqueta): ?>
+            <div style="padding: 1rem; background: #d4edda; border-radius: 4px; border-left: 4px solid #28a745; margin-bottom: 1.5rem;">
+                <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #155724;">
+                    <i class="bi bi-check-circle"></i> Etiqueta gerada
+                    <?php if ($labelGeneratedAt): ?>
+                        <small style="font-weight: normal; color: #666; margin-left: 0.5rem;">
+                            em <?= date('d/m/Y H:i', strtotime($labelGeneratedAt)) ?>
+                        </small>
+                    <?php endif; ?>
+                </p>
+                <?php if (!empty($pedido['tracking_code'])): ?>
+                    <p style="margin: 0.5rem 0; color: #155724;">
+                        <strong>Código de rastreamento:</strong> <?= htmlspecialchars($pedido['tracking_code']) ?>
+                    </p>
+                <?php endif; ?>
+                <p style="margin: 1rem 0 0 0;">
+                    <a href="<?= $basePath ?>/admin/pedidos/<?= $pedido['id'] ?>/frete/imprimir-etiqueta" 
+                       target="_blank"
+                       class="btn" 
+                       style="display: inline-block; padding: 0.75rem 1.5rem; background: #28a745; color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">
+                        <i class="bi bi-printer" style="margin-right: 0.5rem;"></i>
+                        Imprimir Etiqueta
+                    </a>
+                </p>
+            </div>
+        <?php else: ?>
+            <div style="padding: 1rem; background: #fff3cd; border-radius: 4px; border-left: 4px solid #856404; margin-bottom: 1.5rem;">
+                <p style="margin: 0; color: #856404;">
+                    <i class="bi bi-info-circle"></i> Etiqueta ainda não foi gerada.
+                </p>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Formulário para Gerar Etiqueta -->
+        <form method="POST" action="<?= $basePath ?>/admin/pedidos/<?= $pedido['id'] ?>/frete/gerar-etiqueta" class="label-form" style="margin-top: 1rem;">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="label_format" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                    Formato da Etiqueta
+                </label>
+                <select id="label_format" name="label_format" 
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    <option value="A4" <?= $labelFormat === 'A4' ? 'selected' : '' ?>>
+                        A4 (Folha comum - 2 etiquetas por folha)
+                    </option>
+                    <option value="10x15" <?= $labelFormat === '10x15' ? 'selected' : '' ?>>
+                        10x15 (Térmica - 100x150mm)
+                    </option>
+                </select>
+                <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                    <?php if (!$hasEtiqueta): ?>
+                        O formato será usado ao gerar a etiqueta.
+                    <?php else: ?>
+                        <strong>Nota:</strong> Para alterar o formato, será necessário gerar a etiqueta novamente (quando a API estiver disponível).
+                    <?php endif; ?>
+                    <?php if ($labelFormat === '10x15'): ?>
+                        <br><strong>Observação:</strong> Formato 10x15 depende do suporte da API dos Correios.
+                    <?php endif; ?>
+                </small>
+            </div>
+            
+            <button type="submit" class="btn" style="padding: 0.75rem 1.5rem; background: #023A8D; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                <i class="bi bi-file-earmark-plus" style="margin-right: 0.5rem;"></i>
+                <?= $hasEtiqueta ? 'Regenerar Etiqueta' : 'Gerar Etiqueta' ?>
+            </button>
+        </form>
+    </div>
+    
     <!-- Dados do Cliente -->
     <div class="card">
         <h3 class="card-title">Dados do Cliente</h3>
@@ -150,6 +228,74 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             <?= htmlspecialchars($pedido['entrega_cidade']) ?>/<?= htmlspecialchars($pedido['entrega_estado']) ?><br>
             CEP: <?= htmlspecialchars($pedido['entrega_cep']) ?>
         </p>
+    </div>
+    
+    <!-- Documento do Envio -->
+    <div class="card">
+        <h3 class="card-title">Documento do Envio</h3>
+        
+        <?php
+        $documentoEnvio = $pedido['documento_envio'] ?? 'declaracao_conteudo';
+        $nfReference = $pedido['nf_reference'] ?? $pedido['nf_chave'] ?? '';
+        ?>
+        
+        <form method="POST" action="<?= $basePath ?>/admin/pedidos/<?= $pedido['id'] ?>/documento-envio" class="document-form" style="margin-top: 1rem;">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="documento_envio" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Tipo de Documento *</label>
+                <select id="documento_envio" name="documento_envio" required 
+                        onchange="toggleDocumentFields()"
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    <option value="declaracao_conteudo" <?= $documentoEnvio === 'declaracao_conteudo' ? 'selected' : '' ?>>
+                        Declaração de Conteúdo
+                    </option>
+                    <option value="nota_fiscal" <?= $documentoEnvio === 'nota_fiscal' ? 'selected' : '' ?>>
+                        Nota Fiscal
+                    </option>
+                </select>
+            </div>
+            
+            <!-- Campo para Declaração de Conteúdo -->
+            <div id="declaracao_section" class="document-section" style="display: <?= $documentoEnvio === 'declaracao_conteudo' ? 'block' : 'none' ?>;">
+                <div style="padding: 1rem; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #023A8D;">
+                    <p style="margin: 0 0 1rem 0; color: #666;">
+                        A Declaração de Conteúdo será gerada automaticamente com base nos dados do pedido e do remetente configurado no gateway Correios.
+                    </p>
+                    <a href="<?= $basePath ?>/admin/pedidos/<?= $pedido['id'] ?>/envio/declaracao-conteudo" 
+                       target="_blank"
+                       class="btn" 
+                       style="display: inline-block; padding: 0.75rem 1.5rem; background: #023A8D; color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">
+                        <i class="bi bi-file-earmark-pdf" style="margin-right: 0.5rem;"></i>
+                        Visualizar Declaração (PDF)
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Campo para Nota Fiscal -->
+            <div id="nota_fiscal_section" class="document-section" style="display: <?= $documentoEnvio === 'nota_fiscal' ? 'block' : 'none' ?>;">
+                <div style="padding: 1rem; background: #fff3cd; border-radius: 4px; border-left: 4px solid #856404; margin-bottom: 1rem;">
+                    <p style="margin: 0; color: #856404; font-size: 0.875rem;">
+                        <strong>Nota:</strong> A Nota Fiscal é emitida fora do sistema. Aqui é apenas para referência e registro.
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="nf_reference" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Referência da NF (opcional)</label>
+                    <input type="text" 
+                           id="nf_reference" 
+                           name="nf_reference" 
+                           value="<?= htmlspecialchars($nfReference) ?>"
+                           placeholder="Chave da NF (44 dígitos), número da NF, ou observação"
+                           maxlength="255"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                        Informe a chave da NF-e, número da NF, ou qualquer referência relacionada.
+                    </small>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;">
+                Salvar Documento
+            </button>
+        </form>
     </div>
     
     <!-- Itens do Pedido -->
@@ -292,6 +438,40 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
     background: #f8d7da;
     color: #721c24;
 }
+.message.info {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #023A8D;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-size: 1rem;
+}
+.btn:hover {
+    background: #022a6d;
+}
 </style>
+
+<script>
+function toggleDocumentFields() {
+    const select = document.getElementById('documento_envio');
+    const selectedValue = select.value;
+    
+    document.getElementById('declaracao_section').style.display = selectedValue === 'declaracao_conteudo' ? 'block' : 'none';
+    document.getElementById('nota_fiscal_section').style.display = selectedValue === 'nota_fiscal' ? 'block' : 'none';
+}
+
+// Executar ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    toggleDocumentFields();
+});
+</script>
 
 

@@ -5,6 +5,7 @@ namespace App\Services\Shipping;
 use App\Core\Database;
 use App\Tenant\TenantContext;
 use App\Services\Shipping\Providers\SimpleShippingProvider;
+use App\Services\Shipping\Providers\CorreiosProvider;
 
 class ShippingService
 {
@@ -120,8 +121,7 @@ class ShippingService
         // Mapear código para classe do provider
         $providers = [
             'simples' => SimpleShippingProvider::class,
-            // Futuro: 'melhorenvio' => MelhorEnvioProvider::class,
-            // Futuro: 'correios' => CorreiosProvider::class,
+            'correios' => \App\Services\Shipping\Providers\CorreiosProvider::class,
         ];
 
         $providerClass = $providers[$codigo] ?? SimpleShippingProvider::class;
@@ -131,6 +131,26 @@ class ShippingService
         }
 
         return new $providerClass();
+    }
+
+    /**
+     * Obtém configuração JSON do provider (método público)
+     * 
+     * @param int $tenantId ID do tenant
+     * @param string $tipo Tipo do gateway ('payment' ou 'shipping')
+     * @return array Configuração decodificada
+     */
+    public static function getProviderConfig(int $tenantId, string $tipo): array
+    {
+        $gateway = self::getGatewayConfig($tenantId, $tipo);
+        $configJson = $gateway['config_json'] ?? null;
+
+        if (empty($configJson)) {
+            return [];
+        }
+
+        $config = json_decode($configJson, true);
+        return is_array($config) ? $config : [];
     }
 
     /**
@@ -171,25 +191,6 @@ class ShippingService
         return $gateway;
     }
 
-    /**
-     * Obtém configuração JSON do provider (decodificado)
-     * 
-     * @param int $tenantId ID do tenant
-     * @param string $tipo Tipo do gateway
-     * @return array Configuração decodificada
-     */
-    private static function getProviderConfig(int $tenantId, string $tipo): array
-    {
-        $gateway = self::getGatewayConfig($tenantId, $tipo);
-        $configJson = $gateway['config_json'] ?? null;
-
-        if (empty($configJson)) {
-            return [];
-        }
-
-        $config = json_decode($configJson, true);
-        return is_array($config) ? $config : [];
-    }
 }
 
 

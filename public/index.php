@@ -340,6 +340,26 @@ $router->post('/admin/pedidos/{id}/status', AdminOrderController::class . '@upda
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_orders'
 ]);
+$router->post('/admin/pedidos/{id}/frete/gerar-etiqueta', AdminOrderController::class . '@gerarEtiqueta', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
+]);
+$router->get('/admin/pedidos/{id}/frete/imprimir-etiqueta', AdminOrderController::class . '@imprimirEtiqueta', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
+]);
+$router->get('/admin/pedidos/{id}/frete/etiqueta/pdf', AdminOrderController::class . '@etiquetaPdf', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
+]);
+$router->get('/admin/pedidos/{id}/envio/declaracao-conteudo', AdminOrderController::class . '@declaracaoConteudo', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
+]);
+$router->post('/admin/pedidos/{id}/documento-envio', AdminOrderController::class . '@updateDocumentoEnvio', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_orders'
+]);
 
 // Rotas Admin - Clientes
 $router->get('/admin/clientes', AdminCustomerController::class . '@index', [

@@ -28,7 +28,13 @@ class AuthService
 
     public function loginStoreUser(string $email, string $password): bool
     {
-        $tenantId = TenantContext::id();
+        try {
+            $tenantId = TenantContext::id();
+        } catch (\Exception $e) {
+            error_log('[AUTH] Erro ao obter tenant ID: ' . $e->getMessage());
+            return false;
+        }
+        
         $db = Database::getConnection();
         
         $stmt = $db->prepare("
@@ -39,7 +45,18 @@ class AuthService
         $stmt->execute(['email' => $email, 'tenant_id' => $tenantId]);
         $user = $stmt->fetch();
 
-        if (!$user || !password_verify($password, $user['password_hash'])) {
+        if (!$user) {
+            error_log('[AUTH] Usuário não encontrado: email=' . $email . ', tenant_id=' . $tenantId);
+            return false;
+        }
+
+        if (empty($user['password_hash'])) {
+            error_log('[AUTH] Senha não definida para usuário: ' . $email);
+            return false;
+        }
+
+        if (!password_verify($password, $user['password_hash'])) {
+            error_log('[AUTH] Senha incorreta para usuário: ' . $email);
             return false;
         }
 

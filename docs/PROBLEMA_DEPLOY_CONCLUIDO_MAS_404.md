@@ -181,3 +181,5 @@ public_html/
 - Documento anterior: `docs/CONFIRMACAO_DEPLOY_STATUS.md`
 - Script de diagnóstico: `public/debug_rota_categorias.php` (se deployado)
 
+
+
