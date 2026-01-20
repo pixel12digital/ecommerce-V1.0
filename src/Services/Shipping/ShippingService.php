@@ -35,10 +35,23 @@ class ShippingService
 
         error_log("ShippingService::calcularFrete() - Validação OK");
 
-        $provider = self::getProvider($tenantId);
-        $config = self::getProviderConfig($tenantId, 'shipping');
+        try {
+            $provider = self::getProvider($tenantId);
+            error_log("ShippingService::calcularFrete() - Provider obtido: " . get_class($provider));
+        } catch (\Exception $e) {
+            error_log("ShippingService::calcularFrete() - ERRO ao obter provider: " . $e->getMessage());
+            error_log("ShippingService::calcularFrete() - Stack trace: " . $e->getTraceAsString());
+            throw $e;
+        }
         
-        error_log("ShippingService::calcularFrete() - Provider: " . get_class($provider));
+        try {
+            $config = self::getProviderConfig($tenantId, 'shipping');
+            error_log("ShippingService::calcularFrete() - Config obtida: " . json_encode(array_keys($config)));
+        } catch (\Exception $e) {
+            error_log("ShippingService::calcularFrete() - ERRO ao obter config: " . $e->getMessage());
+            error_log("ShippingService::calcularFrete() - Stack trace: " . $e->getTraceAsString());
+            throw $e;
+        }
 
         // ENRIQUECER: Buscar dimensões e peso dos produtos do banco (DADOS REAIS)
         // Isso garante que sempre usamos dados reais cadastrados no admin, não dependendo do frontend

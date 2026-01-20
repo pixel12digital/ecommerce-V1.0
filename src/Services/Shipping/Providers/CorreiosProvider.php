@@ -44,7 +44,8 @@ class CorreiosProvider implements ShippingProviderInterface
 
         // Validar CEPs
         if (empty($cepOrigem) || empty($cepDestino)) {
-            return [];
+            error_log("[SHIP] CorreiosProvider: CEP origem ou destino vazio");
+            throw new \RuntimeException('CEP de origem ou destino não informado.');
         }
 
         // Limpar CEPs (remover caracteres não numéricos)
@@ -52,7 +53,8 @@ class CorreiosProvider implements ShippingProviderInterface
         $cepDestino = preg_replace('/\D/', '', $cepDestino);
 
         if (strlen($cepOrigem) !== 8 || strlen($cepDestino) !== 8) {
-            return [];
+            error_log("[SHIP] CorreiosProvider: CEP inválido (origem: {$cepOrigem}, destino: {$cepDestino})");
+            throw new \RuntimeException('CEP de origem ou destino inválido (deve conter 8 dígitos).');
         }
 
         // Calcular peso e dimensões totais do pacote (SEM FALLBACK - validação já feita)
@@ -71,11 +73,10 @@ class CorreiosProvider implements ShippingProviderInterface
         // Valores máximos
         $pesoTotal = min(30.0, $pesoTotal); // Máximo 30 kg (PAC/SEDEX padrão)
         
-        // Validar se após fallback ainda está inválido
+        // Validar se após ajustes ainda está inválido
         if ($pesoTotal <= 0 || $dimensoes['comprimento'] <= 0 || $dimensoes['largura'] <= 0 || $dimensoes['altura'] <= 0) {
-            error_log("Dados inválidos para cálculo de frete após fallback: peso={$pesoTotal}, dimensoes=" . json_encode($dimensoes));
-            // Retornar array vazio (não quebra checkout, apenas não mostra opções)
-            return [];
+            error_log("[SHIP] CorreiosProvider: Dados inválidos para cálculo de frete: peso={$pesoTotal}, dimensoes=" . json_encode($dimensoes));
+            throw new \RuntimeException('Dados inválidos para cálculo de frete (peso ou dimensões inválidos).');
         }
         
         // Preparar dados para cotação (SEM FALLBACK - validação já feita)
@@ -103,13 +104,13 @@ class CorreiosProvider implements ShippingProviderInterface
             // Modo CWS: exige usuario + codigo_acesso_apis (ignora senha)
             $codigoAcessoApis = $credenciais['codigo_acesso_apis'] ?? $credenciais['chave_acesso_cws'] ?? '';
             if (empty($usuario) || empty($codigoAcessoApis)) {
-                error_log("Credenciais dos Correios não configuradas para cálculo de frete (modo CWS: usuário e código de acesso às APIs são obrigatórios).");
-                return [];
+                error_log("[SHIP] CorreiosProvider: Credenciais dos Correios não configuradas (modo CWS: usuário e código de acesso às APIs são obrigatórios).");
+                throw new \RuntimeException('Credenciais dos Correios não configuradas. Verifique as configurações no painel administrativo.');
             }
         } else {
             // Modo Legado: exige usuario + senha (não implementado ainda)
-            error_log("Modo Legado/SIGEP ainda não implementado para cálculo de frete.");
-            return [];
+            error_log("[SHIP] CorreiosProvider: Modo Legado/SIGEP ainda não implementado para cálculo de frete.");
+            throw new \RuntimeException('Modo de integração Legado/SIGEP ainda não implementado.');
         }
 
         try {
@@ -130,11 +131,12 @@ class CorreiosProvider implements ShippingProviderInterface
             if (empty($opcoesFormatadas)) {
                 error_log("[SHIP] CorreiosProvider::formatarOpcoesFrete() - Opções formatadas ficaram vazias");
                 error_log("[SHIP] CorreiosProvider::formatarOpcoesFrete() - Resposta API original: " . json_encode($opcoesApi));
+                throw new \RuntimeException('Nenhuma opção de frete disponível para este CEP com os dados informados.');
             }
             
             return $opcoesFormatadas;
         } catch (\Exception $e) {
-            // Em caso de erro, logar motivo técnico completo (sem credenciais) e retornar array vazio
+            // Em caso de erro, logar motivo técnico completo (sem credenciais) e relançar exceção
             $mensagemErro = $e->getMessage();
             // Remover credenciais da mensagem de erro antes de logar
             $mensagemErro = preg_replace('/(usuario|senha|chave|token|credencial)[=:]\s*[^\s,;]+/i', '$1=***', $mensagemErro);
@@ -142,7 +144,17 @@ class CorreiosProvider implements ShippingProviderInterface
             error_log("[SHIP] CorreiosProvider: Mensagem: " . $mensagemErro);
             error_log("[SHIP] CorreiosProvider: Arquivo: " . $e->getFile());
             error_log("[SHIP] CorreiosProvider: Linha: " . $e->getLine());
-            return [];
+            error_log("[SHIP] CorreiosProvider: Stack trace: " . $e->getTraceAsString());
+            // Relançar exceção para que seja tratada pelo ShippingService/ShippingController
+            throw $e;
+        } catch (\Throwable $e) {
+            // Capturar qualquer outro erro (Error, etc)
+            error_log("[SHIP] CorreiosProvider: ERRO GRAVE (Throwable)");
+            error_log("[SHIP] CorreiosProvider: Mensagem: " . $e->getMessage());
+            error_log("[SHIP] CorreiosProvider: Arquivo: " . $e->getFile());
+            error_log("[SHIP] CorreiosProvider: Linha: " . $e->getLine());
+            error_log("[SHIP] CorreiosProvider: Stack trace: " . $e->getTraceAsString());
+            throw $e;
         }
     }
 
