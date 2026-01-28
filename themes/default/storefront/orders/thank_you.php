@@ -39,6 +39,9 @@ if (empty($theme['footer_email'])) {
 if (empty($theme['footer_address'])) {
     $theme['footer_address'] = \App\Services\ThemeConfig::get('footer_address', '');
 }
+if (!isset($theme['footer_cnpj']) || $theme['footer_cnpj'] === '') {
+    $theme['footer_cnpj'] = \App\Services\ThemeConfig::get('footer_cnpj', '');
+}
 if (empty($theme['footer_social_instagram'])) {
     $theme['footer_social_instagram'] = \App\Services\ThemeConfig::get('footer_social_instagram', '');
 }

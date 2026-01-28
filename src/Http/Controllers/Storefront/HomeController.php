@@ -38,6 +38,7 @@ class HomeController extends Controller
             'footer_whatsapp' => ThemeConfig::get('footer_whatsapp', ''),
             'footer_email' => ThemeConfig::get('footer_email', ''),
             'footer_address' => ThemeConfig::get('footer_address', ''),
+            'footer_cnpj' => ThemeConfig::get('footer_cnpj', ''),
             
             // Redes sociais
             'footer_social_instagram' => ThemeConfig::get('footer_social_instagram', ''),

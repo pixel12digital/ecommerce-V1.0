@@ -41,6 +41,7 @@ class CartController extends Controller
             'footer_whatsapp' => ThemeConfig::get('footer_whatsapp', ''),
             'footer_email' => ThemeConfig::get('footer_email', ''),
             'footer_address' => ThemeConfig::get('footer_address', ''),
+            'footer_cnpj' => ThemeConfig::get('footer_cnpj', ''),
             'footer_social_instagram' => ThemeConfig::get('footer_social_instagram', ''),
             'footer_social_facebook' => ThemeConfig::get('footer_social_facebook', ''),
             'footer_social_youtube' => ThemeConfig::get('footer_social_youtube', ''),

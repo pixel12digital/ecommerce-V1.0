@@ -796,6 +796,10 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             color: var(--pg-color-secondary);
         }
         
+        .pg-footer-contact-item.pg-footer-cnpj {
+            font-size: 0.9375rem;
+        }
+        
         .pg-footer-social {
             display: flex;
             gap: 12px;

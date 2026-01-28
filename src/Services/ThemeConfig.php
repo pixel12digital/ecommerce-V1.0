@@ -175,6 +175,7 @@ class ThemeConfig
             'footer_whatsapp' => self::get('footer_whatsapp', ''),
             'footer_email' => self::get('footer_email', ''),
             'footer_address' => self::get('footer_address', ''),
+            'footer_cnpj' => self::get('footer_cnpj', ''),
             'footer_social_instagram' => self::get('footer_social_instagram', ''),
             'footer_social_facebook' => self::get('footer_social_facebook', ''),
             'footer_social_youtube' => self::get('footer_social_youtube', ''),

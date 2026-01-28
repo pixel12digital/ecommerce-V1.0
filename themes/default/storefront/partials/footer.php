@@ -101,6 +101,18 @@ $footerCategories = $stmt->fetchAll();
                         <span><?= htmlspecialchars($theme['footer_address']) ?></span>
                     </div>
                 <?php endif; ?>
+                <?php
+                $footerCnpj = trim($theme['footer_cnpj'] ?? '');
+                if ($footerCnpj !== ''):
+                    $cnpjDigits = preg_replace('/\D/', '', $footerCnpj);
+                    $cnpjFormatted = (strlen($cnpjDigits) === 14)
+                        ? substr($cnpjDigits, 0, 2) . '.' . substr($cnpjDigits, 2, 3) . '.' . substr($cnpjDigits, 5, 3) . '/' . substr($cnpjDigits, 8, 4) . '-' . substr($cnpjDigits, 12, 2)
+                        : $footerCnpj;
+                ?>
+                    <div class="pg-footer-contact-item pg-footer-cnpj">
+                        <span>CNPJ: <?= htmlspecialchars($cnpjFormatted) ?></span>
+                    </div>
+                <?php endif; ?>
                 <div class="pg-footer-social">
                     <?php if ($theme['footer_social_instagram']): ?>
                         <a href="<?= htmlspecialchars($theme['footer_social_instagram']) ?>" target="_blank" rel="noopener"><i class="bi bi-instagram icon"></i></a>

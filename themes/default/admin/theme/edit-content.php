@@ -218,6 +218,11 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 <label for="footer_address">Endereço</label>
                 <textarea id="footer_address" name="footer_address" placeholder="Rua, número, bairro, cidade - UF, CEP"><?= htmlspecialchars($config['footer_address']) ?></textarea>
             </div>
+            <div class="admin-form-group">
+                <label for="footer_cnpj">CNPJ da loja</label>
+                <input type="text" id="footer_cnpj" name="footer_cnpj" value="<?= htmlspecialchars($config['footer_cnpj'] ?? '') ?>" placeholder="00.000.000/0000-00 ou apenas números" maxlength="20">
+                <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">Opcional. Exibido no footer no bloco Contato, apenas se preenchido. Aceita com ou sem máscara; o site exibe formatado (00.000.000/0000-00).</small>
+            </div>
         </div>
 
         <!-- Seção Redes Sociais - Fase 10 -->

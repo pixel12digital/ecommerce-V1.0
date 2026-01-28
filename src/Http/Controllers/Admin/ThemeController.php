@@ -43,6 +43,7 @@ class ThemeController extends Controller
             'footer_whatsapp' => ThemeConfig::get('footer_whatsapp', ''),
             'footer_email' => ThemeConfig::get('footer_email', ''),
             'footer_address' => ThemeConfig::get('footer_address', ''),
+            'footer_cnpj' => ThemeConfig::get('footer_cnpj', ''),
             'contact_email' => ThemeConfig::get('contact_email', ''), // E-mail específico para contato (fallback para footer_email)
             
             // Redes sociais
@@ -187,6 +188,7 @@ class ThemeController extends Controller
             'footer_whatsapp',
             'footer_email',
             'footer_address',
+            'footer_cnpj',
             'contact_email',
             'footer_social_instagram',
             'footer_social_facebook',
