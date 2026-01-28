@@ -1,0 +1,5335 @@
+{
+    "generated_at": "2026-01-20 14:43:26",
+    "total_produtos_analisados": 669,
+    "total_grupos_encontrados": 48,
+    "total_produtos_em_grupos": 119,
+    "total_produtos_orfas": 550,
+    "groups": [
+        {
+            "tenant_id": 1,
+            "base_name": "tenis de golfe adidas s2g spikeless boa (tam 2)",
+            "confidence": 80,
+            "suggested_parent_name": "Tenis De Golfe Adidas S2g Spikeless Boa (tam 2)",
+            "detected_attributes": [],
+            "items": [
+                {
+                    "id": 926,
+                    "nome": "Tênis de Golfe adidas S2G Spikeless BOA 24  (TAM 7 1/2)",
+                    "sku": "0000032",
+                    "preco": 1250,
+                    "preco_regular": 1250,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 924,
+                    "nome": "Tênis de Golfe adidas S2G Spikeless BOA 24 (TAM 8 1/2)",
+                    "sku": "0000013",
+                    "preco": 1250,
+                    "preco_regular": 1250,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "calca adidas tm",
+            "confidence": 60,
+            "suggested_parent_name": "Calca Adidas Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Bege"
+                ],
+                "Numeração": [
+                    "34",
+                    "32",
+                    "36"
+                ]
+            },
+            "items": [
+                {
+                    "id": 496,
+                    "nome": "CALÇA ADIDAS BEGE TM 34-32",
+                    "sku": "111",
+                    "preco": 480,
+                    "preco_regular": 480,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 500,
+                    "nome": "CALÇA ADIDAS BEGE TM 36-32",
+                    "sku": "112",
+                    "preco": 480,
+                    "preco_regular": 480,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camisa polo vinho bordo penguin",
+            "confidence": 60,
+            "suggested_parent_name": "Camisa Polo Vinho Bordo Penguin",
+            "detected_attributes": {
+                "Tamanho": [
+                    "M",
+                    "P"
+                ]
+            },
+            "items": [
+                {
+                    "id": 200,
+                    "nome": "camisa polo vinho bordo   Penguin M",
+                    "sku": "0000419",
+                    "preco": 520,
+                    "preco_regular": 520,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 201,
+                    "nome": "camisa polo vinho bordo Penguin  P",
+                    "sku": "0000418",
+                    "preco": 520,
+                    "preco_regular": 520,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "nike air zoom victory tour tamanho",
+            "confidence": 60,
+            "suggested_parent_name": "Nike Air Zoom Victory Tour Tamanho",
+            "detected_attributes": [],
+            "items": [
+                {
+                    "id": 190,
+                    "nome": "Nike Air Zoom Victory Tour 3 - TAMANHO 7.5",
+                    "sku": "424",
+                    "preco": 1250,
+                    "preco_regular": 1250,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 193,
+                    "nome": "Nike Air Zoom Victory Tour 3 - TAMANHO 8.5",
+                    "sku": "427",
+                    "preco": 1250,
+                    "preco_regular": 1250,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "short saia du´mo claro tm",
+            "confidence": 60,
+            "suggested_parent_name": "Short Saia Du´mo Claro Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul"
+                ],
+                "Tamanho": [
+                    "G",
+                    "GG"
+                ]
+            },
+            "items": [
+                {
+                    "id": 28,
+                    "nome": "SHORT SAIA DU´MO AZUL CLARO TM G",
+                    "sku": "277",
+                    "preco": 180,
+                    "preco_regular": 180,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 29,
+                    "nome": "SHORT SAIA DU´MO AZUL CLARO TM GG",
+                    "sku": "276",
+                    "preco": 180,
+                    "preco_regular": 180,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "short saia du´mo marinho tm",
+            "confidence": 60,
+            "suggested_parent_name": "Short Saia Du´mo Marinho Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul"
+                ],
+                "Tamanho": [
+                    "GG",
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 37,
+                    "nome": "SHORT SAIA DU´MO AZUL MARINHO TM GG",
+                    "sku": "281",
+                    "preco": 180,
+                    "preco_regular": 180,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 31,
+                    "nome": "SHORT SAIA DU´MO AZUL MARINHO TM M",
+                    "sku": "280",
+                    "preco": 180,
+                    "preco_regular": 180,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "tenis fj footjoy pro slx com solado detalhes em tm",
+            "confidence": 50,
+            "suggested_parent_name": "Tenis Fj Footjoy Pro Slx Com Solado Detalhes Em Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Branco",
+                    "Azul",
+                    "Preto",
+                    "Vermelho"
+                ]
+            },
+            "items": [
+                {
+                    "id": 219,
+                    "nome": "tênis FJ Footjoy Pro/SLX branco com  solado detalhes em azul  TM 10",
+                    "sku": "0000457",
+                    "preco": 1650,
+                    "preco_regular": 1650,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 236,
+                    "nome": "tênis FJ Footjoy Pro/SLX branco com  solado detalhes em azul  TM 11 1/2",
+                    "sku": "0000471",
+                    "preco": 1650,
+                    "preco_regular": 1650,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 235,
+                    "nome": "tênis FJ Footjoy Pro/SLX branco com  solado detalhes em azul  TM 12",
+                    "sku": "0000472",
+                    "preco": 1650,
+                    "preco_regular": 1650,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 224,
+                    "nome": "tênis FJ Footjoy Pro/SLX preto com solado detalhes em vermelho  TM 10",
+                    "sku": "0000459",
+                    "preco": 1650,
+                    "preco_regular": 1650,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 226,
+                    "nome": "tênis FJ Footjoy Pro/SLX preto com solado detalhes em vermelho  TM 10 1/2",
+                    "sku": "0000464",
+                    "preco": 1650,
+                    "preco_regular": 1650,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 227,
+                    "nome": "tênis FJ Footjoy Pro/SLX preto com solado detalhes em vermelho  TM 11",
+                    "sku": "0000463",
+                    "preco": 1650,
+                    "preco_regular": 1650,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 225,
+                    "nome": "tênis FJ Footjoy Pro/SLX preto com solado detalhes em vermelho  TM 13",
+                    "sku": "0000458",
+                    "preco": 1650,
+                    "preco_regular": 1650,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "bolas de golfe callaway supersoft fosco distancia e visibilidade",
+            "confidence": 50,
+            "suggested_parent_name": "Bolas De Golfe Callaway Supersoft Fosco Distancia E Visibilidade",
+            "detected_attributes": {
+                "Cor": [
+                    "Laranja"
+                ]
+            },
+            "items": [
+                {
+                    "id": 110,
+                    "nome": "Bolas de Golfe Callaway Supersoft Laranja Fosco - Distância e Visibilidade",
+                    "sku": "337",
+                    "preco": 320,
+                    "preco_regular": 320,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 113,
+                    "nome": "Bolas de Golfe Callaway Supersoft Laranja Fosco - Distância e Visibilidade",
+                    "sku": "338",
+                    "preco": 90,
+                    "preco_regular": 90,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 230,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "calca greg norman tm",
+            "confidence": 50,
+            "suggested_parent_name": "Calca Greg Norman Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Verde"
+                ],
+                "Numeração": [
+                    "36",
+                    "32",
+                    "38"
+                ]
+            },
+            "items": [
+                {
+                    "id": 512,
+                    "nome": "CALÇA GREG NORMAN VERDE TM 36-32",
+                    "sku": "103",
+                    "preco": 520,
+                    "preco_regular": 520,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 513,
+                    "nome": "CALÇA GREG NORMAN VERDE TM 38-32",
+                    "sku": "102",
+                    "preco": 480,
+                    "preco_regular": 480,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Preços divergentes (diferença de R$ 40,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camisa polo penguin",
+            "confidence": 40,
+            "suggested_parent_name": "Camisa Polo Penguin",
+            "detected_attributes": {
+                "Cor": [
+                    "Branca",
+                    "Preta"
+                ],
+                "Tamanho": [
+                    "G",
+                    "M",
+                    "P"
+                ]
+            },
+            "items": [
+                {
+                    "id": 199,
+                    "nome": "camisa polo branca Penguin G",
+                    "sku": "0000414",
+                    "preco": 430,
+                    "preco_regular": 430,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 194,
+                    "nome": "camisa polo branca Penguin M",
+                    "sku": "0000413",
+                    "preco": 430,
+                    "preco_regular": 430,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 195,
+                    "nome": "camisa polo branca Penguin P",
+                    "sku": "0000412",
+                    "preco": 430,
+                    "preco_regular": 430,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 197,
+                    "nome": "camisa polo preta  Penguin M",
+                    "sku": "0000416",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 202,
+                    "nome": "camisa polo preta Penguin P",
+                    "sku": "0000417",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Preços divergentes (diferença de R$ 50,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "luva gog golf tm",
+            "confidence": 40,
+            "suggested_parent_name": "Luva Gog Golf Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul",
+                    "Rosa"
+                ]
+            },
+            "items": [
+                {
+                    "id": 564,
+                    "nome": "LUVA GOG GOLF AZUL TM 18",
+                    "sku": "41",
+                    "preco": 200,
+                    "preco_regular": 200,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 563,
+                    "nome": "LUVA GOG GOLF AZUL TM 19",
+                    "sku": "42",
+                    "preco": 200,
+                    "preco_regular": 200,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 559,
+                    "nome": "LUVA GOG GOLF ROSA TM 18",
+                    "sku": "39",
+                    "preco": 200,
+                    "preco_regular": 200,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 560,
+                    "nome": "LUVA GOG GOLF ROSA TM 19",
+                    "sku": "38",
+                    "preco": 200,
+                    "preco_regular": 200,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 561,
+                    "nome": "LUVA GOG GOLF ROSA TM 20",
+                    "sku": "37",
+                    "preco": 200,
+                    "preco_regular": 200,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta clube masculina tam",
+            "confidence": 40,
+            "suggested_parent_name": "Camiseta Clube Masculina Tam",
+            "detected_attributes": {
+                "Cor": [
+                    "Cinza"
+                ],
+                "Tamanho": [
+                    "G",
+                    "GG",
+                    "M",
+                    "P"
+                ]
+            },
+            "items": [
+                {
+                    "id": 878,
+                    "nome": "camiseta clube masculina cinza TAM G",
+                    "sku": "0000270",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 874,
+                    "nome": "camiseta clube masculina cinza TAM GG",
+                    "sku": "0000271",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 882,
+                    "nome": "camiseta clube masculina cinza TAM M",
+                    "sku": "0000269",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 870,
+                    "nome": "camiseta clube masculina cinza TAM P",
+                    "sku": "0000272",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "viseira under armour",
+            "confidence": 40,
+            "suggested_parent_name": "Viseira Under Armour",
+            "detected_attributes": {
+                "Cor": [
+                    "Branca",
+                    "Branco",
+                    "Preta",
+                    "Preto"
+                ]
+            },
+            "items": [
+                {
+                    "id": 456,
+                    "nome": "VISEIRA UNDER ARMOUR BRANCA",
+                    "sku": "192",
+                    "preco": 260,
+                    "preco_regular": 260,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 681,
+                    "nome": "Viseira Under Armour BRANCO",
+                    "sku": "0000101",
+                    "preco": 260,
+                    "preco_regular": 260,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 455,
+                    "nome": "VISEIRA UNDER ARMOUR PRETA",
+                    "sku": "193",
+                    "preco": 260,
+                    "preco_regular": 260,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 683,
+                    "nome": "Viseira Under Armour PRETO",
+                    "sku": "0000100",
+                    "preco": 260,
+                    "preco_regular": 260,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta clube feminina",
+            "confidence": 40,
+            "suggested_parent_name": "Camiseta Clube Feminina",
+            "detected_attributes": {
+                "Cor": [
+                    "Roxa"
+                ],
+                "Tamanho": [
+                    "G",
+                    "GG",
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 865,
+                    "nome": "camiseta clube feminina roxa G",
+                    "sku": "0000258",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 862,
+                    "nome": "camiseta clube feminina roxa GG",
+                    "sku": "0000259",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 868,
+                    "nome": "camiseta clube feminina roxa M",
+                    "sku": "0000257",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta clube sem manga",
+            "confidence": 40,
+            "suggested_parent_name": "Camiseta Clube Sem Manga",
+            "detected_attributes": {
+                "Cor": [
+                    "Rosa"
+                ],
+                "Tamanho": [
+                    "G",
+                    "M",
+                    "P"
+                ]
+            },
+            "items": [
+                {
+                    "id": 834,
+                    "nome": "Camiseta clube rosa sem manga G",
+                    "sku": "0000252",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 879,
+                    "nome": "Camiseta clube rosa sem manga M",
+                    "sku": "0000254",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 871,
+                    "nome": "Camiseta clube rosa sem manga P",
+                    "sku": "0000256",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "corta vento alana tam",
+            "confidence": 40,
+            "suggested_parent_name": "Corta Vento Alana Tam",
+            "detected_attributes": {
+                "Cor": [
+                    "Amarelo"
+                ],
+                "Tamanho": [
+                    "G",
+                    "P"
+                ]
+            },
+            "items": [
+                {
+                    "id": 747,
+                    "nome": "Corta vento Alana Tam G",
+                    "sku": "0000123",
+                    "preco": 160,
+                    "preco_regular": 160,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 717,
+                    "nome": "Corta vento Alana Tam P",
+                    "sku": "0000121",
+                    "preco": 160,
+                    "preco_regular": 160,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 749,
+                    "nome": "Corta Vento Alana Tam P amarelo",
+                    "sku": "0000122",
+                    "preco": 160,
+                    "preco_regular": 160,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "faixa cabelo protetor ouvido",
+            "confidence": 40,
+            "suggested_parent_name": "Faixa Cabelo Protetor Ouvido",
+            "detected_attributes": {
+                "Cor": [
+                    "Branco",
+                    "Cinza",
+                    "Preto"
+                ]
+            },
+            "items": [
+                {
+                    "id": 787,
+                    "nome": "Faixa cabelo protetor ouvido branco",
+                    "sku": "0000192",
+                    "preco": 60,
+                    "preco_regular": 60,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 790,
+                    "nome": "Faixa cabelo protetor ouvido cinza",
+                    "sku": "0000191",
+                    "preco": 60,
+                    "preco_regular": 60,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 793,
+                    "nome": "Faixa cabelo protetor ouvido preto",
+                    "sku": "0000190",
+                    "preco": 60,
+                    "preco_regular": 60,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "footjoy oncinha (tam 2)",
+            "confidence": 40,
+            "suggested_parent_name": "Footjoy Oncinha (tam 2)",
+            "detected_attributes": [],
+            "items": [
+                {
+                    "id": 649,
+                    "nome": "FootJoy  ONCINHA (TAM 7 1/2)",
+                    "sku": "0000028",
+                    "preco": 1450,
+                    "preco_regular": 1450,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 671,
+                    "nome": "FootJoy ONCINHA (TAM 6 1/2)",
+                    "sku": "0000031",
+                    "preco": 1450,
+                    "preco_regular": 1450,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 672,
+                    "nome": "FootJoy ONCINHA (TAM 8 1/2)",
+                    "sku": "0000030",
+                    "preco": 1450,
+                    "preco_regular": 1450,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "mangote",
+            "confidence": 40,
+            "suggested_parent_name": "Mangote",
+            "detected_attributes": {
+                "Cor": [
+                    "Branco",
+                    "Cinza",
+                    "Preto"
+                ]
+            },
+            "items": [
+                {
+                    "id": 746,
+                    "nome": "Mangote branco",
+                    "sku": "0000139",
+                    "preco": 50,
+                    "preco_regular": 50,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 748,
+                    "nome": "Mangote cinza",
+                    "sku": "0000138",
+                    "preco": 50,
+                    "preco_regular": 50,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 716,
+                    "nome": "Mangote preto",
+                    "sku": "0000137",
+                    "preco": 50,
+                    "preco_regular": 50,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "blusa feminina fj tam",
+            "confidence": 40,
+            "suggested_parent_name": "Blusa Feminina Fj Tam",
+            "detected_attributes": {
+                "Cor": [
+                    "Laranja",
+                    "Preta"
+                ],
+                "Tamanho": [
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 743,
+                    "nome": "Blusa feminina FJ Tam M laranja",
+                    "sku": "0000125",
+                    "preco": 560,
+                    "preco_regular": 560,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 741,
+                    "nome": "Blusa feminina FJ Tam M preta",
+                    "sku": "0000126",
+                    "preco": 560,
+                    "preco_regular": 560,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "bone clube iguacu falls",
+            "confidence": 40,
+            "suggested_parent_name": "Bone Clube Iguacu Falls",
+            "detected_attributes": {
+                "Cor": [
+                    "Branco",
+                    "Rosa"
+                ]
+            },
+            "items": [
+                {
+                    "id": 766,
+                    "nome": "Boné clube  iguaçu falls branco",
+                    "sku": "0000199",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 769,
+                    "nome": "Boné clube  iguaçu falls rosa",
+                    "sku": "0000198",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "caixa fechada de bolas taiwan (com 12)",
+            "confidence": 40,
+            "suggested_parent_name": "Caixa Fechada De Bolas Taiwan (com 12)",
+            "detected_attributes": {
+                "Cor": [
+                    "Rosa",
+                    "Verde"
+                ]
+            },
+            "items": [
+                {
+                    "id": 729,
+                    "nome": "Caixa fechada de bolas Taiwan rosa (com 12)",
+                    "sku": "0000116",
+                    "preco": 199,
+                    "preco_regular": 199,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 687,
+                    "nome": "Caixa fechada de bolas Taiwan verde (com 12)",
+                    "sku": "0000115",
+                    "preco": 199,
+                    "preco_regular": 199,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "calca adidas marinho tm",
+            "confidence": 40,
+            "suggested_parent_name": "Calca Adidas Marinho Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul"
+                ],
+                "Numeração": [
+                    "32",
+                    "36"
+                ]
+            },
+            "items": [
+                {
+                    "id": 491,
+                    "nome": "CALÇA ADIDAS AZUL MARINHO TM 32-32",
+                    "sku": "105",
+                    "preco": 480,
+                    "preco_regular": 480,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 492,
+                    "nome": "CALÇA ADIDAS AZUL MARINHO TM 36-32",
+                    "sku": "104",
+                    "preco": 480,
+                    "preco_regular": 480,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camisa polo masculina vineyard vine com listras",
+            "confidence": 40,
+            "suggested_parent_name": "Camisa Polo Masculina Vineyard Vine Com Listras",
+            "detected_attributes": {
+                "Cor": [
+                    "Branca",
+                    "Azul",
+                    "Verde",
+                    "Vermelho"
+                ],
+                "Tamanho": [
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 400,
+                    "nome": "camisa polo masculina Vineyard Vine  branca com listras azul/verde M",
+                    "sku": "0000441",
+                    "preco": 360,
+                    "preco_regular": 360,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 398,
+                    "nome": "camisa polo masculina Vineyard Vine  branca com listras azul/vermelho M",
+                    "sku": "0000439",
+                    "preco": 360,
+                    "preco_regular": 360,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camisa polo masculina vineyard vine com listras s",
+            "confidence": 40,
+            "suggested_parent_name": "Camisa Polo Masculina Vineyard Vine Com Listras S",
+            "detected_attributes": {
+                "Cor": [
+                    "Branca",
+                    "Azul",
+                    "Verde"
+                ]
+            },
+            "items": [
+                {
+                    "id": 399,
+                    "nome": "camisa polo masculina Vineyard Vine  branca com listras azul/verde S",
+                    "sku": "0000440",
+                    "preco": 360,
+                    "preco_regular": 360,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 396,
+                    "nome": "camisa polo masculina Vineyard Vine  com listras verde S",
+                    "sku": "0000437",
+                    "preco": 360,
+                    "preco_regular": 360,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta clube feminina com manga",
+            "confidence": 40,
+            "suggested_parent_name": "Camiseta Clube Feminina Com Manga",
+            "detected_attributes": {
+                "Cor": [
+                    "Branca"
+                ],
+                "Tamanho": [
+                    "G",
+                    "GG"
+                ]
+            },
+            "items": [
+                {
+                    "id": 844,
+                    "nome": "camiseta clube branca feminina G com manga",
+                    "sku": "0000265",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 841,
+                    "nome": "Camiseta clube feminina branca com manga GG",
+                    "sku": "0000266",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta masculina clube agua",
+            "confidence": 40,
+            "suggested_parent_name": "Camiseta Masculina Clube Agua",
+            "detected_attributes": {
+                "Cor": [
+                    "Verde"
+                ],
+                "Tamanho": [
+                    "GG",
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 859,
+                    "nome": "camiseta masculina clube GG verde agua",
+                    "sku": "0000260",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 856,
+                    "nome": "camiseta masculina clube verde agua M",
+                    "sku": "0000261",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta ponto do golfe masculina",
+            "confidence": 40,
+            "suggested_parent_name": "Camiseta Ponto Do Golfe Masculina",
+            "detected_attributes": {
+                "Cor": [
+                    "Branca"
+                ],
+                "Tamanho": [
+                    "M",
+                    "P"
+                ]
+            },
+            "items": [
+                {
+                    "id": 848,
+                    "nome": "Camiseta ponto do golfe masculina branca M",
+                    "sku": "0000248",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 845,
+                    "nome": "Camiseta ponto do golfe masculina branca P",
+                    "sku": "0000249",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta clube fem tam",
+            "confidence": 40,
+            "suggested_parent_name": "Camiseta Clube Fem Tam",
+            "detected_attributes": {
+                "Cor": [
+                    "Preta"
+                ],
+                "Tamanho": [
+                    "G",
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 852,
+                    "nome": "camiseta preta clube fem tam G",
+                    "sku": "0000278",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 849,
+                    "nome": "camiseta preta clube fem tam M",
+                    "sku": "0000279",
+                    "preco": 140,
+                    "preco_regular": 140,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "nike react infinity pro golf (tam 5) e flourecente",
+            "confidence": 40,
+            "suggested_parent_name": "Nike React Infinity Pro Golf (tam 5) E Flourecente",
+            "detected_attributes": {
+                "Cor": [
+                    "Preto",
+                    "Amarelo"
+                ]
+            },
+            "items": [
+                {
+                    "id": 643,
+                    "nome": "Nike React Infinity Pro Golf /(TAM 9.5) PRETO E AMARELO FLOURECENTE",
+                    "sku": "0000010",
+                    "preco": 1450,
+                    "preco_regular": 1450,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 655,
+                    "nome": "Nike React Infinity Pro Golf /(TAM 9.5) PRETO E AMARELO FLOURECENTE",
+                    "sku": "0000025",
+                    "preco": 1450,
+                    "preco_regular": 1450,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "short saia calia tm",
+            "confidence": 40,
+            "suggested_parent_name": "Short Saia Calia Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Bege",
+                    "Branca"
+                ],
+                "Tamanho": [
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 14,
+                    "nome": "SHORT SAIA CALIA BEGE TM M",
+                    "sku": "262",
+                    "preco": 360,
+                    "preco_regular": 360,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 17,
+                    "nome": "SHORT SAIA CALIA BRANCA TM M",
+                    "sku": "263",
+                    "preco": 360,
+                    "preco_regular": 360,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "shorts masculino walter hagen tam 34'9",
+            "confidence": 40,
+            "suggested_parent_name": "Shorts Masculino Walter Hagen Tam 34'9",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul",
+                    "Rosa"
+                ]
+            },
+            "items": [
+                {
+                    "id": 910,
+                    "nome": "Shorts masculino walter hagen azul tam 34'9",
+                    "sku": "0000288",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 877,
+                    "nome": "Shorts masculino walter hagen rosa tam 34'9",
+                    "sku": "0000286",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "shorts masculino walter hagen tam 36'9",
+            "confidence": 40,
+            "suggested_parent_name": "Shorts Masculino Walter Hagen Tam 36'9",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul",
+                    "Rosa"
+                ]
+            },
+            "items": [
+                {
+                    "id": 908,
+                    "nome": "Shorts masculino walter hagen azul tam 36'9",
+                    "sku": "0000289",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 836,
+                    "nome": "Shorts masculino walter hagen rosa tam 36'9",
+                    "sku": "0000283",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "tee c",
+            "confidence": 40,
+            "suggested_parent_name": "Tee C",
+            "detected_attributes": {
+                "Cor": [
+                    "Branco",
+                    "Laranja"
+                ],
+                "Tamanho": [
+                    "GRANDE",
+                    "UN"
+                ]
+            },
+            "items": [
+                {
+                    "id": 540,
+                    "nome": "TEE BRANCO GRANDE C/ 10 UN",
+                    "sku": "21",
+                    "preco": 15,
+                    "preco_regular": 15,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 545,
+                    "nome": "TEE LARANJA C/ 10 UN",
+                    "sku": "23",
+                    "preco": 15,
+                    "preco_regular": 15,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "tenis adidas zg23 golf shoes todo tam",
+            "confidence": 40,
+            "suggested_parent_name": "Tenis Adidas Zg23 Golf Shoes Todo Tam",
+            "detected_attributes": {
+                "Cor": [
+                    "Preto"
+                ]
+            },
+            "items": [
+                {
+                    "id": 710,
+                    "nome": "Tênis Adidas ZG23 Golf Shoes Todo preto TAM 10 1/2",
+                    "sku": "0000075",
+                    "preco": 1350,
+                    "preco_regular": 1350,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 713,
+                    "nome": "Tênis Adidas ZG23 Golf Shoes Todo preto TAM 9",
+                    "sku": "0000074",
+                    "preco": 1350,
+                    "preco_regular": 1350,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "toalha clube iguassu falls",
+            "confidence": 40,
+            "suggested_parent_name": "Toalha Clube Iguassu Falls",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul",
+                    "Branca"
+                ]
+            },
+            "items": [
+                {
+                    "id": 813,
+                    "nome": "toalha clube iguassu falls azul",
+                    "sku": "0000214",
+                    "preco": 60,
+                    "preco_regular": 60,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 815,
+                    "nome": "toalha clube iguassu falls branca",
+                    "sku": "0000213",
+                    "preco": 60,
+                    "preco_regular": 60,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": []
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camisa polo escuro penguin",
+            "confidence": 30,
+            "suggested_parent_name": "Camisa Polo Escuro Penguin",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul",
+                    "Verde"
+                ],
+                "Tamanho": [
+                    "M",
+                    "P"
+                ]
+            },
+            "items": [
+                {
+                    "id": 191,
+                    "nome": "camisa polo azul escuro  Penguin M",
+                    "sku": "0000410",
+                    "preco": 430,
+                    "preco_regular": 430,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 196,
+                    "nome": "camisa polo azul escuro  Penguin P",
+                    "sku": "0000411",
+                    "preco": 430,
+                    "preco_regular": 430,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 203,
+                    "nome": "camisa polo verde escuro Penguin M",
+                    "sku": "0000422",
+                    "preco": 520,
+                    "preco_regular": 520,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 90,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta fj tm",
+            "confidence": 30,
+            "suggested_parent_name": "Camiseta Fj Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Cinza",
+                    "Azul",
+                    "Verde"
+                ],
+                "Tamanho": [
+                    "M",
+                    "INFANTIL"
+                ]
+            },
+            "items": [
+                {
+                    "id": 460,
+                    "nome": "CAMISETA FJ CINZA TM M",
+                    "sku": "409",
+                    "preco": 520,
+                    "preco_regular": 520,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 44,
+                    "nome": "CAMISETA FJ INFANTIL AZUL TM M",
+                    "sku": "290",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 437,
+                    "nome": "CAMISETA FJ VERDE TM M",
+                    "sku": "293",
+                    "preco": 520,
+                    "preco_regular": 520,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 140,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "bermuda izod tm",
+            "confidence": 30,
+            "suggested_parent_name": "Bermuda Izod Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Bege",
+                    "Cinza"
+                ],
+                "Numeração": [
+                    "34"
+                ]
+            },
+            "items": [
+                {
+                    "id": 15,
+                    "nome": "BERMUDA IZOD BEGE TM 10",
+                    "sku": "261",
+                    "preco": 220,
+                    "preco_regular": 220,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 378,
+                    "nome": "BERMUDA IZOD CINZA TM 34",
+                    "sku": "250",
+                    "preco": 389,
+                    "preco_regular": 389,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 169,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "bermuda walter hagen tm",
+            "confidence": 30,
+            "suggested_parent_name": "Bermuda Walter Hagen Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Rosa",
+                    "Verde"
+                ],
+                "Numeração": [
+                    "32",
+                    "42"
+                ]
+            },
+            "items": [
+                {
+                    "id": 376,
+                    "nome": "BERMUDA WALTER HAGEN ROSA TM 32",
+                    "sku": "252",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 141,
+                    "nome": "BERMUDA WALTER HAGEN VERDE TM 42",
+                    "sku": "375",
+                    "preco": 420,
+                    "preco_regular": 420,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 40,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "calca feminina soul tm",
+            "confidence": 30,
+            "suggested_parent_name": "Calca Feminina Soul Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Preta"
+                ],
+                "Tamanho": [
+                    "P",
+                    "M"
+                ]
+            },
+            "items": [
+                {
+                    "id": 468,
+                    "nome": "CALÇA FEMININA  SOUL PRETA TM P",
+                    "sku": "128",
+                    "preco": 190,
+                    "preco_regular": 190,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 467,
+                    "nome": "CALÇA FEMININA PRETA SOUL TM M",
+                    "sku": "129",
+                    "preco": 320,
+                    "preco_regular": 320,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 130,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camisa polo escuro penguin l",
+            "confidence": 30,
+            "suggested_parent_name": "Camisa Polo Escuro Penguin L",
+            "detected_attributes": {
+                "Cor": [
+                    "Azul",
+                    "Verde"
+                ],
+                "Tamanho": [
+                    "G"
+                ]
+            },
+            "items": [
+                {
+                    "id": 192,
+                    "nome": "camisa polo azul escuro Penguin L",
+                    "sku": "0000409",
+                    "preco": 430,
+                    "preco_regular": 430,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 208,
+                    "nome": "camisa polo verde escuro  Penguin L/G",
+                    "sku": "0000423",
+                    "preco": 520,
+                    "preco_regular": 520,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 90,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "camiseta columbia golf tam s",
+            "confidence": 30,
+            "suggested_parent_name": "Camiseta Columbia Golf Tam S",
+            "detected_attributes": [],
+            "items": [
+                {
+                    "id": 791,
+                    "nome": "Camiseta Columbia Golf Tam S",
+                    "sku": "0000175",
+                    "preco": 420,
+                    "preco_regular": 420,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 800,
+                    "nome": "Camiseta Columbia Golf Tam S",
+                    "sku": "0000172",
+                    "preco": 480,
+                    "preco_regular": 480,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Preços divergentes (diferença de R$ 60,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "cinto under armour",
+            "confidence": 30,
+            "suggested_parent_name": "Cinto Under Armour",
+            "detected_attributes": {
+                "Cor": [
+                    "Branco",
+                    "Cinza"
+                ]
+            },
+            "items": [
+                {
+                    "id": 532,
+                    "nome": "CINTO UNDER ARMOUR BRANCO",
+                    "sku": "88",
+                    "preco": 320,
+                    "preco_regular": 320,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 708,
+                    "nome": "Cinto under armour cinza",
+                    "sku": "0000107",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Preços divergentes (diferença de R$ 60,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "pacote de bola usada",
+            "confidence": 30,
+            "suggested_parent_name": "Pacote De Bola Usada",
+            "detected_attributes": [],
+            "items": [
+                {
+                    "id": 728,
+                    "nome": "pacote de bola usada 100",
+                    "sku": "0000132",
+                    "preco": 100,
+                    "preco_regular": 100,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 731,
+                    "nome": "pacote de bola usada 120",
+                    "sku": "0000131",
+                    "preco": 120,
+                    "preco_regular": 120,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Preços divergentes (diferença de R$ 20,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "regata greg norman tm xl",
+            "confidence": 30,
+            "suggested_parent_name": "Regata Greg Norman Tm Xl",
+            "detected_attributes": {
+                "Cor": [
+                    "Branca",
+                    "Rosa"
+                ]
+            },
+            "items": [
+                {
+                    "id": 38,
+                    "nome": "REGATA GREG NORMAN BRANCA TM XL",
+                    "sku": "287",
+                    "preco": 320,
+                    "preco_regular": 320,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 47,
+                    "nome": "REGATA GREG NORMAN ROSA TM XL",
+                    "sku": "297",
+                    "preco": 350,
+                    "preco_regular": 350,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 30,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "tenis nike c tm",
+            "confidence": 30,
+            "suggested_parent_name": "Tenis Nike C Tm",
+            "detected_attributes": {
+                "Cor": [
+                    "Dourado",
+                    "Preto",
+                    "Verde"
+                ]
+            },
+            "items": [
+                {
+                    "id": 129,
+                    "nome": "TÊNIS NIKE C/ DOURADO TM 4",
+                    "sku": "359",
+                    "preco": 1250,
+                    "preco_regular": 1250,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 439,
+                    "nome": "TÊNIS NIKE PRETO C/ VERDE TM 9.5",
+                    "sku": "361",
+                    "preco": 1450,
+                    "preco_regular": 1450,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 200,00)"
+            ]
+        },
+        {
+            "tenant_id": 1,
+            "base_name": "viseira adidas",
+            "confidence": 30,
+            "suggested_parent_name": "Viseira Adidas",
+            "detected_attributes": {
+                "Cor": [
+                    "Cinza",
+                    "Preta"
+                ]
+            },
+            "items": [
+                {
+                    "id": 457,
+                    "nome": "VISEIRA ADIDAS CINZA",
+                    "sku": "195",
+                    "preco": 380,
+                    "preco_regular": 380,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                },
+                {
+                    "id": 299,
+                    "nome": "VISEIRA ADIDAS PRETA",
+                    "sku": "0000367",
+                    "preco": 320,
+                    "preco_regular": 320,
+                    "preco_promocional": null,
+                    "estoque": 1,
+                    "status": "publish"
+                }
+            ],
+            "notes": [
+                "Imagens diferentes",
+                "Preços divergentes (diferença de R$ 60,00)"
+            ]
+        }
+    ],
+    "orphans": [
+        {
+            "id": 433,
+            "nome": "Adidas GZ6969 Adicross Retro W ADICROSS RETRO Calçado Branco/Preto/Branco- TAMANHO 8 1/2",
+            "sku": "167",
+            "preco": 1250
+        },
+        {
+            "id": 925,
+            "nome": "Adidas Solarmotion BOA (TAM 7)",
+            "sku": "0000012",
+            "preco": 1250
+        },
+        {
+            "id": 921,
+            "nome": "Adidas Solarmotion BOA 24 Spikeless Golf (TAM 7) CINZA COM VERDE",
+            "sku": "0000020",
+            "preco": 1250
+        },
+        {
+            "id": 923,
+            "nome": "Adidas Summervent 24 (TAM 7)",
+            "sku": "0000014",
+            "preco": 1250
+        },
+        {
+            "id": 920,
+            "nome": "ADIDAS Tech Response SL 3.0 CINZA E ROXO (TAM 6)",
+            "sku": "0000023",
+            "preco": 1350
+        },
+        {
+            "id": 9,
+            "nome": "Air Zoom Victory Tour 3 NRG numero 7.5",
+            "sku": "0000372",
+            "preco": 1250
+        },
+        {
+            "id": 212,
+            "nome": "amisa polo listrada Vineyard Vines Sankaty - TAMANHO M",
+            "sku": "0000448",
+            "preco": 360
+        },
+        {
+            "id": 519,
+            "nome": "Aperfeiçoe Seu Putt: Treinador de Distância e Precisão de Golfe",
+            "sku": "74",
+            "preco": 150
+        },
+        {
+            "id": 520,
+            "nome": "Aumente Sua Precisão no Green com o JEF World of Golf Straight-Line Putting Pal",
+            "sku": "78",
+            "preco": 120
+        },
+        {
+            "id": 521,
+            "nome": "Aumente Sua Precisão no Green: JEF World of Golf Straight-Line Putting Pal + TEE",
+            "sku": "77",
+            "preco": 120
+        },
+        {
+            "id": 146,
+            "nome": "BERMUDA ADIDAS BEGE TM 38",
+            "sku": "378",
+            "preco": 460
+        },
+        {
+            "id": 245,
+            "nome": "Bermuda Adidas PRETA  - TAMANHO 36",
+            "sku": "0000483",
+            "preco": 460
+        },
+        {
+            "id": 185,
+            "nome": "BERMUDA ADIDAS TM 28 CREME",
+            "sku": "419",
+            "preco": 420
+        },
+        {
+            "id": 381,
+            "nome": "BERMUDA ALPINE CARAMELO TM 32",
+            "sku": "253",
+            "preco": 320
+        },
+        {
+            "id": 145,
+            "nome": "BERMUDA CALLAWAY CINZA CLARA LISTRADA TM 40",
+            "sku": "376",
+            "preco": 420
+        },
+        {
+            "id": 377,
+            "nome": "BERMUDA CALLAWAY LISTRADA GRAFIT TM",
+            "sku": "251",
+            "preco": 380
+        },
+        {
+            "id": 179,
+            "nome": "BERMUDA CALLAWAY TM 36 CINCA CLARO",
+            "sku": "418",
+            "preco": 420
+        },
+        {
+            "id": 382,
+            "nome": "BERMUDA FEMININA NIKE XADREZ AZUL TM 0",
+            "sku": "258",
+            "preco": 390
+        },
+        {
+            "id": 380,
+            "nome": "BERMUDA GREG NORMAN BEGE TM 32",
+            "sku": "254",
+            "preco": 380
+        },
+        {
+            "id": 144,
+            "nome": "BERMUDA GREG NORMAN CINZA CLARA TM 36",
+            "sku": "377",
+            "preco": 420
+        },
+        {
+            "id": 16,
+            "nome": "BERMUDA IZOD AZUL MARINHO TM 10",
+            "sku": "260",
+            "preco": 220
+        },
+        {
+            "id": 12,
+            "nome": "BERMUDA NIKE FEMININA GRAFITE TM 4",
+            "sku": "259",
+            "preco": 449
+        },
+        {
+            "id": 373,
+            "nome": "BERMUDA NIKE LISTRADA  TM 16",
+            "sku": "132",
+            "preco": 390
+        },
+        {
+            "id": 379,
+            "nome": "BERMUDA PGATOUR XADREZ AZUL CLARO TM 40",
+            "sku": "255",
+            "preco": 320
+        },
+        {
+            "id": 384,
+            "nome": "BERMUDA PUMA VINHO TM 28",
+            "sku": "256",
+            "preco": 380
+        },
+        {
+            "id": 383,
+            "nome": "BERMUDA UNDER AMOUR CINZA TM 32",
+            "sku": "257",
+            "preco": 360
+        },
+        {
+            "id": 149,
+            "nome": "BERMUDA WALTER HAGEN PINK TM 36",
+            "sku": "379",
+            "preco": 420
+        },
+        {
+            "id": 372,
+            "nome": "BLUSA COLUMBIA SURF LARANJA TM 2XL",
+            "sku": "243",
+            "preco": 560
+        },
+        {
+            "id": 745,
+            "nome": "Blusa feminina FJ Tam XS verde",
+            "sku": "0000124",
+            "preco": 520
+        },
+        {
+            "id": 279,
+            "nome": "blusa feminina Greg Norman lavanda com estampa de beija- flor TM XS",
+            "sku": "0000517",
+            "preco": 380
+        },
+        {
+            "id": 739,
+            "nome": "Blusa feminina Greg Norman Tam XL",
+            "sku": "0000127",
+            "preco": 380
+        },
+        {
+            "id": 438,
+            "nome": "BLUSA FJ CINZA TM S",
+            "sku": "413",
+            "preco": 620
+        },
+        {
+            "id": 767,
+            "nome": "Blusa frio VINEYARD VINES rosa baleia TAM L",
+            "sku": "0000183",
+            "preco": 490
+        },
+        {
+            "id": 5,
+            "nome": "BLUSA GREG NORMAN AMARELA TM L/G",
+            "sku": "238",
+            "preco": 380
+        },
+        {
+            "id": 275,
+            "nome": "blusa masculina preto com azul Under Armour TM S",
+            "sku": "0000510",
+            "preco": 720
+        },
+        {
+            "id": 273,
+            "nome": "blusa masculino azul marinho Under Armour  TM M",
+            "sku": "0000509",
+            "preco": 620
+        },
+        {
+            "id": 3,
+            "nome": "BLUSA NIKE CINZA TM XL",
+            "sku": "240",
+            "preco": 420
+        },
+        {
+            "id": 371,
+            "nome": "BLUSA NIKE CINZA TM XXL",
+            "sku": "244",
+            "preco": 350
+        },
+        {
+            "id": 4,
+            "nome": "BLUSA SEA SURF VERDE MILITAR TM G",
+            "sku": "239",
+            "preco": 360
+        },
+        {
+            "id": 719,
+            "nome": "Blusa THE NORTH FACE TAM XL",
+            "sku": "0000120",
+            "preco": 480
+        },
+        {
+            "id": 370,
+            "nome": "BLUSA UNDER ARMOUR PRETA TM XL",
+            "sku": "245",
+            "preco": 480
+        },
+        {
+            "id": 369,
+            "nome": "BLUSA VINEYARD VINES ROSA TM XL",
+            "sku": "241",
+            "preco": 490
+        },
+        {
+            "id": 118,
+            "nome": "Bolas de Golfe Bridgestone Lady Precept",
+            "sku": "346",
+            "preco": 290
+        },
+        {
+            "id": 106,
+            "nome": "Bolas de Golfe Callaway Supersoft Pink Matte",
+            "sku": "334",
+            "preco": 320
+        },
+        {
+            "id": 112,
+            "nome": "Bolas de Golfe Callaway Warbird Distance+ Brancas",
+            "sku": "339",
+            "preco": 350
+        },
+        {
+            "id": 114,
+            "nome": "Bolas de Golfe Callaway Warbird Distance+ Brancas (Pack 3 Unidades)",
+            "sku": "340",
+            "preco": 100
+        },
+        {
+            "id": 115,
+            "nome": "Bolas de Golfe TaylorMade Distance+",
+            "sku": "343",
+            "preco": 350
+        },
+        {
+            "id": 123,
+            "nome": "Bolas de Golfe Titleist Pro V1 - Pacote com 12 Unidades",
+            "sku": "347",
+            "preco": 480
+        },
+        {
+            "id": 121,
+            "nome": "Bolas de Golfe Titleist Pro V1x - CAIXA COMPLETA 12 UNIDADES",
+            "sku": "349",
+            "preco": 480
+        },
+        {
+            "id": 933,
+            "nome": "BOLSA CALLAWAY CHASE 14 CINZA E AMARELA",
+            "sku": "587",
+            "preco": 2450
+        },
+        {
+            "id": 932,
+            "nome": "BOLSA DE CARRINHO CALLAWAY CHASE 14",
+            "sku": "",
+            "preco": 2450
+        },
+        {
+            "id": 105,
+            "nome": "bolsa de golfe Titleist Cart 14",
+            "sku": "0000401",
+            "preco": 2350
+        },
+        {
+            "id": 694,
+            "nome": "Bolsa de sapato",
+            "sku": "0000096",
+            "preco": 140
+        },
+        {
+            "id": 901,
+            "nome": "Bolsa de tacos ultralight",
+            "sku": "0000308",
+            "preco": 2950
+        },
+        {
+            "id": 307,
+            "nome": "BOLSA TITLEIST PLAYERS 4",
+            "sku": "429",
+            "preco": 2450
+        },
+        {
+            "id": 452,
+            "nome": "BONÉ ADIDAS BRANCO E VERMELHO",
+            "sku": "191",
+            "preco": 240
+        },
+        {
+            "id": 768,
+            "nome": "Boné adidas feminino branco com vermelho",
+            "sku": "0000166",
+            "preco": 240
+        },
+        {
+            "id": 134,
+            "nome": "Boné de Golfe Impermeável FootJoy DryJoys",
+            "sku": "366",
+            "preco": 390
+        },
+        {
+            "id": 131,
+            "nome": "Boné de Golfe Maxfli Tour Masculino BRANCO",
+            "sku": "363",
+            "preco": 199
+        },
+        {
+            "id": 130,
+            "nome": "Boné de Golfe Maxfli Tour Masculino com Logo 3D - PRETO",
+            "sku": "364",
+            "preco": 199
+        },
+        {
+            "id": 135,
+            "nome": "Boné de Golfe Trançado Maxfli",
+            "sku": "365",
+            "preco": 199
+        },
+        {
+            "id": 448,
+            "nome": "BONÉ PUMA BEGE",
+            "sku": "184",
+            "preco": 320
+        },
+        {
+            "id": 98,
+            "nome": "Boné Srixon Edição Limitada EUA Patch Collection",
+            "sku": "0000397",
+            "preco": 360
+        },
+        {
+            "id": 386,
+            "nome": "BONÉ TAYLORMADE AZUL MARINHO E BRANCO",
+            "sku": "0000369",
+            "preco": 320
+        },
+        {
+            "id": 324,
+            "nome": "BONÉ TITLEIST AZUL CLARO ESCRITA BRANCA",
+            "sku": "182",
+            "preco": 390
+        },
+        {
+            "id": 316,
+            "nome": "BONÉ TITLEIST AZUL CLARO LOGO BRANCA",
+            "sku": "174",
+            "preco": 240
+        },
+        {
+            "id": 449,
+            "nome": "BONÉ TITLEIST AZUL MARINHO LOGO BRANCA",
+            "sku": "186",
+            "preco": 320
+        },
+        {
+            "id": 322,
+            "nome": "BONÉ TITLEIST BRANCO",
+            "sku": "180",
+            "preco": 320
+        },
+        {
+            "id": 691,
+            "nome": "Boné titleist preto com simbolo redondo branco",
+            "sku": "0000097",
+            "preco": 250
+        },
+        {
+            "id": 447,
+            "nome": "BONÉ TITLEIST PRETO LOGO BRANCA",
+            "sku": "185",
+            "preco": 320
+        },
+        {
+            "id": 296,
+            "nome": "boné Titleist pro v1 preto",
+            "sku": "0000533",
+            "preco": 390
+        },
+        {
+            "id": 688,
+            "nome": "Boné titleist roxo claro",
+            "sku": "0000098",
+            "preco": 320
+        },
+        {
+            "id": 133,
+            "nome": "Boné Titleist Tour Performance",
+            "sku": "367",
+            "preco": 390
+        },
+        {
+            "id": 181,
+            "nome": "BONÉ TITLEIST VERDE ÁGUA",
+            "sku": "416",
+            "preco": 390
+        },
+        {
+            "id": 451,
+            "nome": "BONÉ UNDER ARMOUR ESTAMPADO",
+            "sku": "187",
+            "preco": 220
+        },
+        {
+            "id": 887,
+            "nome": "caixa bola completa callaway supersoft rosa",
+            "sku": "0000315",
+            "preco": 320
+        },
+        {
+            "id": 634,
+            "nome": "CAIXA C/ 3 UNIDADES BRIDGESTONE",
+            "sku": "17",
+            "preco": 80
+        },
+        {
+            "id": 636,
+            "nome": "CAIXA C/ 3 UNIDADES SRIXON",
+            "sku": "15",
+            "preco": 110
+        },
+        {
+            "id": 631,
+            "nome": "CAIXA C/ 3 UNIDADES TAIWAN ROSA",
+            "sku": "13",
+            "preco": 60
+        },
+        {
+            "id": 635,
+            "nome": "CAIXA C/ 3 UNIDADES TITLEIST",
+            "sku": "16",
+            "preco": 100
+        },
+        {
+            "id": 117,
+            "nome": "Caixa Completa Bolas de Golfe Callaway Supersoft Brancas",
+            "sku": "341",
+            "preco": 320
+        },
+        {
+            "id": 119,
+            "nome": "Caixa Completa Bolas de Golfe Titleist TruFeel Brancas",
+            "sku": "345",
+            "preco": 320
+        },
+        {
+            "id": 633,
+            "nome": "CAIXA COMPLETA TAIWAN ROSA",
+            "sku": "11",
+            "preco": 199
+        },
+        {
+            "id": 915,
+            "nome": "caixa de bola callaway supersoft completa laranja",
+            "sku": "0000317",
+            "preco": 320
+        },
+        {
+            "id": 918,
+            "nome": "caixa de bola completa bridgestone lady precept",
+            "sku": "0000320",
+            "preco": 290
+        },
+        {
+            "id": 639,
+            "nome": "caixa de bolas com logo 12un",
+            "sku": "0000003",
+            "preco": 620
+        },
+        {
+            "id": 726,
+            "nome": "Caixa fechada de bolas callaway (com 12)",
+            "sku": "0000117",
+            "preco": 320
+        },
+        {
+            "id": 723,
+            "nome": "Caixa fechada de bolas titleist (com 12)",
+            "sku": "0000118",
+            "preco": 320
+        },
+        {
+            "id": 408,
+            "nome": "CALÇA ADIDAS BEGE TM 32 x 32",
+            "sku": "380",
+            "preco": 480
+        },
+        {
+            "id": 758,
+            "nome": "Calça azul greg norman 38x32",
+            "sku": "0000202",
+            "preco": 480
+        },
+        {
+            "id": 750,
+            "nome": "calça bege nike masculina tam 32 M",
+            "sku": "0000204",
+            "preco": 380
+        },
+        {
+            "id": 827,
+            "nome": "calça bordo tam 32x32",
+            "sku": "0000207",
+            "preco": 480
+        },
+        {
+            "id": 762,
+            "nome": "calça cinza greg norman tam 40x32",
+            "sku": "0000201",
+            "preco": 480
+        },
+        {
+            "id": 464,
+            "nome": "Calça de Golfe FootJoy Performance TAMANHO 38X34",
+            "sku": "125",
+            "preco": 480
+        },
+        {
+            "id": 243,
+            "nome": "Calça de golfe Walter Hagen masculina elástica Hydro-Dri, 5 bolsos, slim fit, vermelha, - W34",
+            "sku": "0000481",
+            "preco": 480
+        },
+        {
+            "id": 806,
+            "nome": "calça fem preta soul life tam m",
+            "sku": "0000233",
+            "preco": 180
+        },
+        {
+            "id": 935,
+            "nome": "Calça feminina de golfe Nike Dri-Fit Tour bege TAMANHO M",
+            "sku": "458",
+            "preco": 480
+        },
+        {
+            "id": 469,
+            "nome": "CALÇA FEMININA LADY HAGEN AZUL MARINHO TM XS",
+            "sku": "127",
+            "preco": 440
+        },
+        {
+            "id": 818,
+            "nome": "calça feminina nike preta tam 16",
+            "sku": "0000227",
+            "preco": 520
+        },
+        {
+            "id": 936,
+            "nome": "CALÇA FEMININA PGATOUR BRANCA TM 6",
+            "sku": "542",
+            "preco": 480
+        },
+        {
+            "id": 822,
+            "nome": "calça feminina puma tam L azul marinho",
+            "sku": "0000225",
+            "preco": 420
+        },
+        {
+            "id": 917,
+            "nome": "CALÇA GLORIA VANDERBILT VERDE",
+            "sku": "1",
+            "preco": 460
+        },
+        {
+            "id": 471,
+            "nome": "CALÇA GLORIA VANDERBILT VERDE TM 18",
+            "sku": "131",
+            "preco": 460
+        },
+        {
+            "id": 250,
+            "nome": "calça Greg Norman  azul marinho TM 32X34",
+            "sku": "0000487",
+            "preco": 520
+        },
+        {
+            "id": 754,
+            "nome": "calça greg norman 35 x 32 cinza",
+            "sku": "0000203",
+            "preco": 420
+        },
+        {
+            "id": 248,
+            "nome": "calça Greg Norman azul marinho  masculina TM 34X34",
+            "sku": "0000484",
+            "preco": 520
+        },
+        {
+            "id": 497,
+            "nome": "CALÇA GREG NORMAN BEGE CLARA TM 34-34",
+            "sku": "110",
+            "preco": 480
+        },
+        {
+            "id": 490,
+            "nome": "CALÇA GREG NORMAN GRAFITE TM 40-32",
+            "sku": "106",
+            "preco": 480
+        },
+        {
+            "id": 831,
+            "nome": "calça greg norman preta masculina 34x32",
+            "sku": "0000205",
+            "preco": 480
+        },
+        {
+            "id": 463,
+            "nome": "CALÇA IZOD GOLF BEGE  TM 36-32",
+            "sku": "123",
+            "preco": 420
+        },
+        {
+            "id": 823,
+            "nome": "calça masculina adidas azul marinho tam 36x32",
+            "sku": "0000209",
+            "preco": 480
+        },
+        {
+            "id": 825,
+            "nome": "calça masculina adidas bege tam 36x32",
+            "sku": "0000208",
+            "preco": 480
+        },
+        {
+            "id": 804,
+            "nome": "calça masculina izod golf tam 36x32",
+            "sku": "0000234",
+            "preco": 420
+        },
+        {
+            "id": 465,
+            "nome": "CALÇA PEBBLE BEACH TM 34-32",
+            "sku": "124",
+            "preco": 480
+        },
+        {
+            "id": 816,
+            "nome": "calça preta feminina lady hagen tam xs",
+            "sku": "0000228",
+            "preco": 380
+        },
+        {
+            "id": 472,
+            "nome": "CALÇA PUMA FEMININA PRETA TM XXL",
+            "sku": "130",
+            "preco": 480
+        },
+        {
+            "id": 934,
+            "nome": "CALÇA UNDER ARMOUR FEMININA BRANCA TM 2",
+            "sku": "545",
+            "preco": 520
+        },
+        {
+            "id": 615,
+            "nome": "calça walter hagen bege claro tam W46 L32",
+            "sku": "0000333",
+            "preco": 480
+        },
+        {
+            "id": 829,
+            "nome": "calça walter hagen tam 38x32",
+            "sku": "0000206",
+            "preco": 420
+        },
+        {
+            "id": 510,
+            "nome": "CALÇA WALTER HAGEN TM 34-32 VERMELHA",
+            "sku": "101",
+            "preco": 460
+        },
+        {
+            "id": 931,
+            "nome": "Callaway Chase 14 Cart Bag PRETA",
+            "sku": "",
+            "preco": 2450
+        },
+        {
+            "id": 779,
+            "nome": "Camisa Adidas Tamanho: M",
+            "sku": "0000179",
+            "preco": 320
+        },
+        {
+            "id": 503,
+            "nome": "CAMISA CLUB ROOM TM S ROSA",
+            "sku": "119",
+            "preco": 320
+        },
+        {
+            "id": 788,
+            "nome": "Camisa Cutter e Buck TAM S/P",
+            "sku": "0000176",
+            "preco": 380
+        },
+        {
+            "id": 773,
+            "nome": "Camisa GELANTE Tamanho: L",
+            "sku": "0000181",
+            "preco": 160
+        },
+        {
+            "id": 407,
+            "nome": "camisa polo  masculina Walter Hagen azul com listras vermelho/preto M",
+            "sku": "0000431",
+            "preco": 360
+        },
+        {
+            "id": 206,
+            "nome": "camisa polo  verde escuro- branco gola Penguin G",
+            "sku": "0000425",
+            "preco": 480
+        },
+        {
+            "id": 254,
+            "nome": "Camisa Polo de Golfe Walter Hagen Perfect 11 - Estampa \"Hops & Birdies\"-   TM S",
+            "sku": "0000492",
+            "preco": 420
+        },
+        {
+            "id": 256,
+            "nome": "Camisa Polo FJ Performance - Gradiente TM S",
+            "sku": "0000490",
+            "preco": 520
+        },
+        {
+            "id": 215,
+            "nome": "camisa polo listrada Vineyard Vines Sankaty- TAMANHO L",
+            "sku": "0000449",
+            "preco": 360
+        },
+        {
+            "id": 395,
+            "nome": "camisa polo masculina Vineyard Vine  azul claro com listra branca L",
+            "sku": "0000436",
+            "preco": 360
+        },
+        {
+            "id": 394,
+            "nome": "camisa polo masculina Vineyard Vine  azul claro com listra branca M",
+            "sku": "0000435",
+            "preco": 360
+        },
+        {
+            "id": 393,
+            "nome": "camisa polo masculina Vineyard Vine  azul claro com listra branca S",
+            "sku": "0000434",
+            "preco": 360
+        },
+        {
+            "id": 405,
+            "nome": "camisa polo masculina Vineyard Vine  azul mescla L",
+            "sku": "0000446",
+            "preco": 360
+        },
+        {
+            "id": 397,
+            "nome": "camisa polo masculina Vineyard Vine  branca com listras azu/vermelho S",
+            "sku": "0000438",
+            "preco": 360
+        },
+        {
+            "id": 217,
+            "nome": "camisa polo masculina Vineyard Vine  branca com listras azul/vermelho XL",
+            "sku": "0000453",
+            "preco": 360
+        },
+        {
+            "id": 406,
+            "nome": "camisa polo masculina Vineyard Vine  com listras finas preto/branco S",
+            "sku": "0000447",
+            "preco": 360
+        },
+        {
+            "id": 404,
+            "nome": "Camisa polo masculina Vineyard Vine mescla M",
+            "sku": "0000445",
+            "preco": 360
+        },
+        {
+            "id": 392,
+            "nome": "camisa polo masculina Vineyard Vines  branca M",
+            "sku": "0000433",
+            "preco": 360
+        },
+        {
+            "id": 391,
+            "nome": "camisa polo masculina Vineyard Vines  branca S/P",
+            "sku": "0000432",
+            "preco": 360
+        },
+        {
+            "id": 218,
+            "nome": "camisa polo masculina Vineyard Vines com listras finas vermelho /branco L",
+            "sku": "0000452",
+            "preco": 360
+        },
+        {
+            "id": 389,
+            "nome": "camisa polo masculina Vineyard Vines com listras finas vermelho /branco M",
+            "sku": "0000429",
+            "preco": 360
+        },
+        {
+            "id": 255,
+            "nome": "Camisa Polo Nike Golf Dri-FIT - Desempenho Vibrante -TM S",
+            "sku": "0000491",
+            "preco": 420
+        },
+        {
+            "id": 198,
+            "nome": "camisa polo preta Penguin L",
+            "sku": "0000415",
+            "preco": 380
+        },
+        {
+            "id": 139,
+            "nome": "CAMISA POLO TRAVIS MATHEW CINZA LISA TM XL",
+            "sku": "371",
+            "preco": 420
+        },
+        {
+            "id": 143,
+            "nome": "CAMISA POLO TRAVIS MATHEW VERMELHA",
+            "sku": "373",
+            "preco": 420
+        },
+        {
+            "id": 204,
+            "nome": "camisa polo verde escuro Penguin S",
+            "sku": "0000421",
+            "preco": 520
+        },
+        {
+            "id": 150,
+            "nome": "CAMISA POLO VINEYARD VINES BRANCA TM M",
+            "sku": "385",
+            "preco": 360
+        },
+        {
+            "id": 205,
+            "nome": "camisa polo vinho bordo  Penguin L/G",
+            "sku": "0000420",
+            "preco": 520
+        },
+        {
+            "id": 169,
+            "nome": "CAMISA POLO WALTER HAGEN  VERDE ESTAMPADA TM L",
+            "sku": "401",
+            "preco": 360
+        },
+        {
+            "id": 258,
+            "nome": "Camisa Polo Walter Hagen Performance 11 - Azul Claro TM S",
+            "sku": "0000496",
+            "preco": 420
+        },
+        {
+            "id": 487,
+            "nome": "CAMISA WALTER HAGEN AZUL TM S",
+            "sku": "120",
+            "preco": 360
+        },
+        {
+            "id": 782,
+            "nome": "Camisa Walter Hagen Tam XL",
+            "sku": "0000178",
+            "preco": 360
+        },
+        {
+            "id": 414,
+            "nome": "CAMISETA ADIDAS AZUL TM XL FEMININA",
+            "sku": "146",
+            "preco": 380
+        },
+        {
+            "id": 928,
+            "nome": "CAMISETA ADIDAS BRANCA TM M",
+            "sku": "289",
+            "preco": 330
+        },
+        {
+            "id": 52,
+            "nome": "CAMISETA ADIDAS CINZA TM S",
+            "sku": "304",
+            "preco": 360
+        },
+        {
+            "id": 441,
+            "nome": "CAMISETA ADIDAS ROSA LISTRADA TM M",
+            "sku": "145",
+            "preco": 360
+        },
+        {
+            "id": 66,
+            "nome": "CAMISETA ADIDAS ROSA TM XL",
+            "sku": "321",
+            "preco": 390
+        },
+        {
+            "id": 474,
+            "nome": "CAMISETA AZUL LISTRADA FJ TM S",
+            "sku": "134",
+            "preco": 520
+        },
+        {
+            "id": 837,
+            "nome": "camiseta branca com gola verde masculina clube TAM P",
+            "sku": "0000267",
+            "preco": 140
+        },
+        {
+            "id": 846,
+            "nome": "camiseta clube branca com gola preta masc tam M",
+            "sku": "0000280",
+            "preco": 140
+        },
+        {
+            "id": 847,
+            "nome": "camiseta clube branca fem GG sem manga",
+            "sku": "0000264",
+            "preco": 140
+        },
+        {
+            "id": 864,
+            "nome": "camiseta clube branca feminina sem manga M",
+            "sku": "0000274",
+            "preco": 140
+        },
+        {
+            "id": 861,
+            "nome": "camiseta clube branca sem manga fem tam P",
+            "sku": "0000275",
+            "preco": 140
+        },
+        {
+            "id": 858,
+            "nome": "camiseta clube fem branca com manga tam P",
+            "sku": "0000276",
+            "preco": 140
+        },
+        {
+            "id": 840,
+            "nome": "camiseta clube fem preta com manga GG",
+            "sku": "0000282",
+            "preco": 140
+        },
+        {
+            "id": 851,
+            "nome": "Camiseta clube feminina verde TAM XG",
+            "sku": "0000247",
+            "preco": 140
+        },
+        {
+            "id": 867,
+            "nome": "camiseta clube masculina branca com gola preta TAM P",
+            "sku": "0000273",
+            "preco": 140
+        },
+        {
+            "id": 850,
+            "nome": "camiseta clube masculina preta P",
+            "sku": "0000263",
+            "preco": 140
+        },
+        {
+            "id": 853,
+            "nome": "camiseta clube masculina verde agua G",
+            "sku": "0000262",
+            "preco": 140
+        },
+        {
+            "id": 843,
+            "nome": "camiseta clube preta fem sem manga tam GG",
+            "sku": "0000281",
+            "preco": 140
+        },
+        {
+            "id": 883,
+            "nome": "camiseta clube rosa sem manga tam GG",
+            "sku": "0000253",
+            "preco": 140
+        },
+        {
+            "id": 354,
+            "nome": "CAMISETA COSTÃO GOLF AZUL TM M",
+            "sku": "219",
+            "preco": 140
+        },
+        {
+            "id": 336,
+            "nome": "CAMISETA COSTÃO ROXA TM M",
+            "sku": "207",
+            "preco": 140
+        },
+        {
+            "id": 797,
+            "nome": "Camiseta Cremieux Performance Tam L",
+            "sku": "0000173",
+            "preco": 320
+        },
+        {
+            "id": 59,
+            "nome": "CAMISETA CUTTER E BUCK LISTRADA CINZA TM S/P",
+            "sku": "314",
+            "preco": 380
+        },
+        {
+            "id": 828,
+            "nome": "camiseta feminina fj azul marinha listrado tam s",
+            "sku": "0000222",
+            "preco": 520
+        },
+        {
+            "id": 803,
+            "nome": "camiseta feminina fj roxa tam m",
+            "sku": "0000219",
+            "preco": 520
+        },
+        {
+            "id": 807,
+            "nome": "camiseta feminina g/fore azul marinho tam s",
+            "sku": "0000217",
+            "preco": 560
+        },
+        {
+            "id": 811,
+            "nome": "Camiseta feminina greg norman azul tam S",
+            "sku": "0000215",
+            "preco": 350
+        },
+        {
+            "id": 809,
+            "nome": "camiseta feminina greg norman tam xl rosa",
+            "sku": "0000216",
+            "preco": 380
+        },
+        {
+            "id": 814,
+            "nome": "camiseta feminina lady hagen preta tam M",
+            "sku": "0000229",
+            "preco": 360
+        },
+        {
+            "id": 802,
+            "nome": "camiseta feminina lady hagen tam s vermelha",
+            "sku": "0000220",
+            "preco": 360
+        },
+        {
+            "id": 805,
+            "nome": "camiseta feminina puma azul gola rosa tam s",
+            "sku": "0000218",
+            "preco": 380
+        },
+        {
+            "id": 489,
+            "nome": "CAMISETA FJ AZUL CLARO TM M",
+            "sku": "295",
+            "preco": 520
+        },
+        {
+            "id": 461,
+            "nome": "CAMISETA FJ AZUL MARINHO TM M",
+            "sku": "310",
+            "preco": 420
+        },
+        {
+            "id": 477,
+            "nome": "CAMISETA FJ AZUL TM S",
+            "sku": "136",
+            "preco": 520
+        },
+        {
+            "id": 462,
+            "nome": "CAMISETA FJ BRANCA C/ AZUL TM S",
+            "sku": "404",
+            "preco": 480
+        },
+        {
+            "id": 46,
+            "nome": "CAMISETA FJ BRANCA C/ VERMELHO TM L",
+            "sku": "298",
+            "preco": 390
+        },
+        {
+            "id": 54,
+            "nome": "CAMISETA GELANTE AZUL MARINHO TM XL",
+            "sku": "308",
+            "preco": 160
+        },
+        {
+            "id": 57,
+            "nome": "CAMISETA GELANTE AZUL TM L",
+            "sku": "311",
+            "preco": 160
+        },
+        {
+            "id": 50,
+            "nome": "CAMISETA GREG NORMAL VINHO TM S/P",
+            "sku": "301",
+            "preco": 380
+        },
+        {
+            "id": 808,
+            "nome": "camiseta greg norman branca fem tam xl",
+            "sku": "0000232",
+            "preco": 380
+        },
+        {
+            "id": 756,
+            "nome": "Camiseta Greg Norman Tam M",
+            "sku": "0000170",
+            "preco": 420
+        },
+        {
+            "id": 764,
+            "nome": "Camiseta IZOD GOLF Tam XL",
+            "sku": "0000167",
+            "preco": 380
+        },
+        {
+            "id": 51,
+            "nome": "CAMISETA LADY HAGEN PRETA TM M",
+            "sku": "305",
+            "preco": 320
+        },
+        {
+            "id": 875,
+            "nome": "camiseta masculina clube branca tam XGG",
+            "sku": "0000255",
+            "preco": 140
+        },
+        {
+            "id": 833,
+            "nome": "camiseta masculina com gola verde clube tam M",
+            "sku": "0000268",
+            "preco": 140
+        },
+        {
+            "id": 68,
+            "nome": "CAMISETA NIKE AMARELA TM S",
+            "sku": "323",
+            "preco": 380
+        },
+        {
+            "id": 824,
+            "nome": "camiseta nike azul dri fit tam L",
+            "sku": "0000224",
+            "preco": 320
+        },
+        {
+            "id": 48,
+            "nome": "CAMISETA NIKE VERMELHA TM XL",
+            "sku": "300",
+            "preco": 370
+        },
+        {
+            "id": 65,
+            "nome": "CAMISETA PGATOUR ROSA TM XL",
+            "sku": "319",
+            "preco": 290
+        },
+        {
+            "id": 43,
+            "nome": "CAMISETA PGM GOLF AZUL TM L",
+            "sku": "291",
+            "preco": 390
+        },
+        {
+            "id": 826,
+            "nome": "camiseta pgm preta tam L",
+            "sku": "0000223",
+            "preco": 320
+        },
+        {
+            "id": 170,
+            "nome": "CAMISETA POLO ADIDAS AMARELA TM S",
+            "sku": "406",
+            "preco": 380
+        },
+        {
+            "id": 855,
+            "nome": "camiseta preta clube fem tam P com manga",
+            "sku": "0000277",
+            "preco": 140
+        },
+        {
+            "id": 61,
+            "nome": "CAMISETA STITCH AZUL LISTRADA TM XL",
+            "sku": "312",
+            "preco": 320
+        },
+        {
+            "id": 889,
+            "nome": "camiseta tail white label tam L",
+            "sku": "0000314",
+            "preco": 420
+        },
+        {
+            "id": 444,
+            "nome": "CAMISETA TRAVIS MATHEW BRANCA TM XL",
+            "sku": "148",
+            "preco": 420
+        },
+        {
+            "id": 603,
+            "nome": "CAMISETA TRAVIS MATHEW CINZA TM M",
+            "sku": "164",
+            "preco": 380
+        },
+        {
+            "id": 55,
+            "nome": "CAMISETA TRAVIS MATHEW CINZA TM XXL",
+            "sku": "307",
+            "preco": 420
+        },
+        {
+            "id": 776,
+            "nome": "Camiseta TRAVIS MATHEW TAM L",
+            "sku": "0000180",
+            "preco": 420
+        },
+        {
+            "id": 760,
+            "nome": "Camiseta Travis Mathew Tam M",
+            "sku": "0000169",
+            "preco": 380
+        },
+        {
+            "id": 770,
+            "nome": "Camiseta TRAVIS MATHEW tam XL",
+            "sku": "0000182",
+            "preco": 380
+        },
+        {
+            "id": 794,
+            "nome": "Camiseta Under Armour Tam S",
+            "sku": "0000174",
+            "preco": 360
+        },
+        {
+            "id": 167,
+            "nome": "CAMISETA VINEYARD VINES AZUL PISCINA TM L",
+            "sku": "403",
+            "preco": 360
+        },
+        {
+            "id": 168,
+            "nome": "CAMISETA VINEYARD VINES AZUL PISCINA TM M",
+            "sku": "402",
+            "preco": 360
+        },
+        {
+            "id": 64,
+            "nome": "CAMISETA VINEYARD VINES LISTRADA TM L",
+            "sku": "320",
+            "preco": 320
+        },
+        {
+            "id": 69,
+            "nome": "CAMISETA VINEYARD VINES ROSA ESTAMPADA TM L",
+            "sku": "322",
+            "preco": 360
+        },
+        {
+            "id": 752,
+            "nome": "Camiseta Vineyard Vines Tam M",
+            "sku": "0000171",
+            "preco": 320
+        },
+        {
+            "id": 60,
+            "nome": "CAMISETA WALTER HAGEN AZUL  TM XXL",
+            "sku": "313",
+            "preco": 360
+        },
+        {
+            "id": 538,
+            "nome": "CAMISETA WALTER HAGEN BRANCA E VERDE  TM XL",
+            "sku": "315",
+            "preco": 360
+        },
+        {
+            "id": 785,
+            "nome": "Camiseta WALTER HAGEN TAM S",
+            "sku": "0000177",
+            "preco": 360
+        },
+        {
+            "id": 302,
+            "nome": "CAMISETA WALTER HAGEN VERDE LISTRADA TM S",
+            "sku": "316",
+            "preco": 320
+        },
+        {
+            "id": 830,
+            "nome": "camiseta/bata adidas branca alongada tam s",
+            "sku": "0000221",
+            "preco": 380
+        },
+        {
+            "id": 810,
+            "nome": "camiseta/bata adidas tam s",
+            "sku": "0000231",
+            "preco": 380
+        },
+        {
+            "id": 294,
+            "nome": "Capa Protetora de Taco de Golfe Maxfli - Padrão Bandeira dos EUA",
+            "sku": "0000529",
+            "preco": 139
+        },
+        {
+            "id": 295,
+            "nome": "Capa Protetora de Taco de Golfe Maxfli Knit - Estilo Vintage",
+            "sku": "0000528",
+            "preco": 139
+        },
+        {
+            "id": 290,
+            "nome": "Capa protetora para taco de golfe MAXFLI  Numero 1",
+            "sku": "0000527",
+            "preco": 159
+        },
+        {
+            "id": 454,
+            "nome": "CHAPÉU ADIDAS CINZA",
+            "sku": "189",
+            "preco": 380
+        },
+        {
+            "id": 679,
+            "nome": "Chapéu adidas Tam S/M",
+            "sku": "0000102",
+            "preco": 350
+        },
+        {
+            "id": 453,
+            "nome": "CHAPÉU PRETO NIKE",
+            "sku": "190",
+            "preco": 380
+        },
+        {
+            "id": 101,
+            "nome": "Chapéu Titleist Charleston Aussie",
+            "sku": "0000399",
+            "preco": 480
+        },
+        {
+            "id": 365,
+            "nome": "CHAVEIRO DOURADO",
+            "sku": "228",
+            "preco": 120
+        },
+        {
+            "id": 641,
+            "nome": "CHAVEIRO TACO E BOLA DE GOLF",
+            "sku": "0000001",
+            "preco": 80
+        },
+        {
+            "id": 361,
+            "nome": "CHAVEIRO TEMATICO MINI GOLF",
+            "sku": "226",
+            "preco": 70
+        },
+        {
+            "id": 675,
+            "nome": "Cinto adidas bege Tam M/L",
+            "sku": "0000104",
+            "preco": 420
+        },
+        {
+            "id": 534,
+            "nome": "CINTO ADIDAS ROXO",
+            "sku": "92",
+            "preco": 320
+        },
+        {
+            "id": 677,
+            "nome": "Cinto adidas roxo e preto S/M",
+            "sku": "0000103",
+            "preco": 320
+        },
+        {
+            "id": 527,
+            "nome": "CINTO ARMOUR AZUL MARINHO",
+            "sku": "87",
+            "preco": 320
+        },
+        {
+            "id": 166,
+            "nome": "CINTO ARNOLD PALMER BRANCO E PRETO TM 38",
+            "sku": "398",
+            "preco": 380
+        },
+        {
+            "id": 165,
+            "nome": "CINTO ARNOLD PALMER PRETO TM 38",
+            "sku": "399",
+            "preco": 380
+        },
+        {
+            "id": 84,
+            "nome": "cinto azul marinho Greg Norman tamanho 44",
+            "sku": "0000388",
+            "preco": 360
+        },
+        {
+            "id": 162,
+            "nome": "Cinto de Golfe Trançado Elástico Walter Hagen",
+            "sku": "397",
+            "preco": 340
+        },
+        {
+            "id": 83,
+            "nome": "cinto masculino Greg Norman tamanho 32",
+            "sku": "0000389",
+            "preco": 340
+        },
+        {
+            "id": 780,
+            "nome": "cinto masculino puma mesclado cinza e azul marinho TAM S/M",
+            "sku": "0000162",
+            "preco": 340
+        },
+        {
+            "id": 87,
+            "nome": "cinto Nike 3x1  cores preto/verde/azul marinho ( serve ate tamanho 42)",
+            "sku": "0000390",
+            "preco": 320
+        },
+        {
+            "id": 536,
+            "nome": "CINTO PUMA AZUL CLARO",
+            "sku": "95",
+            "preco": 340
+        },
+        {
+            "id": 535,
+            "nome": "CINTO PUMA AZUL E VERDE",
+            "sku": "91",
+            "preco": 340
+        },
+        {
+            "id": 711,
+            "nome": "Cinto Puma trançado azul e bege",
+            "sku": "0000106",
+            "preco": 340
+        },
+        {
+            "id": 530,
+            "nome": "Cinto Puma Ultralite Stretch -VERDE",
+            "sku": "90",
+            "preco": 360
+        },
+        {
+            "id": 531,
+            "nome": "CINTO TFLOW BEGE",
+            "sku": "89",
+            "preco": 320
+        },
+        {
+            "id": 714,
+            "nome": "Cinto Under Armour Azul marinho",
+            "sku": "0000105",
+            "preco": 320
+        },
+        {
+            "id": 475,
+            "nome": "COLETE FEMININO FJ PRETO TM M",
+            "sku": "133",
+            "preco": 680
+        },
+        {
+            "id": 737,
+            "nome": "Contador de tacada",
+            "sku": "0000128",
+            "preco": 80
+        },
+        {
+            "id": 364,
+            "nome": "CONTADOR MANUAL",
+            "sku": "229",
+            "preco": 80
+        },
+        {
+            "id": 721,
+            "nome": "Corta vento masculino azul marinho tam P",
+            "sku": "0000119",
+            "preco": 160
+        },
+        {
+            "id": 374,
+            "nome": "CORTA VENTO PRETO TM GG",
+            "sku": "248",
+            "preco": 160
+        },
+        {
+            "id": 515,
+            "nome": "ESCOVA LIMPA TACOS",
+            "sku": "72",
+            "preco": 80
+        },
+        {
+            "id": 775,
+            "nome": "Escova limpar taco azul e preta",
+            "sku": "0000196",
+            "preco": 80
+        },
+        {
+            "id": 772,
+            "nome": "Escovinha para limpar taco toda preta",
+            "sku": "0000197",
+            "preco": 80
+        },
+        {
+            "id": 703,
+            "nome": "Escovinha para limpar tacos com recipiente de água",
+            "sku": "0000093",
+            "preco": 120
+        },
+        {
+            "id": 697,
+            "nome": "Espelho para treino de putter",
+            "sku": "0000095",
+            "preco": 140
+        },
+        {
+            "id": 142,
+            "nome": "FJ Heather Yoke Half Zip Pullover- TAMANHO M",
+            "sku": "374",
+            "preco": 560
+        },
+        {
+            "id": 644,
+            "nome": "FootJoy  ONCINHA (TAM 7 )",
+            "sku": "0000008",
+            "preco": 1450
+        },
+        {
+            "id": 674,
+            "nome": "FootJoy  ONCINHA (TAM 8)",
+            "sku": "0000029",
+            "preco": 1450
+        },
+        {
+            "id": 667,
+            "nome": "FootJoy Flex CINZA COM ROXO  FEM (TAM 6 1/2)",
+            "sku": "0000016",
+            "preco": 990
+        },
+        {
+            "id": 663,
+            "nome": "FootJoy Flex preto 1 TECIDO (TAM 8 1/2 )",
+            "sku": "0000018",
+            "preco": 1150
+        },
+        {
+            "id": 507,
+            "nome": "FootJoy Tênis de golfe feminino sem cadarço N°6",
+            "sku": "99",
+            "preco": 980
+        },
+        {
+            "id": 665,
+            "nome": "FootJoy Women's FJ Fuel Golf (TAM 6)",
+            "sku": "0000017",
+            "preco": 1350
+        },
+        {
+            "id": 661,
+            "nome": "FootJoy Women's FJ Fuel Golf Shoes 1 - (TAM 8 1/2) COURO",
+            "sku": "0000019",
+            "preco": 1150
+        },
+        {
+            "id": 642,
+            "nome": "FootJoy Women's Flex Golf Cinza c Roxo (TAM 6)",
+            "sku": "0000011",
+            "preco": 990
+        },
+        {
+            "id": 548,
+            "nome": "GRIP CINZA C/ AZUL",
+            "sku": "27",
+            "preco": 80
+        },
+        {
+            "id": 164,
+            "nome": "GRIP LAB GOLF N° 2",
+            "sku": "400",
+            "preco": 350
+        },
+        {
+            "id": 652,
+            "nome": "Guaraná Lata",
+            "sku": "0000050",
+            "preco": 8
+        },
+        {
+            "id": 104,
+            "nome": "Guarda-Chuva de Golfe Titleist Tour Double Canopy Pro V1",
+            "sku": "0000402",
+            "preco": 790
+        },
+        {
+            "id": 817,
+            "nome": "imã para marcador (apenas para contagem x não vender)",
+            "sku": "0000212",
+            "preco": 20
+        },
+        {
+            "id": 601,
+            "nome": "JAQUETA CORTA VENTO ALANA",
+            "sku": "70",
+            "preco": 160
+        },
+        {
+            "id": 715,
+            "nome": "Kit de jogo golfe infantil (para brincar)",
+            "sku": "0000089",
+            "preco": 550
+        },
+        {
+            "id": 99,
+            "nome": "Kit Óculos Esportivo Ciclismo 5 Lentes Polarizado TG Store",
+            "sku": "333",
+            "preco": 680
+        },
+        {
+            "id": 570,
+            "nome": "LUVA AVANT TM XL",
+            "sku": "49",
+            "preco": 180
+        },
+        {
+            "id": 154,
+            "nome": "LUVA BRIDGESTONE GLOVE TM M",
+            "sku": "387",
+            "preco": 220
+        },
+        {
+            "id": 97,
+            "nome": "LUVA BRIDGESTONE GOLF  TM ML",
+            "sku": "329",
+            "preco": 180
+        },
+        {
+            "id": 158,
+            "nome": "LUVA BRIDGESTONE GOLF TM M",
+            "sku": "394",
+            "preco": 180
+        },
+        {
+            "id": 124,
+            "nome": "LUVA BRIDGESTONE GROVE TM M",
+            "sku": "351",
+            "preco": 220
+        },
+        {
+            "id": 727,
+            "nome": "Luva callaway tam S",
+            "sku": "0000148",
+            "preco": 200
+        },
+        {
+            "id": 153,
+            "nome": "LUVA CALLAWAY X JUNIOR",
+            "sku": "388",
+            "preco": 140
+        },
+        {
+            "id": 366,
+            "nome": "luva e-glove  masculina medium M (mão direita )",
+            "sku": "0000365",
+            "preco": 220
+        },
+        {
+            "id": 732,
+            "nome": "luva fj contour flx feminina SMALL",
+            "sku": "0000146",
+            "preco": 200
+        },
+        {
+            "id": 734,
+            "nome": "Luva FJ contour flx masculina CADET MEDIUM",
+            "sku": "0000145",
+            "preco": 200
+        },
+        {
+            "id": 736,
+            "nome": "Luva FJ contour flx SMALL MASCULINA",
+            "sku": "0000144",
+            "preco": 200
+        },
+        {
+            "id": 568,
+            "nome": "LUVA FJ CONTOUR TM MEDIUM",
+            "sku": "44",
+            "preco": 220
+        },
+        {
+            "id": 567,
+            "nome": "LUVA FJ CONTOUR TM SMAL",
+            "sku": "45",
+            "preco": 220
+        },
+        {
+            "id": 79,
+            "nome": "luva FJ hiperflx masculina medium large ML (mão esquerda )",
+            "sku": "0000381",
+            "preco": 240
+        },
+        {
+            "id": 137,
+            "nome": "LUVA FJ HYPERFLX TM LARGE",
+            "sku": "369",
+            "preco": 240
+        },
+        {
+            "id": 91,
+            "nome": "LUVA FJ HYPERFLX TM MED LG",
+            "sku": "328",
+            "preco": 240
+        },
+        {
+            "id": 96,
+            "nome": "LUVA FJ HYPERFLX TM MEDIUM",
+            "sku": "330",
+            "preco": 240
+        },
+        {
+            "id": 163,
+            "nome": "LUVA FJ HYPERFLX TM MEDIUM LG",
+            "sku": "396",
+            "preco": 240
+        },
+        {
+            "id": 572,
+            "nome": "LUVA FJ JUNIOR TM L",
+            "sku": "53",
+            "preco": 140
+        },
+        {
+            "id": 574,
+            "nome": "LUVA FJ JUNIOR TM MEDIUM",
+            "sku": "51",
+            "preco": 140
+        },
+        {
+            "id": 577,
+            "nome": "LUVA FJ JUNIOR TM MEDIUM-LARGER",
+            "sku": "54",
+            "preco": 140
+        },
+        {
+            "id": 573,
+            "nome": "LUVA FJ JUNIOR TM SMALL",
+            "sku": "52",
+            "preco": 140
+        },
+        {
+            "id": 159,
+            "nome": "LUVA FJ STASOF TM X-LG",
+            "sku": "393",
+            "preco": 220
+        },
+        {
+            "id": 744,
+            "nome": "Luva FJ Weather Sof MEDIUM (caixa verde)",
+            "sku": "0000140",
+            "preco": 180
+        },
+        {
+            "id": 111,
+            "nome": "LUVA FJ WEATHERSOF TM MED. LG",
+            "sku": "336",
+            "preco": 180
+        },
+        {
+            "id": 566,
+            "nome": "LUVA FJ WEATHERSOF TM SMAL",
+            "sku": "46",
+            "preco": 180
+        },
+        {
+            "id": 565,
+            "nome": "LUVA FJ WEATHERSOF TM X-LG",
+            "sku": "47",
+            "preco": 180
+        },
+        {
+            "id": 155,
+            "nome": "LUVA FJ WEATHERSOFT TM LARGE",
+            "sku": "391",
+            "preco": 180
+        },
+        {
+            "id": 160,
+            "nome": "LUVA FJ WEATHERSOFT TM MED-LG",
+            "sku": "392",
+            "preco": 180
+        },
+        {
+            "id": 558,
+            "nome": "LUVA GOG AZUL TM 20",
+            "sku": "40",
+            "preco": 200
+        },
+        {
+            "id": 161,
+            "nome": "LUVA HYPERFLX TM LARGER",
+            "sku": "395",
+            "preco": 240
+        },
+        {
+            "id": 724,
+            "nome": "luva kirkland ML",
+            "sku": "0000149",
+            "preco": 130
+        },
+        {
+            "id": 578,
+            "nome": "luva kirkland s (mao direita)",
+            "sku": "0000341",
+            "preco": 130
+        },
+        {
+            "id": 765,
+            "nome": "luva kirkland tam S (para mão esquerda)",
+            "sku": "0000150",
+            "preco": 130
+        },
+        {
+            "id": 186,
+            "nome": "LUVA KIRLAND - DESTRO TAMANHO S",
+            "sku": "423",
+            "preco": 130
+        },
+        {
+            "id": 187,
+            "nome": "LUVA KIRLAND -CANHOTO TAMANHO S",
+            "sku": "422",
+            "preco": 130
+        },
+        {
+            "id": 367,
+            "nome": "luva ping masculina medium large ML  (mão direita)",
+            "sku": "0000364",
+            "preco": 220
+        },
+        {
+            "id": 356,
+            "nome": "luva rain grip  masculina cadet medium (1 par) luva de chuva",
+            "sku": "0000363",
+            "preco": 360
+        },
+        {
+            "id": 348,
+            "nome": "luva soft grip  masculina  medium large ( mão esquerda )",
+            "sku": "0000359",
+            "preco": 180
+        },
+        {
+            "id": 353,
+            "nome": "luva soft grip  masculina  small  S ( mão esquerda )",
+            "sku": "0000360",
+            "preco": 180
+        },
+        {
+            "id": 738,
+            "nome": "Luva Taylor made stratus tech RH-S",
+            "sku": "0000143",
+            "preco": 180
+        },
+        {
+            "id": 740,
+            "nome": "Luva taylor made stratus tech RH-XL",
+            "sku": "0000142",
+            "preco": 180
+        },
+        {
+            "id": 152,
+            "nome": "LUVA TAYLORMADE STRATUS COLD TM ML",
+            "sku": "383",
+            "preco": 360
+        },
+        {
+            "id": 569,
+            "nome": "LUVA TAYLORMADE TM XL",
+            "sku": "50",
+            "preco": 180
+        },
+        {
+            "id": 184,
+            "nome": "LUVA TAYLORMADE TPFLEX - CANHOTO TAMANHO S",
+            "sku": "420",
+            "preco": 240
+        },
+        {
+            "id": 730,
+            "nome": "luva taylormade TPflex RH-S",
+            "sku": "0000147",
+            "preco": 240
+        },
+        {
+            "id": 562,
+            "nome": "LUVA TITLEIST TM ML",
+            "sku": "43",
+            "preco": 130
+        },
+        {
+            "id": 147,
+            "nome": "LUVA Valley Forge Traditional Winter Golf Gloves TM XL",
+            "sku": "382",
+            "preco": 260
+        },
+        {
+            "id": 742,
+            "nome": "Luva Weather Sof FJ MED/LG",
+            "sku": "0000141",
+            "preco": 180
+        },
+        {
+            "id": 516,
+            "nome": "MANGUITO PRETO NIKE G",
+            "sku": "71",
+            "preco": 50
+        },
+        {
+            "id": 483,
+            "nome": "MARCADOR  DE BOLAS MASTERS",
+            "sku": "0000352",
+            "preco": 50
+        },
+        {
+            "id": 819,
+            "nome": "marcador clube iguassu",
+            "sku": "0000211",
+            "preco": 50
+        },
+        {
+            "id": 821,
+            "nome": "marcador clube iguassu com imã para boné",
+            "sku": "0000210",
+            "preco": 70
+        },
+        {
+            "id": 735,
+            "nome": "Marcador estilo canivete",
+            "sku": "0000129",
+            "preco": 80
+        },
+        {
+            "id": 784,
+            "nome": "Necessaire florida",
+            "sku": "0000193",
+            "preco": 49
+        },
+        {
+            "id": 781,
+            "nome": "Necessaire preta",
+            "sku": "0000194",
+            "preco": 49
+        },
+        {
+            "id": 11,
+            "nome": "Nike Air Zoom Victory Tour 3 Numeração 8",
+            "sku": "0000370",
+            "preco": 1250
+        },
+        {
+            "id": 10,
+            "nome": "Nike Air Zoom Victory Tour 3 Numero 8.5",
+            "sku": "0000371",
+            "preco": 1250
+        },
+        {
+            "id": 229,
+            "nome": "Nike Victory G Lite Next Nature  -TAMANHO 10,5",
+            "sku": "0000467",
+            "preco": 980
+        },
+        {
+            "id": 71,
+            "nome": "OCULOS A99 GOLF",
+            "sku": "325",
+            "preco": 350
+        },
+        {
+            "id": 585,
+            "nome": "oculos sol skechers",
+            "sku": "0000342",
+            "preco": 720
+        },
+        {
+            "id": 625,
+            "nome": "PACOTE BOLINHA USADA 50,00",
+            "sku": "5",
+            "preco": 50
+        },
+        {
+            "id": 733,
+            "nome": "Pacote bolinha usada de 80",
+            "sku": "0000130",
+            "preco": 80
+        },
+        {
+            "id": 640,
+            "nome": "PAR MEIA IZZO BRANCO",
+            "sku": "0000002",
+            "preco": 39
+        },
+        {
+            "id": 905,
+            "nome": "picole 7 belo",
+            "sku": "0000306",
+            "preco": 12
+        },
+        {
+            "id": 886,
+            "nome": "picole açai leitinho",
+            "sku": "0000300",
+            "preco": 15
+        },
+        {
+            "id": 894,
+            "nome": "picole banoffe",
+            "sku": "0000296",
+            "preco": 15
+        },
+        {
+            "id": 907,
+            "nome": "picole brigadeiro",
+            "sku": "0000305",
+            "preco": 18
+        },
+        {
+            "id": 916,
+            "nome": "picole caramelo crocante com flor de sal",
+            "sku": "0000301",
+            "preco": 18
+        },
+        {
+            "id": 903,
+            "nome": "picole chocolate",
+            "sku": "0000307",
+            "preco": 12
+        },
+        {
+            "id": 912,
+            "nome": "picole de brownie",
+            "sku": "0000303",
+            "preco": 18
+        },
+        {
+            "id": 909,
+            "nome": "picole de coco branco",
+            "sku": "0000304",
+            "preco": 15
+        },
+        {
+            "id": 914,
+            "nome": "picole de leite com creme de avela",
+            "sku": "0000302",
+            "preco": 15
+        },
+        {
+            "id": 888,
+            "nome": "picole doce de leite",
+            "sku": "0000299",
+            "preco": 12
+        },
+        {
+            "id": 660,
+            "nome": "Picole framboesa",
+            "sku": "0000043",
+            "preco": 12
+        },
+        {
+            "id": 662,
+            "nome": "Picole limonada suiça",
+            "sku": "0000042",
+            "preco": 8
+        },
+        {
+            "id": 666,
+            "nome": "Picolé maracuja",
+            "sku": "0000040",
+            "preco": 15
+        },
+        {
+            "id": 668,
+            "nome": "Picole morango com leite",
+            "sku": "0000039",
+            "preco": 15
+        },
+        {
+            "id": 658,
+            "nome": "Picole NUTS GLACERADA",
+            "sku": "0000044",
+            "preco": 15
+        },
+        {
+            "id": 890,
+            "nome": "picole ovomaltine",
+            "sku": "0000298",
+            "preco": 18
+        },
+        {
+            "id": 892,
+            "nome": "picole ovomaltine vegano",
+            "sku": "0000297",
+            "preco": 12
+        },
+        {
+            "id": 669,
+            "nome": "Picolé Pistache",
+            "sku": "0000038",
+            "preco": 20
+        },
+        {
+            "id": 664,
+            "nome": "Picole uva classico",
+            "sku": "0000041",
+            "preco": 8
+        },
+        {
+            "id": 518,
+            "nome": "POCKET - CARTEIRA SCORE",
+            "sku": "75",
+            "preco": 160
+        },
+        {
+            "id": 517,
+            "nome": "POCKET - CARTEIRA VERDE",
+            "sku": "76",
+            "preco": 120
+        },
+        {
+            "id": 604,
+            "nome": "Polo de Golfe Feminino End On End Open Collar da FootJoy ROSA TM M",
+            "sku": "296",
+            "preco": 520
+        },
+        {
+            "id": 442,
+            "nome": "Polo de Golfe Performance Dual Color – Bordô e Cinza TM S/P",
+            "sku": "144",
+            "preco": 390
+        },
+        {
+            "id": 278,
+            "nome": "polo masculina FJ  azul marinho  com detalhe de listras azul claro/branco  TM S",
+            "sku": "0000512",
+            "preco": 520
+        },
+        {
+            "id": 285,
+            "nome": "polo masculina FJ vermelha  clássica  TM S",
+            "sku": "0000518",
+            "preco": 520
+        },
+        {
+            "id": 281,
+            "nome": "polo masculina Greg Norman  com estampa listrada em tons de roxo, pink e branco TM M",
+            "sku": "0000515",
+            "preco": 420
+        },
+        {
+            "id": 280,
+            "nome": "polo masculina Greg Norman cinza TM M",
+            "sku": "0000516",
+            "preco": 420
+        },
+        {
+            "id": 284,
+            "nome": "Polo masculina Walter Hagen  -  TM S",
+            "sku": "0000519",
+            "preco": 420
+        },
+        {
+            "id": 276,
+            "nome": "polo masculina Walter Hagen clube house vintage TM S",
+            "sku": "0000514",
+            "preco": 420
+        },
+        {
+            "id": 274,
+            "nome": "polo masculina Walter Hagen cor salmon TM S",
+            "sku": "0000511",
+            "preco": 420
+        },
+        {
+            "id": 277,
+            "nome": "polo masculina Walter Hagen cor verde limão/cinza/azul marinho  TM S",
+            "sku": "0000513",
+            "preco": 420
+        },
+        {
+            "id": 262,
+            "nome": "polo Walter Hagen branca estampada em cinza  ( gola cinza ) TM S",
+            "sku": "0000497",
+            "preco": 420
+        },
+        {
+            "id": 216,
+            "nome": "Polo Winstead Sankaty mesclada masculina da Vineyard Vines – TAMANHO L",
+            "sku": "0000454",
+            "preco": 360
+        },
+        {
+            "id": 645,
+            "nome": "Prestigio preto",
+            "sku": "0000006",
+            "preco": 6
+        },
+        {
+            "id": 673,
+            "nome": "Pringles churrasco",
+            "sku": "0000054",
+            "preco": 18
+        },
+        {
+            "id": 650,
+            "nome": "Pringles creme e cebola",
+            "sku": "0000052",
+            "preco": 18
+        },
+        {
+            "id": 648,
+            "nome": "Pringles original",
+            "sku": "0000053",
+            "preco": 18
+        },
+        {
+            "id": 722,
+            "nome": "Protetor solar Nivea sun",
+            "sku": "0000134",
+            "preco": 69.9
+        },
+        {
+            "id": 725,
+            "nome": "Protetor solar spray oaz",
+            "sku": "0000133",
+            "preco": 79.9
+        },
+        {
+            "id": 720,
+            "nome": "Protetor solar sundown",
+            "sku": "0000135",
+            "preco": 60
+        },
+        {
+            "id": 298,
+            "nome": "Puma Women's Range Pique Sleeveless Golf Polo - vermelha  TM S",
+            "sku": "0000534",
+            "preco": 420
+        },
+        {
+            "id": 670,
+            "nome": "Redbull",
+            "sku": "0000034",
+            "preco": 20
+        },
+        {
+            "id": 42,
+            "nome": "REGATA ADIDAS AZUL LISTRADA TM M",
+            "sku": "292",
+            "preco": 520
+        },
+        {
+            "id": 45,
+            "nome": "REGATA ADIDAS ROSE TM M",
+            "sku": "294",
+            "preco": 420
+        },
+        {
+            "id": 49,
+            "nome": "REGATA ADIDAS VERMELHA ESTAMPADA TM M",
+            "sku": "299",
+            "preco": 420
+        },
+        {
+            "id": 893,
+            "nome": "regata feminina preta TAIL WHITE LABEL TAM L",
+            "sku": "0000312",
+            "preco": 420
+        },
+        {
+            "id": 891,
+            "nome": "regata feminina tail white label tam S",
+            "sku": "0000313",
+            "preco": 420
+        },
+        {
+            "id": 171,
+            "nome": "REGATA G/ FORE AZUL MARINHO TM S",
+            "sku": "405",
+            "preco": 560
+        },
+        {
+            "id": 53,
+            "nome": "REGATA GOTTEX GOLF FLORIDA TM S",
+            "sku": "302",
+            "preco": 360
+        },
+        {
+            "id": 301,
+            "nome": "REGATA GREG NOMAN ESTAMPADA AZUL  E VERMELHO TM S/P",
+            "sku": "303",
+            "preco": 320
+        },
+        {
+            "id": 473,
+            "nome": "REGATA GREG NORMAN  ESTAMPADA TM SP",
+            "sku": "135",
+            "preco": 380
+        },
+        {
+            "id": 172,
+            "nome": "REGATA PETER MILAR CINZA TM S",
+            "sku": "408",
+            "preco": 480
+        },
+        {
+            "id": 482,
+            "nome": "REGATA PUMA AZUL TM S",
+            "sku": "142",
+            "preco": 420
+        },
+        {
+            "id": 173,
+            "nome": "REGATA TAIL WHITE LABEL PRETA TM S",
+            "sku": "407",
+            "preco": 420
+        },
+        {
+            "id": 72,
+            "nome": "RELOGIO ION EDGE",
+            "sku": "324",
+            "preco": 1350
+        },
+        {
+            "id": 718,
+            "nome": "Repelente repellere",
+            "sku": "0000136",
+            "preco": 60
+        },
+        {
+            "id": 478,
+            "nome": "RESGATA FJ LÍLAS LISTRADA TM XS",
+            "sku": "137",
+            "preco": 520
+        },
+        {
+            "id": 792,
+            "nome": "Saia PUMA branca TAM 10",
+            "sku": "0000158",
+            "preco": 380
+        },
+        {
+            "id": 36,
+            "nome": "SHORT CALIA DE BADADO PRETO TM M",
+            "sku": "282",
+            "preco": 320
+        },
+        {
+            "id": 18,
+            "nome": "SHORT SAIA ADIDAS ROSA E LÍLAS TM XL",
+            "sku": "265",
+            "preco": 420
+        },
+        {
+            "id": 20,
+            "nome": "SHORT SAIA ADIDAS ROXA TM XL",
+            "sku": "268",
+            "preco": 330
+        },
+        {
+            "id": 30,
+            "nome": "SHORT SAIA AZUL CLARO TM M",
+            "sku": "275",
+            "preco": 320
+        },
+        {
+            "id": 35,
+            "nome": "SHORT SAIA DU´MO TM M PRETA",
+            "sku": "283",
+            "preco": 180
+        },
+        {
+            "id": 34,
+            "nome": "SHORT SAIA GLOWMODE TM L PRETA",
+            "sku": "284",
+            "preco": 320
+        },
+        {
+            "id": 23,
+            "nome": "SHORT SAIA GRAND SLAM AZUL TM M",
+            "sku": "271",
+            "preco": 360
+        },
+        {
+            "id": 39,
+            "nome": "SHORT SAIA GREG NORMAN PRETA TM XXL",
+            "sku": "286",
+            "preco": 380
+        },
+        {
+            "id": 25,
+            "nome": "SHORT SAIA LADY HAGEN BANCA C/ VERDE TM XXL",
+            "sku": "269",
+            "preco": 380
+        },
+        {
+            "id": 22,
+            "nome": "SHORT SAIA LADY HAGEN ROSA TM L",
+            "sku": "266",
+            "preco": 380
+        },
+        {
+            "id": 26,
+            "nome": "SHORT SAIA NIKE AZIL TM M",
+            "sku": "274",
+            "preco": 380
+        },
+        {
+            "id": 40,
+            "nome": "SHORT SAIA PRETA BOLSO LATERAL TM S",
+            "sku": "285",
+            "preco": 220
+        },
+        {
+            "id": 21,
+            "nome": "SHORT SAIA TRICOLOR TM L",
+            "sku": "267",
+            "preco": 320
+        },
+        {
+            "id": 929,
+            "nome": "Short-Saia Adidas Vermelho TM L (G)",
+            "sku": "476",
+            "preco": 380
+        },
+        {
+            "id": 440,
+            "nome": "Short-Saia Esportivo Adidas 3 Listras Roxo Feminino TM XXL",
+            "sku": "143",
+            "preco": 330
+        },
+        {
+            "id": 897,
+            "nome": "Shorts adidas preto masculino TAM 36",
+            "sku": "0000310",
+            "preco": 460
+        },
+        {
+            "id": 609,
+            "nome": "Shorts callaway cinza tam 36",
+            "sku": "0000324",
+            "preco": 420
+        },
+        {
+            "id": 593,
+            "nome": "shorts cinza greg norman masculino tam 36",
+            "sku": "0000345",
+            "preco": 0
+        },
+        {
+            "id": 820,
+            "nome": "shorts feminino nike golf azul marinho tam 12",
+            "sku": "0000226",
+            "preco": 320
+        },
+        {
+            "id": 795,
+            "nome": "Shorts masculino adidas BEGE TAM 28",
+            "sku": "0000156",
+            "preco": 380
+        },
+        {
+            "id": 246,
+            "nome": "shorts masculino Callaway preto TM 34",
+            "sku": "0000482",
+            "preco": 420
+        },
+        {
+            "id": 783,
+            "nome": "Shorts masculino cinza under armour tam 32",
+            "sku": "0000161",
+            "preco": 320
+        },
+        {
+            "id": 606,
+            "nome": "Shorts masculino GREG NORMAN PRETO tamanho 34",
+            "sku": "0000322",
+            "preco": 420
+        },
+        {
+            "id": 267,
+            "nome": "shorts masculino laranja Puma TM XL",
+            "sku": "0000505",
+            "preco": 480
+        },
+        {
+            "id": 588,
+            "nome": "shorts masculino preto greg norman TAM 32",
+            "sku": "0000344",
+            "preco": 0
+        },
+        {
+            "id": 263,
+            "nome": "shorts masculino Walter Hagen azul com pássaros brancos TM W32",
+            "sku": "0000502",
+            "preco": 420
+        },
+        {
+            "id": 269,
+            "nome": "shorts masculino Walter Hagen azul com pássaros brancos TM W35",
+            "sku": "0000503",
+            "preco": 420
+        },
+        {
+            "id": 268,
+            "nome": "shorts masculino Walter Hagen azul com pássaros brancos TM W40",
+            "sku": "0000504",
+            "preco": 420
+        },
+        {
+            "id": 873,
+            "nome": "Shorts masculino walter hagen azul tam 30'9",
+            "sku": "0000287",
+            "preco": 380
+        },
+        {
+            "id": 613,
+            "nome": "shorts masculino walter hagen cinza tam W42 10\"",
+            "sku": "0000328",
+            "preco": 460
+        },
+        {
+            "id": 832,
+            "nome": "Shorts masculino walter hagen rosa tam 35'9",
+            "sku": "0000284",
+            "preco": 380
+        },
+        {
+            "id": 881,
+            "nome": "Shorts masculino walter hagen rosa tam 38'9",
+            "sku": "0000285",
+            "preco": 380
+        },
+        {
+            "id": 272,
+            "nome": "shorts masculino Walter Hagen verde claro TM W30",
+            "sku": "00000506",
+            "preco": 420
+        },
+        {
+            "id": 789,
+            "nome": "Shorts puma branco TAM 10",
+            "sku": "0000159",
+            "preco": 320
+        },
+        {
+            "id": 899,
+            "nome": "Shorts saia adidas preto TAM M",
+            "sku": "0000309",
+            "preco": 420
+        },
+        {
+            "id": 798,
+            "nome": "Shorts saia ADIDAS TAM XL",
+            "sku": "0000155",
+            "preco": 380
+        },
+        {
+            "id": 761,
+            "nome": "Shorts saia azul bebê TAM M",
+            "sku": "0000151",
+            "preco": 360
+        },
+        {
+            "id": 607,
+            "nome": "Shorts saia branco stride skort TAM L",
+            "sku": "0000321",
+            "preco": 320
+        },
+        {
+            "id": 617,
+            "nome": "shorts saia calia golf verde claro tam S",
+            "sku": "0000331",
+            "preco": 380
+        },
+        {
+            "id": 176,
+            "nome": "SHORTS SAIA CALLAWAY PRETA TM XS",
+            "sku": "410",
+            "preco": 320
+        },
+        {
+            "id": 174,
+            "nome": "SHORTS SAIA DSG TM L",
+            "sku": "412",
+            "preco": 320
+        },
+        {
+            "id": 175,
+            "nome": "SHORTS SAIA DSG TM S",
+            "sku": "411",
+            "preco": 320
+        },
+        {
+            "id": 906,
+            "nome": "Shorts saia FJ branco tam XS",
+            "sku": "0000290",
+            "preco": 440
+        },
+        {
+            "id": 900,
+            "nome": "shorts saia Fj preto tam m",
+            "sku": "0000293",
+            "preco": 440
+        },
+        {
+            "id": 904,
+            "nome": "shorts saia fj salmão tam M",
+            "sku": "0000291",
+            "preco": 440
+        },
+        {
+            "id": 620,
+            "nome": "shorts saia lady hagen azul marinho tam XS",
+            "sku": "0000334",
+            "preco": 380
+        },
+        {
+            "id": 177,
+            "nome": "SHORTS SAIA LADY HAGEN FLORAL -TAMANHO 4",
+            "sku": "414",
+            "preco": 420
+        },
+        {
+            "id": 777,
+            "nome": "shorts saia lady hagen sereia tam M",
+            "sku": "0000163",
+            "preco": 380
+        },
+        {
+            "id": 423,
+            "nome": "SHORTS SAIA PRETA TM M",
+            "sku": "156",
+            "preco": 180
+        },
+        {
+            "id": 757,
+            "nome": "Shorts saia preto (PP ou P) com renda embaixo",
+            "sku": "0000152",
+            "preco": 320
+        },
+        {
+            "id": 753,
+            "nome": "Shorts saia preto bolso lateral TAM M",
+            "sku": "0000153",
+            "preco": 220
+        },
+        {
+            "id": 771,
+            "nome": "shorts saia preto gelufilm S/M",
+            "sku": "0000165",
+            "preco": 140
+        },
+        {
+            "id": 801,
+            "nome": "Shorts saia PUMA TAM XL mesclado azul e branco",
+            "sku": "0000154",
+            "preco": 380
+        },
+        {
+            "id": 774,
+            "nome": "shorts saia rosa fluorescente TAM M/G",
+            "sku": "0000164",
+            "preco": 320
+        },
+        {
+            "id": 786,
+            "nome": "Shorts saia rosa/branco/cinza TAM M GRANDSLAM",
+            "sku": "0000160",
+            "preco": 340
+        },
+        {
+            "id": 646,
+            "nome": "Sonho de valsa",
+            "sku": "0000005",
+            "preco": 3
+        },
+        {
+            "id": 706,
+            "nome": "Suporte para aprender tacar",
+            "sku": "0000092",
+            "preco": 150
+        },
+        {
+            "id": 528,
+            "nome": "TEE BRANCO PEQUENO (10 UN)",
+            "sku": "86",
+            "preco": 15
+        },
+        {
+            "id": 387,
+            "nome": "TEE DECORATIVOS (UNIDADE)",
+            "sku": "227",
+            "preco": 20
+        },
+        {
+            "id": 526,
+            "nome": "TEE LISTRADO",
+            "sku": "82",
+            "preco": 20
+        },
+        {
+            "id": 539,
+            "nome": "TEE MADEIRA  GRANDE C/ 10 UN",
+            "sku": "22",
+            "preco": 15
+        },
+        {
+            "id": 541,
+            "nome": "TEE MADEIRA COLORIDO C/10 UN",
+            "sku": "20",
+            "preco": 15
+        },
+        {
+            "id": 529,
+            "nome": "TEE MADEIRA PEQUENO (10 UN)",
+            "sku": "85",
+            "preco": 10
+        },
+        {
+            "id": 239,
+            "nome": "tênis  FJ Footjoy Flex Spikeless azul marinho/cinza e branco TM 9",
+            "sku": "0000475",
+            "preco": 1250
+        },
+        {
+            "id": 234,
+            "nome": "tênis  Nike  Air Zoom Infinity  Tour  branco/verde TM 10,5",
+            "sku": "0000473",
+            "preco": 1650
+        },
+        {
+            "id": 415,
+            "nome": "TÊNIS ADIDAS  TAMANHO 5.2",
+            "sku": "150",
+            "preco": 980
+        },
+        {
+            "id": 426,
+            "nome": "TÊNIS ADIDAS BOA BRANCO C/ CINZA-  TAMANHO 8 1/2",
+            "sku": "159",
+            "preco": 1350
+        },
+        {
+            "id": 421,
+            "nome": "TÊNIS ADIDAS BOA BRANCO TAMANHO 14",
+            "sku": "158",
+            "preco": 1350
+        },
+        {
+            "id": 183,
+            "nome": "TÊNIS ADIDAS BRANCO C/ VERDE TM 11 1/2",
+            "sku": "421",
+            "preco": 1250
+        },
+        {
+            "id": 435,
+            "nome": "TÊNIS ADIDAS BRANCO E AZUL - TAMANHO 8",
+            "sku": "171",
+            "preco": 1350
+        },
+        {
+            "id": 651,
+            "nome": "Ténis Adidas Branco Masculino TAM 9",
+            "sku": "0000027",
+            "preco": 1250
+        },
+        {
+            "id": 446,
+            "nome": "TÊNIS ADIDAS PRETO E CINZA TM 11",
+            "sku": "152",
+            "preco": 1350
+        },
+        {
+            "id": 237,
+            "nome": "tênis Adidas Retrocross  branco com detalhes azul /vermelho  feminino  TM 7",
+            "sku": "0000477",
+            "preco": 1390
+        },
+        {
+            "id": 233,
+            "nome": "tenis Adidas Retrocross GV6911 branco TM 8",
+            "sku": "0000468",
+            "preco": 1150
+        },
+        {
+            "id": 657,
+            "nome": "Ténis Adidas S2G BOA Spikeless Golf BRANCO E VERMELHO TAM 11 1/2",
+            "sku": "0000024",
+            "preco": 1350
+        },
+        {
+            "id": 653,
+            "nome": "Ténis Adidas Solarmotion BOA 24 Spikeless Golf CINZA COM VERDE TAM 8",
+            "sku": "0000026",
+            "preco": 1250
+        },
+        {
+            "id": 240,
+            "nome": "tênis Adidas Solarmotion Spikeless cor preto/verde TM 12",
+            "sku": "0000474",
+            "preco": 1250
+        },
+        {
+            "id": 511,
+            "nome": "Tênis adidas Tour360 24 Boa Golf Shoes N°7",
+            "sku": "100",
+            "preco": 1300
+        },
+        {
+            "id": 306,
+            "nome": "Tênis adidas ZG21 Motion Primegreen TAMANHO 9",
+            "sku": "0000465",
+            "preco": 1150
+        },
+        {
+            "id": 436,
+            "nome": "Tênis Adidas ZG23 BRANCO e AZUL -TAMANHO 10 1/2",
+            "sku": "170",
+            "preco": 1350
+        },
+        {
+            "id": 419,
+            "nome": "TÊNIS Adidas ZG23 Lightstrike TAMANHO 10",
+            "sku": "154",
+            "preco": 1350
+        },
+        {
+            "id": 684,
+            "nome": "Tênis alto padrão G/Fore (Tam 6.5) branco e roxo",
+            "sku": "0000084",
+            "preco": 2450
+        },
+        {
+            "id": 428,
+            "nome": "Tênis de golfe Adidas Tour360 Infinity feminino TAMANHO 8",
+            "sku": "162",
+            "preco": 1350
+        },
+        {
+            "id": 420,
+            "nome": "Tênis de Golfe Adidas ZG23 Lightstrike - TAMANHO 11 1/2",
+            "sku": "153",
+            "preco": 1350
+        },
+        {
+            "id": 412,
+            "nome": "Tênis de Golfe com Spikes Feminino Traditions Saddle da FootJoy TM 7",
+            "sku": "352",
+            "preco": 1350
+        },
+        {
+            "id": 126,
+            "nome": "Tênis de Golfe Feminino FootJoy Pro/SL Spikeless - TAMANHO 7",
+            "sku": "353",
+            "preco": 1350
+        },
+        {
+            "id": 127,
+            "nome": "Tênis de Golfe Feminino FootJoy Traditions - Estampa Leopardo -  TAMANHO 7 1/2",
+            "sku": "355",
+            "preco": 1350
+        },
+        {
+            "id": 488,
+            "nome": "Tênis de Golfe Feminino G/FORE Cap Toe Gallivanter — TM 6.5",
+            "sku": "138",
+            "preco": 2450
+        },
+        {
+            "id": 222,
+            "nome": "Tênis de Golfe FootJoy FJ Flex XP na cor cinza com detalhes em preto e branco - TAMANHO 10",
+            "sku": "0000461",
+            "preco": 1250
+        },
+        {
+            "id": 480,
+            "nome": "Tênis de Golfe FootJoy Flex Citrus Glow Limited Edition. - TAMANHO 8",
+            "sku": "139",
+            "preco": 1100
+        },
+        {
+            "id": 919,
+            "nome": "Tênis de Golfe FootJoy Flex Coastal — Versatilidade e Conforto em Azul TM 8",
+            "sku": "81",
+            "preco": 1250
+        },
+        {
+            "id": 303,
+            "nome": "Tênis de Golfe FootJoy Pro|SLX PRETO E VERMELHO - TAMANHO 9 1/2",
+            "sku": "0000387",
+            "preco": 1350
+        },
+        {
+            "id": 922,
+            "nome": "Tênis de Golfe Masculino adidas Retrocross Spikeless (TAM 11 1/2) BRANCO COM VERDE",
+            "sku": "0000015",
+            "preco": 1250
+        },
+        {
+            "id": 132,
+            "nome": "Tênis de Golfe Nike Air Zoom Victory Tour 3 - TAMANHO 6",
+            "sku": "362",
+            "preco": 890
+        },
+        {
+            "id": 410,
+            "nome": "Tênis de Golfe Spikeless Feminino FJ Fuel da FootJoy ROSA TM 6",
+            "sku": "354",
+            "preco": 1350
+        },
+        {
+            "id": 411,
+            "nome": "Tênis de Golfe Spikeless Masculino FJ Flex da FootJoy TM 9 1/2",
+            "sku": "360",
+            "preco": 1250
+        },
+        {
+            "id": 895,
+            "nome": "tênis feminino Footjoy prosl branco com rosa TAM 7",
+            "sku": "0000311",
+            "preco": 1350
+        },
+        {
+            "id": 506,
+            "nome": "TÊNIS FJ CINZA E ROXO N° 6 1/2",
+            "sku": "96",
+            "preco": 990.9
+        },
+        {
+            "id": 223,
+            "nome": "tenis FJ Footjoy  Flex XP  cinza com detalhes azul marinho e solado em vermelho TM 9 1/2",
+            "sku": "0000460",
+            "preco": 1250
+        },
+        {
+            "id": 230,
+            "nome": "tenis FJ Footjoy  SuperLites XP azul com vermelho TM 10",
+            "sku": "0000466",
+            "preco": 1350
+        },
+        {
+            "id": 228,
+            "nome": "tênis FJ FootJoy preto com solado em vermelho/ branco TM 8",
+            "sku": "0000462",
+            "preco": 1250
+        },
+        {
+            "id": 238,
+            "nome": "tênis FJ Footjoy ProLite preto/cinza TM 10",
+            "sku": "0000476",
+            "preco": 1150
+        },
+        {
+            "id": 413,
+            "nome": "TÊNIS FJ PRETO TM 8 1/2",
+            "sku": "358",
+            "preco": 1350
+        },
+        {
+            "id": 704,
+            "nome": "Tênis FootJoy cinca com solado laranja masculino Tam 7 ½",
+            "sku": "0000077",
+            "preco": 1350
+        },
+        {
+            "id": 695,
+            "nome": "Tênis Footjoy feminino TAM 7 (branco e rosa)",
+            "sku": "0000080",
+            "preco": 1250
+        },
+        {
+            "id": 508,
+            "nome": "Tênis FootJoy Flex Coasta rosa l N° 5",
+            "sku": "98",
+            "preco": 1250
+        },
+        {
+            "id": 701,
+            "nome": "Tênis FootJoy Flex feminino cinza com azul TAM 6",
+            "sku": "0000078",
+            "preco": 990
+        },
+        {
+            "id": 707,
+            "nome": "Tênis FootJoy Flex feminino todo preto TAM 6",
+            "sku": "0000076",
+            "preco": 990
+        },
+        {
+            "id": 692,
+            "nome": "Tênis FootJoy infantil TAM 3 (roxo com amarelo)",
+            "sku": "0000081",
+            "preco": 450
+        },
+        {
+            "id": 698,
+            "nome": "Tênis Footjoy masculino amarelo fluorescente TAM 8",
+            "sku": "0000079",
+            "preco": 1100
+        },
+        {
+            "id": 689,
+            "nome": "Tênis Footjoy mesclado feminino Tam 5 ½",
+            "sku": "0000082",
+            "preco": 980
+        },
+        {
+            "id": 659,
+            "nome": "Tênis G/FORE SEREIA TAM 11",
+            "sku": "0000022",
+            "preco": 2450
+        },
+        {
+            "id": 647,
+            "nome": "TÊNIS NIKE 6",
+            "sku": "0000004",
+            "preco": 845.5
+        },
+        {
+            "id": 82,
+            "nome": "tênis Nike Air Zoom com logo prata e dourado  numeração 4,5",
+            "sku": "0000386",
+            "preco": 1250
+        },
+        {
+            "id": 678,
+            "nome": "Tênis nike com travas (Tam 6) preto e branco",
+            "sku": "0000087",
+            "preco": 890
+        },
+        {
+            "id": 686,
+            "nome": "Tênis nike feminino (cinza com rosa) TAM 9",
+            "sku": "0000083",
+            "preco": 980
+        },
+        {
+            "id": 680,
+            "nome": "Tênis nike feminino Tam 10",
+            "sku": "0000086",
+            "preco": 990
+        },
+        {
+            "id": 682,
+            "nome": "Tênis nike feminino Tam 7y (preto e branco tecidoz)",
+            "sku": "0000085",
+            "preco": 790
+        },
+        {
+            "id": 434,
+            "nome": "Tênis Nike Infinity G Golf - CINZA E VERDE TAMANHO 9",
+            "sku": "172",
+            "preco": 1100
+        },
+        {
+            "id": 676,
+            "nome": "Tênis nike masculino  (Tam 10 ½)",
+            "sku": "0000088",
+            "preco": 980
+        },
+        {
+            "id": 602,
+            "nome": "TÊNIS NIKE PRETO N 6",
+            "sku": "165",
+            "preco": 890
+        },
+        {
+            "id": 288,
+            "nome": "tênis Nike Victory G Lite NN cor cinza TM 10",
+            "sku": "0000522",
+            "preco": 980
+        },
+        {
+            "id": 317,
+            "nome": "TÊNIS PUMA BRANCO TM 5.5",
+            "sku": "173",
+            "preco": 950
+        },
+        {
+            "id": 231,
+            "nome": "tênis Puma Sllip-on  verde Tustin feminino TM 6,5.",
+            "sku": "0000470",
+            "preco": 890
+        },
+        {
+            "id": 443,
+            "nome": "TÊNIS SKECHERS BRANCO E VERDE TM 7.6",
+            "sku": "149",
+            "preco": 950
+        },
+        {
+            "id": 509,
+            "nome": "Tênis Skechers GO GOLF Pivot - Splash - CORAL N°7",
+            "sku": "97",
+            "preco": 950
+        },
+        {
+            "id": 232,
+            "nome": "tênis Slip-one Puma metallic pink  Tustin L feminino  TM 6",
+            "sku": "0000469",
+            "preco": 890
+        },
+        {
+            "id": 315,
+            "nome": "Titleist Boardwalk Rope Hat",
+            "sku": "175",
+            "preco": 240
+        },
+        {
+            "id": 19,
+            "nome": "TOALHA COSTÃO GOLF BRANCA",
+            "sku": "264",
+            "preco": 60
+        },
+        {
+            "id": 580,
+            "nome": "TOALHA GOLF VERDE",
+            "sku": "55",
+            "preco": 120
+        },
+        {
+            "id": 700,
+            "nome": "Toalha microfibra",
+            "sku": "0000094",
+            "preco": 80
+        },
+        {
+            "id": 763,
+            "nome": "Toalha preta tênis feminina detalhes rosa",
+            "sku": "0000184",
+            "preco": 120
+        },
+        {
+            "id": 759,
+            "nome": "Toalha tenis cinza com rosa",
+            "sku": "0000185",
+            "preco": 120
+        },
+        {
+            "id": 138,
+            "nome": "TravisMathew Handsome Town 3.0 Polo -TAMANHO L",
+            "sku": "372",
+            "preco": 420
+        },
+        {
+            "id": 712,
+            "nome": "vara de alinhamento (amarela)",
+            "sku": "0000090",
+            "preco": 230
+        },
+        {
+            "id": 709,
+            "nome": "vara de alinhamento (laranja)",
+            "sku": "0000091",
+            "preco": 230
+        },
+        {
+            "id": 557,
+            "nome": "Vara de alinhamento rígida laranja",
+            "sku": "0000338",
+            "preco": 290
+        },
+        {
+            "id": 514,
+            "nome": "VARETA DE TREINO",
+            "sku": "73",
+            "preco": 260
+        },
+        {
+            "id": 812,
+            "nome": "vestido callaway azul tam M",
+            "sku": "0000230",
+            "preco": 680
+        },
+        {
+            "id": 902,
+            "nome": "Vestido lady hagen tam M",
+            "sku": "0000292",
+            "preco": 420
+        },
+        {
+            "id": 796,
+            "nome": "vinho casimiro bonarda",
+            "sku": "0000189",
+            "preco": 80
+        },
+        {
+            "id": 755,
+            "nome": "Vinho casimiro cosecha 2020",
+            "sku": "0000186",
+            "preco": 150
+        },
+        {
+            "id": 799,
+            "nome": "vinho casimiro syrah",
+            "sku": "0000188",
+            "preco": 80
+        },
+        {
+            "id": 751,
+            "nome": "vinho casimiro torrones san juanino",
+            "sku": "0000187",
+            "preco": 80
+        },
+        {
+            "id": 182,
+            "nome": "VISEIRA ADIDAS AZUL MARINHO",
+            "sku": "415",
+            "preco": 320
+        },
+        {
+            "id": 685,
+            "nome": "viseira adidas feminina cinza quadriculada",
+            "sku": "0000099",
+            "preco": 320
+        },
+        {
+            "id": 459,
+            "nome": "VISEIRA ANEW GOLF",
+            "sku": "196",
+            "preco": 220
+        },
+        {
+            "id": 458,
+            "nome": "VISEIRA NIKE ROSA",
+            "sku": "194",
+            "preco": 180
+        }
+    ]
+}

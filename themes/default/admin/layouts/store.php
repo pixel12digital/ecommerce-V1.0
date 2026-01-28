@@ -691,6 +691,12 @@
                         <span>Categorias</span>
                     </a>
                 </li>
+                <li>
+                    <a href="<?= $basePath ?>/admin/atributos" class="<?= $isActive('/admin/atributos') ? 'active' : '' ?>" style="padding-left: 2.5rem;">
+                        <i class="bi bi-list-ul icon"></i>
+                        <span>Atributos</span>
+                    </a>
+                </li>
                 <?php else: ?>
                 <!-- DEBUG: Menu Produtos/Categorias - canManageProducts = false (usuário: <?= $currentUserId ?: 'não logado' ?>) -->
                 <?php endif; ?>

@@ -787,8 +787,13 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         }
         
         .pg-footer-contact-item .icon {
-            color: var(--pg-color-secondary);
+            color: #e8e8e8;
             font-size: 1rem;
+            transition: color 0.2s ease;
+        }
+        
+        .pg-footer-contact-item:hover .icon {
+            color: var(--pg-color-secondary);
         }
         
         .pg-footer-social {
@@ -848,18 +853,18 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         
         .pg-footer-dev {
             font-size: 13px;
-            opacity: 0.9;
+            color: #b8b8b8;
         }
         
         .pg-footer-dev a {
-            color: var(--pg-color-secondary);
+            color: #e8e8e8;
             text-decoration: none;
             font-weight: 600;
-            transition: opacity 0.2s ease;
+            transition: color 0.2s ease, opacity 0.2s ease;
         }
         
         .pg-footer-dev a:hover {
-            opacity: 1;
+            color: var(--pg-color-secondary);
             text-decoration: underline;
         }
         

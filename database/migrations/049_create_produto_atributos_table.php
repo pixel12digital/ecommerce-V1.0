@@ -1,0 +1,24 @@
+<?php
+
+use App\Core\Database;
+
+$db = Database::getConnection();
+
+$db->exec("
+    CREATE TABLE IF NOT EXISTS produto_atributos (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        tenant_id BIGINT UNSIGNED NOT NULL,
+        produto_id BIGINT UNSIGNED NOT NULL,
+        atributo_id BIGINT UNSIGNED NOT NULL,
+        ordem INT UNSIGNED DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+        FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
+        FOREIGN KEY (atributo_id) REFERENCES atributos(id) ON DELETE CASCADE,
+        INDEX idx_tenant_id (tenant_id),
+        INDEX idx_produto_id (produto_id),
+        INDEX idx_atributo_id (atributo_id),
+        UNIQUE KEY unique_produto_atributo (produto_id, atributo_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+");

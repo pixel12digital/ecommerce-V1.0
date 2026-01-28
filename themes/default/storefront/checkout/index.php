@@ -134,7 +134,7 @@ ob_start();
                 <div class="form-row">
                     <div class="form-group">
                         <label for="entrega_cep">CEP *</label>
-                        <input type="text" id="entrega_cep" name="entrega_cep" value="<?= htmlspecialchars($formData['entrega_cep'] ?? '') ?>" 
+                        <input type="text" id="entrega_cep" name="entrega_cep" value="<?= htmlspecialchars($formData['entrega_cep'] ?? ($_GET['cep'] ?? '')) ?>" 
                                placeholder="00000-000" required maxlength="9" aria-label="CEP">
                     </div>
                     <div class="form-group">
@@ -198,21 +198,35 @@ ob_start();
             <!-- Frete - Fase 10 -->
             <div class="form-section">
                 <h3 class="section-title">Opções de Frete</h3>
+                <?php if (!empty($freteErro)): ?>
+                    <div class="shipping-error" style="padding: 1rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 1rem; color: #856404;">
+                        <i class="bi bi-exclamation-triangle" style="margin-right: 0.5rem;"></i>
+                        <?= htmlspecialchars($freteErro) ?>
+                    </div>
+                <?php endif; ?>
                 <div class="shipping-options">
-                    <?php foreach ($opcoesFrete as $opcao): ?>
-                        <label class="option-card" onclick="selectShipping(this)">
-                            <input type="radio" name="metodo_frete" value="<?= htmlspecialchars($opcao['codigo']) ?>" required>
-                            <div>
-                                <div class="option-title"><?= htmlspecialchars($opcao['titulo']) ?></div>
-                                <div class="option-desc">
-                                    R$ <?= number_format($opcao['valor'], 2, ',', '.') ?> - <?= htmlspecialchars($opcao['prazo']) ?>
-                                    <?php if (!empty($opcao['descricao'])): ?>
-                                        <br><?= htmlspecialchars($opcao['descricao']) ?>
-                                    <?php endif; ?>
+                    <?php if (empty($opcoesFrete)): ?>
+                        <?php if (empty($freteErro)): ?>
+                            <p style="color: #666; font-size: 0.9rem; padding: 1rem; text-align: center;">
+                                Informe o CEP de entrega para calcular o frete.
+                            </p>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <?php foreach ($opcoesFrete as $opcao): ?>
+                            <label class="option-card" onclick="selectShipping(this)">
+                                <input type="radio" name="metodo_frete" value="<?= htmlspecialchars($opcao['codigo']) ?>" required>
+                                <div>
+                                    <div class="option-title"><?= htmlspecialchars($opcao['titulo']) ?></div>
+                                    <div class="option-desc">
+                                        R$ <?= number_format($opcao['valor'], 2, ',', '.') ?> - <?= htmlspecialchars($opcao['prazo']) ?>
+                                        <?php if (!empty($opcao['descricao'])): ?>
+                                            <br><?= htmlspecialchars($opcao['descricao']) ?>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
-                            </div>
-                        </label>
-                    <?php endforeach; ?>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
             
@@ -575,6 +589,15 @@ $additionalScripts = '
         // Inicializar estado do campo de senha ao carregar
         document.addEventListener(\'DOMContentLoaded\', function() {
             togglePasswordField();
+            
+            // Carregar CEP do localStorage se não estiver preenchido
+            const cepInput = document.getElementById(\'entrega_cep\');
+            if (cepInput && !cepInput.value) {
+                const savedCEP = localStorage.getItem(\'cart_shipping_cep\');
+                if (savedCEP) {
+                    cepInput.value = savedCEP;
+                }
+            }
         });
     </script>
 ';

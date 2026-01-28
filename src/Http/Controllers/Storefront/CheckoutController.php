@@ -32,7 +32,26 @@ class CheckoutController extends Controller
 
         // Buscar opções de frete (usar CEP padrão para cálculo inicial)
         $cep = $_GET['cep'] ?? '';
-        $opcoesFrete = ShippingService::calcularFrete($tenantId, $cep, $subtotal, $cart['items']);
+        $freteErro = null;
+        $freteErroTecnico = null;
+        
+        try {
+            $opcoesFrete = ShippingService::calcularFrete($tenantId, $cep, $subtotal, $cart['items']);
+            
+            // Se não houver opções e CEP foi informado, preparar mensagem amigável
+            if (empty($opcoesFrete) && !empty($cep)) {
+                $freteErro = "Não foi possível calcular o frete no momento. Verifique o CEP e tente novamente.";
+                // Logar motivo técnico (sem credenciais) para debug
+                $freteErroTecnico = "Nenhuma opção de frete retornada para CEP: " . preg_replace('/\D/', '', $cep);
+                error_log("Checkout: {$freteErroTecnico}");
+            }
+        } catch (\Exception $e) {
+            // Em caso de erro, logar motivo técnico mas não quebrar checkout
+            $freteErro = "Não foi possível calcular o frete no momento. Verifique o CEP e tente novamente.";
+            $freteErroTecnico = "Erro ao calcular frete: " . $e->getMessage();
+            error_log("Checkout: {$freteErroTecnico}");
+            $opcoesFrete = []; // Retornar array vazio (não quebra checkout)
+        }
 
         // Buscar métodos de pagamento
         $metodosPagamento = PaymentService::listarMetodosDisponiveis($tenantId);
@@ -87,6 +106,7 @@ class CheckoutController extends Controller
             'cart' => $cart,
             'subtotal' => $subtotal,
             'opcoesFrete' => $opcoesFrete,
+            'freteErro' => $freteErro,
             'metodosPagamento' => $metodosPagamento,
             'customer' => $customer,
             'customerAddresses' => $customerAddresses,
@@ -352,37 +372,138 @@ class CheckoutController extends Controller
 
             $pedidoId = $db->lastInsertId();
 
-            // Inserir itens do pedido
+            // Inserir itens do pedido e decrementar estoque
             $stmtItem = $db->prepare("
                 INSERT INTO pedido_itens (
-                    tenant_id, pedido_id, produto_id,
-                    nome_produto, sku, quantidade, preco_unitario, total_linha,
+                    tenant_id, pedido_id, produto_id, variacao_id,
+                    nome_produto, sku, atributos_json, quantidade, preco_unitario, total_linha,
                     created_at, updated_at
                 ) VALUES (
-                    :tenant_id, :pedido_id, :produto_id,
-                    :nome_produto, :sku, :quantidade, :preco_unitario, :total_linha,
+                    :tenant_id, :pedido_id, :produto_id, :variacao_id,
+                    :nome_produto, :sku, :atributos_json, :quantidade, :preco_unitario, :total_linha,
                     NOW(), NOW()
                 )
             ");
 
             foreach ($cart['items'] as $item) {
-                // Buscar SKU do produto
-                $stmtSku = $db->prepare("SELECT sku FROM produtos WHERE id = :id AND tenant_id = :tenant_id");
-                $stmtSku->execute(['id' => $item['produto_id'], 'tenant_id' => $tenantId]);
-                $sku = $stmtSku->fetchColumn();
+                $variacaoId = isset($item['variacao_id']) && $item['variacao_id'] > 0 
+                    ? (int)$item['variacao_id'] 
+                    : null;
+                
+                $produtoId = (int)$item['produto_id'];
+                $quantidade = (int)$item['quantidade'];
 
-                $totalLinha = $item['preco_unitario'] * $item['quantidade'];
+                // Buscar SKU: priorizar variação, senão produto
+                $sku = null;
+                if ($variacaoId) {
+                    $stmtSku = $db->prepare("
+                        SELECT sku FROM produto_variacoes 
+                        WHERE id = :variacao_id AND tenant_id = :tenant_id
+                    ");
+                    $stmtSku->execute(['variacao_id' => $variacaoId, 'tenant_id' => $tenantId]);
+                    $sku = $stmtSku->fetchColumn();
+                }
+                
+                if (!$sku) {
+                    $stmtSku = $db->prepare("SELECT sku FROM produtos WHERE id = :id AND tenant_id = :tenant_id");
+                    $stmtSku->execute(['id' => $produtoId, 'tenant_id' => $tenantId]);
+                    $sku = $stmtSku->fetchColumn();
+                }
 
+                // Montar atributos_json (snapshot)
+                $atributosJson = null;
+                if ($variacaoId && !empty($item['atributos'])) {
+                    // Buscar atributos completos da variação para snapshot
+                    $stmtAtributos = $db->prepare("
+                        SELECT a.nome as atributo_nome, a.slug as atributo_slug,
+                               at.nome as termo_nome, at.slug as termo_slug, at.valor_cor
+                        FROM produto_variacao_atributos pva
+                        INNER JOIN atributos a ON a.id = pva.atributo_id
+                        INNER JOIN atributo_termos at ON at.id = pva.atributo_termo_id
+                        WHERE pva.variacao_id = :variacao_id
+                        AND pva.tenant_id = :tenant_id
+                        ORDER BY a.ordem ASC, at.ordem ASC
+                    ");
+                    $stmtAtributos->execute([
+                        'variacao_id' => $variacaoId,
+                        'tenant_id' => $tenantId
+                    ]);
+                    $atributos = $stmtAtributos->fetchAll(\PDO::FETCH_ASSOC);
+                    if (!empty($atributos)) {
+                        $atributosJson = json_encode($atributos, JSON_UNESCAPED_UNICODE);
+                    }
+                }
+
+                $totalLinha = $item['preco_unitario'] * $quantidade;
+
+                // Inserir item do pedido
                 $stmtItem->execute([
                     'tenant_id' => $tenantId,
                     'pedido_id' => $pedidoId,
-                    'produto_id' => $item['produto_id'],
+                    'produto_id' => $produtoId,
+                    'variacao_id' => $variacaoId,
                     'nome_produto' => $item['nome'],
                     'sku' => $sku ?: null,
-                    'quantidade' => $item['quantidade'],
+                    'atributos_json' => $atributosJson,
+                    'quantidade' => $quantidade,
                     'preco_unitario' => $item['preco_unitario'],
                     'total_linha' => $totalLinha,
                 ]);
+
+                // Decrementar estoque
+                if ($variacaoId) {
+                    // Decrementar estoque da variação
+                    $stmtEstoque = $db->prepare("
+                        UPDATE produto_variacoes 
+                        SET quantidade_estoque = quantidade_estoque - :quantidade,
+                            status_estoque = CASE 
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) <= 0 THEN 'outofstock'
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) > 0 THEN 'instock'
+                                ELSE status_estoque
+                            END,
+                            updated_at = NOW()
+                        WHERE id = :variacao_id
+                        AND tenant_id = :tenant_id
+                        AND gerencia_estoque = 1
+                        AND quantidade_estoque >= :quantidade
+                    ");
+                    $stmtEstoque->execute([
+                        'variacao_id' => $variacaoId,
+                        'tenant_id' => $tenantId,
+                        'quantidade' => $quantidade
+                    ]);
+                    
+                    if ($stmtEstoque->rowCount() === 0) {
+                        // Estoque insuficiente na variação
+                        throw new \Exception("Estoque insuficiente para a variação selecionada. Por favor, verifique o carrinho e tente novamente.");
+                    }
+                } else {
+                    // Decrementar estoque do produto
+                    $stmtEstoque = $db->prepare("
+                        UPDATE produtos 
+                        SET quantidade_estoque = quantidade_estoque - :quantidade,
+                            status_estoque = CASE 
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) <= 0 THEN 'outofstock'
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) > 0 THEN 'instock'
+                                ELSE status_estoque
+                            END,
+                            updated_at = NOW()
+                        WHERE id = :produto_id
+                        AND tenant_id = :tenant_id
+                        AND gerencia_estoque = 1
+                        AND quantidade_estoque >= :quantidade
+                    ");
+                    $stmtEstoque->execute([
+                        'produto_id' => $produtoId,
+                        'tenant_id' => $tenantId,
+                        'quantidade' => $quantidade
+                    ]);
+                    
+                    if ($stmtEstoque->rowCount() === 0) {
+                        // Estoque insuficiente no produto
+                        throw new \Exception("Estoque insuficiente para o produto selecionado. Por favor, verifique o carrinho e tente novamente.");
+                    }
+                }
             }
 
             // Processar pagamento usando o provider configurado

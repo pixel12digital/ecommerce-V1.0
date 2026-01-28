@@ -58,18 +58,40 @@ class CartService
     }
 
     /**
+     * Gera a chave de identificação do item no carrinho
+     * Se tiver variacao_id: "v:{variacao_id}"
+     * Senão: "p:{produto_id}"
+     */
+    private static function getItemKey(?int $variacaoId, int $produtoId): string
+    {
+        if ($variacaoId !== null && $variacaoId > 0) {
+            return "v:{$variacaoId}";
+        }
+        return "p:{$produtoId}";
+    }
+
+    /**
      * Adiciona ou atualiza um item no carrinho
+     * 
+     * @param int $produtoId ID do produto
+     * @param array $itemData Dados do item (deve incluir 'variacao_id' se for variação)
      */
     public static function addItem(int $produtoId, array $itemData): void
     {
         $cart = self::get();
         
-        if (isset($cart['items'][$produtoId])) {
+        $variacaoId = isset($itemData['variacao_id']) && $itemData['variacao_id'] > 0 
+            ? (int)$itemData['variacao_id'] 
+            : null;
+        
+        $itemKey = self::getItemKey($variacaoId, $produtoId);
+        
+        if (isset($cart['items'][$itemKey])) {
             // Se já existe, soma a quantidade
-            $cart['items'][$produtoId]['quantidade'] += ($itemData['quantidade'] ?? 1);
+            $cart['items'][$itemKey]['quantidade'] += ($itemData['quantidade'] ?? 1);
         } else {
             // Se não existe, cria novo item
-            $cart['items'][$produtoId] = $itemData;
+            $cart['items'][$itemKey] = $itemData;
         }
         
         self::save($cart);
@@ -77,20 +99,23 @@ class CartService
 
     /**
      * Atualiza a quantidade de um item
+     * 
+     * @param string $itemKey Chave do item (formato "p:{id}" ou "v:{id}")
+     * @param int $quantidade Nova quantidade
      */
-    public static function updateItem(int $produtoId, int $quantidade): bool
+    public static function updateItem(string $itemKey, int $quantidade): bool
     {
         $cart = self::get();
         
-        if (!isset($cart['items'][$produtoId])) {
+        if (!isset($cart['items'][$itemKey])) {
             return false;
         }
         
         if ($quantidade <= 0) {
             // Remove o item se quantidade for 0 ou negativa
-            unset($cart['items'][$produtoId]);
+            unset($cart['items'][$itemKey]);
         } else {
-            $cart['items'][$produtoId]['quantidade'] = $quantidade;
+            $cart['items'][$itemKey]['quantidade'] = $quantidade;
         }
         
         self::save($cart);
@@ -99,16 +124,18 @@ class CartService
 
     /**
      * Remove um item do carrinho
+     * 
+     * @param string $itemKey Chave do item (formato "p:{id}" ou "v:{id}")
      */
-    public static function removeItem(int $produtoId): bool
+    public static function removeItem(string $itemKey): bool
     {
         $cart = self::get();
         
-        if (!isset($cart['items'][$produtoId])) {
+        if (!isset($cart['items'][$itemKey])) {
             return false;
         }
         
-        unset($cart['items'][$produtoId]);
+        unset($cart['items'][$itemKey]);
         self::save($cart);
         return true;
     }

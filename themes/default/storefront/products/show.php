@@ -204,33 +204,106 @@ ob_start();
                 </div>
             </div>
             
-            <div class="product-stock <?= $produto['status_estoque'] === 'instock' ? 'stock-in' : 'stock-out' ?>">
-                <?php 
-                $stockStatus = \App\Support\LangHelper::stockStatusLabel($produto['status_estoque'] ?? null);
-                $isInStock = $produto['status_estoque'] === 'instock';
-                ?>
-                <?php if ($isInStock): ?>
-                    <i class="bi bi-check-circle-fill icon" style="color: #28a745;"></i> <?= $stockStatus ?>
-                    <?php if ($produto['quantidade_estoque']): ?>
-                        (<?= $produto['quantidade_estoque'] ?> unidades disponíveis)
+            <?php if (($produto['tipo'] ?? 'simple') === 'variable' && !empty($atributos)): ?>
+                <!-- Seletores de Variação -->
+                <div class="product-variations" id="product-variations">
+                    <?php foreach ($atributos as $attr): ?>
+                        <div class="variation-attribute" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.75rem; font-weight: 600; font-size: 1rem;">
+                                <?= htmlspecialchars($attr['atributo_nome']) ?>
+                            </label>
+                            <?php if ($attr['atributo_tipo'] === 'color' || $attr['atributo_tipo'] === 'image'): ?>
+                                <!-- Swatches para Cor/Imagem -->
+                                <div class="variation-swatches" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                                    <?php foreach ($attr['termos'] as $termo): ?>
+                                        <button type="button" 
+                                                class="variation-swatch" 
+                                                data-atributo-id="<?= $attr['atributo_id'] ?>"
+                                                data-termo-id="<?= $termo['termo_id'] ?>"
+                                                data-termo-nome="<?= htmlspecialchars($termo['termo_nome']) ?>"
+                                                style="position: relative; width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; background: #fff; padding: 0; transition: all 0.2s; display: flex; align-items: center; justify-content: center;"
+                                                title="<?= htmlspecialchars($termo['termo_nome']) ?>">
+                                            <?php if ($termo['swatch_image']): ?>
+                                                <img src="<?= media_url($termo['swatch_image']) ?>" 
+                                                     alt="<?= htmlspecialchars($termo['termo_nome']) ?>"
+                                                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px;">
+                                            <?php elseif ($termo['valor_cor']): ?>
+                                                <span style="display: block; width: 100%; height: 100%; background: <?= htmlspecialchars($termo['valor_cor']) ?>; border-radius: 2px;"></span>
+                                            <?php else: ?>
+                                                <span style="font-size: 0.75rem; color: #666;"><?= htmlspecialchars(mb_substr($termo['termo_nome'], 0, 2)) ?></span>
+                                            <?php endif; ?>
+                                            <span class="swatch-check" style="position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #28a745; border: 2px solid #fff; border-radius: 50%; display: none; align-items: center; justify-content: center; color: white; font-size: 12px;">
+                                                <i class="bi bi-check"></i>
+                                            </span>
+                                        </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <!-- Pills/Botões para Select -->
+                                <div class="variation-pills" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    <?php foreach ($attr['termos'] as $termo): ?>
+                                        <button type="button" 
+                                                class="variation-pill" 
+                                                data-atributo-id="<?= $attr['atributo_id'] ?>"
+                                                data-termo-id="<?= $termo['termo_id'] ?>"
+                                                data-termo-nome="<?= htmlspecialchars($termo['termo_nome']) ?>"
+                                                style="padding: 0.75rem 1.5rem; border: 2px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; font-weight: 500;">
+                                            <?= htmlspecialchars($termo['termo_nome']) ?>
+                                        </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Status de Estoque da Variação -->
+                <div class="product-stock variation-stock" id="variation-stock" style="display: none; margin-bottom: 1rem;">
+                    <span id="variation-stock-text"></span>
+                </div>
+
+                <!-- Preço da Variação -->
+                <div class="product-price variation-price" id="variation-price" style="display: none; margin-bottom: 1rem;">
+                    <span id="variation-price-text"></span>
+                </div>
+            <?php else: ?>
+                <!-- Produto Simples -->
+                <div class="product-stock <?= $produto['status_estoque'] === 'instock' ? 'stock-in' : 'stock-out' ?>">
+                    <?php 
+                    $stockStatus = \App\Support\LangHelper::stockStatusLabel($produto['status_estoque'] ?? null);
+                    $isInStock = $produto['status_estoque'] === 'instock';
+                    ?>
+                    <?php if ($isInStock): ?>
+                        <i class="bi bi-check-circle-fill icon" style="color: #28a745;"></i> <?= $stockStatus ?>
+                        <?php if ($produto['quantidade_estoque']): ?>
+                            (<?= $produto['quantidade_estoque'] ?> unidades disponíveis)
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <i class="bi bi-x-circle-fill icon" style="color: #dc3545;"></i> <?= $stockStatus ?>
                     <?php endif; ?>
-                <?php else: ?>
-                    <i class="bi bi-x-circle-fill icon" style="color: #dc3545;"></i> <?= $stockStatus ?>
-                <?php endif; ?>
-            </div>
+                </div>
+            <?php endif; ?>
             
-            <form method="POST" action="<?= $basePath ?>/carrinho/adicionar" class="add-to-cart-form">
+            <form method="POST" action="<?= $basePath ?>/carrinho/adicionar" class="add-to-cart-form" id="add-to-cart-form">
                 <input type="hidden" name="produto_id" value="<?= $produto['id'] ?>">
-                <input type="number" name="quantidade" value="1" min="1" 
-                       max="<?= $produto['quantidade_estoque'] ?? 999 ?>" 
-                       class="quantity-input"
-                       <?= $produto['status_estoque'] !== 'instock' ? 'disabled' : '' ?>>
-                <button type="submit" class="btn-add-cart" 
-                        <?= $produto['status_estoque'] !== 'instock' ? 'disabled' : '' ?>>
+                <input type="hidden" name="variacao_id" id="variacao_id" value="">
+                <input type="number" name="quantidade" value="1" min="1" id="quantidade-input"
+                       <?php if (($produto['tipo'] ?? 'simple') !== 'variable'): ?>
+                       max="<?= $produto['quantidade_estoque'] ?? 999 ?>"
+                       <?php endif; ?>
+                       class="quantity-input">
+                <button type="submit" class="btn-add-cart" id="btn-add-cart" disabled>
                     <i class="bi bi-cart-plus icon" style="margin-right: 0.5rem;"></i>
                     Adicionar ao Carrinho
                 </button>
             </form>
+
+            <!-- Dados JSON para JavaScript -->
+            <?php if (($produto['tipo'] ?? 'simple') === 'variable' && !empty($variacoes)): ?>
+                <script>
+                    window.productVariations = <?= json_encode($variacoes, JSON_UNESCAPED_UNICODE) ?>;
+                </script>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -1423,6 +1496,289 @@ $additionalScripts = '
             });
         })();
     </script>
+
+    <?php if (($produto['tipo'] ?? 'simple') === 'variable' && !empty($variacoes)): ?>
+    <script>
+    (function() {
+        const variations = window.productVariations || [];
+        const swatches = document.querySelectorAll('.variation-swatch, .variation-pill');
+        const variacaoIdInput = document.getElementById('variacao_id');
+        const btnAddCart = document.getElementById('btn-add-cart');
+        const quantidadeInput = document.getElementById('quantidade-input');
+        const variationStock = document.getElementById('variation-stock');
+        const variationStockText = document.getElementById('variation-stock-text');
+        const variationPrice = document.getElementById('variation-price');
+        const variationPriceText = document.getElementById('variation-price-text');
+        const mainImage = document.getElementById('mainImage');
+        const basePath = '<?= $basePath ?>';
+
+        // Armazenar seleções atuais
+        const selectedTerms = {};
+
+        function buildCurrentSignature() {
+            const pairs = [];
+            Object.keys(selectedTerms).forEach(function(atributoId) {
+                const termoId = selectedTerms[atributoId];
+                if (atributoId && termoId) {
+                    pairs.push([parseInt(atributoId, 10), parseInt(termoId, 10)]);
+                }
+            });
+            // Ordenar por atributo_id (numérico)
+            pairs.sort((a, b) => a[0] - b[0]);
+            return pairs.map(([a, t]) => `${a}:${t}`).join('|');
+        }
+
+        function findVariation(signature) {
+            return variations.find(function(v) {
+                return v.signature === signature;
+            });
+        }
+
+        function getAvailableOptions() {
+            const available = {};
+            variations.forEach(function(variation) {
+                const parts = variation.signature.split('|');
+                parts.forEach(function(part) {
+                    const [atributoId, termoId] = part.split(':').map(Number);
+                    if (!available[atributoId]) {
+                        available[atributoId] = new Set();
+                    }
+                    // Verificar se esta combinação é compatível com seleções atuais
+                    let isCompatible = true;
+                    Object.keys(selectedTerms).forEach(function(selAtributoId) {
+                        if (selAtributoId != atributoId) {
+                            const selTermoId = selectedTerms[selAtributoId];
+                            const selPart = `${selAtributoId}:${selTermoId}`;
+                            if (!parts.includes(selPart)) {
+                                isCompatible = false;
+                            }
+                        }
+                    });
+                    if (isCompatible) {
+                        available[atributoId].add(termoId);
+                    }
+                });
+            });
+            return available;
+        }
+
+        function updateAvailableOptions() {
+            const available = getAvailableOptions();
+            swatches.forEach(function(swatch) {
+                const atributoId = swatch.getAttribute('data-atributo-id');
+                const termoId = parseInt(swatch.getAttribute('data-termo-id'), 10);
+                const isAvailable = available[atributoId] && available[atributoId].has(termoId);
+                
+                if (isAvailable) {
+                    swatch.style.opacity = '1';
+                    swatch.style.cursor = 'pointer';
+                    swatch.disabled = false;
+                    swatch.title = swatch.getAttribute('data-termo-nome');
+                } else {
+                    swatch.style.opacity = '0.4';
+                    swatch.style.cursor = 'not-allowed';
+                    swatch.disabled = true;
+                    swatch.title = 'Indisponível';
+                }
+            });
+        }
+
+        // Buscar imagem por cor dos termos (para preview ao selecionar apenas cor)
+        const termosComImagem = {};
+        <?php if (!empty($atributos)): ?>
+            <?php foreach ($atributos as $attr): ?>
+                <?php if ($attr['atributo_tipo'] === 'color'): ?>
+                    <?php foreach ($attr['termos'] as $termo): ?>
+                        <?php if (!empty($termo['imagem_produto'])): ?>
+                            termosComImagem[<?= $termo['termo_id'] ?>] = '<?= media_url($termo['imagem_produto']) ?>';
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
+        function updateImage(variation, selectedColorTermId) {
+            if (!mainImage) return;
+            
+            let imageUrl = null;
+            
+            // Se variação completa existe, usar prioridade: variação > cor > produto
+            if (variation) {
+                if (variation.image) {
+                    imageUrl = basePath + variation.image;
+                } else if (variation.image_by_color) {
+                    imageUrl = basePath + variation.image_by_color;
+                } else if (mainImage.dataset.originalSrc) {
+                    imageUrl = mainImage.dataset.originalSrc;
+                }
+            } else if (selectedColorTermId && termosComImagem[selectedColorTermId]) {
+                // Se apenas cor selecionada (sem variação completa), usar imagem por cor
+                imageUrl = basePath + termosComImagem[selectedColorTermId];
+            } else if (mainImage.dataset.originalSrc) {
+                // Fallback: imagem do produto
+                imageUrl = mainImage.dataset.originalSrc;
+            }
+            
+            if (imageUrl && imageUrl !== mainImage.src) {
+                mainImage.style.opacity = '0';
+                mainImage.style.transition = 'opacity 0.3s';
+                setTimeout(function() {
+                    mainImage.src = imageUrl;
+                    mainImage.style.opacity = '1';
+                }, 150);
+            }
+        }
+
+        function updateUI() {
+            const signature = buildCurrentSignature();
+            const variation = findVariation(signature);
+
+            // Atualizar opções disponíveis
+            updateAvailableOptions();
+
+            // Buscar termo de cor selecionado (se houver)
+            let selectedColorTermId = null;
+            // Buscar atributo do tipo "color" nos atributos
+            <?php if (!empty($atributos)): ?>
+                <?php foreach ($atributos as $attr): ?>
+                    <?php if ($attr['atributo_tipo'] === 'color'): ?>
+                        const corAtributoId = <?= $attr['atributo_id'] ?>;
+                        if (selectedTerms[corAtributoId]) {
+                            selectedColorTermId = parseInt(selectedTerms[corAtributoId], 10);
+                        }
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            if (variation) {
+                variacaoIdInput.value = variation.variacao_id;
+
+                // Atualizar imagem (variação completa)
+                updateImage(variation, selectedColorTermId);
+
+                if (variationPrice && variationPriceText) {
+                    variationPrice.style.display = 'block';
+                    const precoFormatado = new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    }).format(variation.price_final);
+                    variationPriceText.textContent = precoFormatado;
+                }
+
+                if (variationStock && variationStockText) {
+                    variationStock.style.display = 'block';
+                    let stockText = '';
+                    let stockClass = '';
+
+                    if (variation.manage_stock == 1) {
+                        if (variation.qty > 0) {
+                            stockText = '<i class="bi bi-check-circle-fill icon" style="color: #28a745;"></i> Em estoque';
+                            if (variation.qty < 10) {
+                                stockText += ' (' + variation.qty + ' unidades disponíveis)';
+                            }
+                            stockClass = 'stock-in';
+                        } else {
+                            if (variation.backorder === 'yes') {
+                                stockText = '<i class="bi bi-clock icon" style="color: #ff9800;"></i> Sob encomenda';
+                                stockClass = 'stock-backorder';
+                            } else {
+                                stockText = '<i class="bi bi-x-circle-fill icon" style="color: #dc3545;"></i> Indisponível';
+                                stockClass = 'stock-out';
+                            }
+                        }
+                    } else {
+                        stockText = '<i class="bi bi-check-circle-fill icon" style="color: #28a745;"></i> Disponível';
+                        stockClass = 'stock-in';
+                    }
+
+                    variationStockText.innerHTML = stockText;
+                    variationStock.className = 'product-stock variation-stock ' + stockClass;
+
+                    if (quantidadeInput) {
+                        if (variation.manage_stock && variation.backorder !== 'yes') {
+                            quantidadeInput.max = String(variation.qty ?? 0);
+                        } else {
+                            quantidadeInput.removeAttribute('max');
+                        }
+                    }
+
+                    if (btnAddCart) {
+                        const canAdd = variation.manage_stock == 0 || variation.qty > 0 || variation.backorder === 'yes';
+                        btnAddCart.disabled = !canAdd;
+                    }
+                }
+            } else {
+                variacaoIdInput.value = '';
+                
+                // Se apenas cor selecionada (sem variação completa), trocar imagem por cor
+                if (selectedColorTermId && termosComImagem[selectedColorTermId]) {
+                    updateImage(null, selectedColorTermId);
+                } else if (mainImage && mainImage.dataset.originalSrc) {
+                    // Voltar para imagem original se não houver cor selecionada
+                    updateImage(null, null);
+                }
+                
+                if (variationPrice) variationPrice.style.display = 'none';
+                if (variationStock) {
+                    variationStock.style.display = 'block';
+                    variationStockText.innerHTML = '<i class="bi bi-x-circle-fill icon" style="color: #dc3545;"></i> Selecione todas as opções';
+                    variationStock.className = 'product-stock variation-stock stock-out';
+                }
+                if (btnAddCart) btnAddCart.disabled = true;
+            }
+        }
+
+        // Salvar imagem original
+        if (mainImage) {
+            mainImage.dataset.originalSrc = mainImage.src;
+        }
+
+        // Event listeners para swatches e pills
+        swatches.forEach(function(swatch) {
+            swatch.addEventListener('click', function() {
+                if (this.disabled) return;
+                
+                const atributoId = this.getAttribute('data-atributo-id');
+                const termoId = this.getAttribute('data-termo-id');
+                
+                // Remover seleção anterior do mesmo atributo
+                swatches.forEach(function(s) {
+                    if (s.getAttribute('data-atributo-id') === atributoId) {
+                        s.classList.remove('selected');
+                        if (s.classList.contains('variation-swatch')) {
+                            s.style.borderColor = '#ddd';
+                            const check = s.querySelector('.swatch-check');
+                            if (check) check.style.display = 'none';
+                        } else {
+                            s.style.borderColor = '#ddd';
+                            s.style.background = '#fff';
+                            s.style.color = '#333';
+                        }
+                    }
+                });
+                
+                // Selecionar atual
+                this.classList.add('selected');
+                if (this.classList.contains('variation-swatch')) {
+                    this.style.borderColor = '#28a745';
+                    this.style.borderWidth = '3px';
+                    const check = this.querySelector('.swatch-check');
+                    if (check) check.style.display = 'flex';
+                } else {
+                    this.style.borderColor = '#28a745';
+                    this.style.background = '#28a745';
+                    this.style.color = '#fff';
+                }
+                
+                selectedTerms[atributoId] = termoId;
+                updateUI();
+            });
+        });
+
+        updateUI();
+    })();
+    </script>
+    <?php endif; ?>
 ';
 
 // Configurar variáveis para o layout base

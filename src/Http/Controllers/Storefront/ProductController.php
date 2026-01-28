@@ -350,6 +350,135 @@ class ProductController extends Controller
             ]);
         }
 
+        // Buscar atributos e variações (se produto variável)
+        $atributos = [];
+        $variacoes = [];
+        
+        if ($produto['tipo'] === 'variable') {
+            // Buscar atributos usados para variação
+            $stmt = $db->prepare("
+                SELECT a.id as atributo_id, a.nome as atributo_nome, a.slug as atributo_slug, a.tipo as atributo_tipo
+                FROM produto_atributos pa
+                INNER JOIN atributos a ON a.id = pa.atributo_id
+                WHERE pa.produto_id = :produto_id 
+                AND pa.tenant_id = :tenant_id
+                AND pa.usado_para_variacao = 1
+                ORDER BY pa.ordem ASC, a.ordem ASC
+            ");
+            $stmt->execute(['produto_id' => $produto['id'], 'tenant_id' => $tenantId]);
+            $atributosRaw = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Para cada atributo, buscar termos disponíveis
+            foreach ($atributosRaw as $attr) {
+                $stmtTermos = $db->prepare("
+                    SELECT at.id as termo_id, at.nome as termo_nome, at.slug as termo_slug, 
+                           at.valor_cor, at.imagem as swatch_image, pat.imagem_produto
+                    FROM produto_atributo_termos pat
+                    INNER JOIN atributo_termos at ON at.id = pat.atributo_termo_id
+                    WHERE pat.produto_id = :produto_id
+                    AND pat.atributo_id = :atributo_id
+                    AND pat.tenant_id = :tenant_id
+                    ORDER BY at.ordem ASC, at.nome ASC
+                ");
+                $stmtTermos->execute([
+                    'produto_id' => $produto['id'],
+                    'atributo_id' => $attr['atributo_id'],
+                    'tenant_id' => $tenantId
+                ]);
+                $termos = $stmtTermos->fetchAll(\PDO::FETCH_ASSOC);
+                
+                $atributos[] = [
+                    'atributo_id' => (int)$attr['atributo_id'],
+                    'atributo_nome' => $attr['atributo_nome'],
+                    'atributo_slug' => $attr['atributo_slug'],
+                    'atributo_tipo' => $attr['atributo_tipo'],
+                    'termos' => $termos
+                ];
+            }
+
+            // Buscar todas as variações do produto
+            $stmt = $db->prepare("
+                SELECT pv.*
+                FROM produto_variacoes pv
+                WHERE pv.produto_id = :produto_id 
+                AND pv.tenant_id = :tenant_id
+                AND pv.status = 'publish'
+                ORDER BY pv.id ASC
+            ");
+            $stmt->execute(['produto_id' => $produto['id'], 'tenant_id' => $tenantId]);
+            $variacoesRaw = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Para cada variação, buscar atributos e montar assinatura
+            foreach ($variacoesRaw as $variacao) {
+                $stmtAttr = $db->prepare("
+                    SELECT pva.atributo_id, pva.atributo_termo_id
+                    FROM produto_variacao_atributos pva
+                    WHERE pva.variacao_id = :variacao_id AND pva.tenant_id = :tenant_id
+                    ORDER BY pva.atributo_id ASC
+                ");
+                $stmtAttr->execute(['variacao_id' => $variacao['id'], 'tenant_id' => $tenantId]);
+                $attrs = $stmtAttr->fetchAll(\PDO::FETCH_ASSOC);
+                
+                // Montar assinatura (ordenada por atributo_id para garantir consistência)
+                // A query já ordena por atributo_id, mas garantimos aqui também
+                usort($attrs, function($a, $b) {
+                    return $a['atributo_id'] <=> $b['atributo_id'];
+                });
+                $signatureParts = [];
+                foreach ($attrs as $attr) {
+                    $signatureParts[] = $attr['atributo_id'] . ':' . $attr['atributo_termo_id'];
+                }
+                $signature = implode('|', $signatureParts);
+                
+                // Determinar preço
+                $precoRegular = $variacao['preco_regular'] ?? $produto['preco_regular'];
+                $precoPromocional = $variacao['preco_promocional'] ?? $produto['preco_promocional'];
+                $precoFinal = $precoPromocional ?: $precoRegular;
+                
+                // Buscar imagem por cor (se variação tiver cor)
+                $imagemPorCor = null;
+                foreach ($attrs as $attrVar) {
+                    $stmtCor = $db->prepare("
+                        SELECT pat.imagem_produto
+                        FROM produto_atributo_termos pat
+                        INNER JOIN atributos a ON a.id = pat.atributo_id
+                        WHERE pat.produto_id = :produto_id
+                        AND pat.atributo_id = :atributo_id
+                        AND pat.atributo_termo_id = :termo_id
+                        AND pat.tenant_id = :tenant_id
+                        AND a.tipo = 'color'
+                        AND pat.imagem_produto IS NOT NULL
+                        LIMIT 1
+                    ");
+                    $stmtCor->execute([
+                        'produto_id' => $produto['id'],
+                        'atributo_id' => $attrVar['atributo_id'],
+                        'termo_id' => $attrVar['atributo_termo_id'],
+                        'tenant_id' => $tenantId
+                    ]);
+                    $corResult = $stmtCor->fetch();
+                    if ($corResult && !empty($corResult['imagem_produto'])) {
+                        $imagemPorCor = $corResult['imagem_produto'];
+                        break;
+                    }
+                }
+
+                $variacoes[] = [
+                    'variacao_id' => (int)$variacao['id'],
+                    'signature' => $signature,
+                    'price_regular' => (float)$precoRegular,
+                    'price_promo' => $precoPromocional ? (float)$precoPromocional : null,
+                    'price_final' => (float)$precoFinal,
+                    'manage_stock' => (int)($variacao['gerencia_estoque'] ?? 0),
+                    'qty' => (int)($variacao['quantidade_estoque'] ?? 0),
+                    'backorder' => $variacao['permite_pedidos_falta'] ?? 'no',
+                    'image' => $variacao['imagem'] ?? null,
+                    'image_by_color' => $imagemPorCor,
+                    'status_estoque' => $variacao['status_estoque'] ?? 'instock'
+                ];
+            }
+        }
+
         // Buscar produtos relacionados
         $produtosRelacionados = [];
         if (!empty($categorias)) {
@@ -532,6 +661,8 @@ class ProductController extends Controller
         unset($_SESSION['review_message'], $_SESSION['review_message_type']);
 
         $this->view('storefront/products/show', [
+            'atributos' => $atributos,
+            'variacoes' => $variacoes,
             'produto' => $produto,
             'imagens' => $imagens,
             'categorias' => $categorias,

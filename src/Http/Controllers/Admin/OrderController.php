@@ -603,6 +603,133 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Salva código de rastreamento do pedido
+     * 
+     * POST /admin/pedidos/{id}/rastreio
+     */
+    public function salvarRastreio(int $id): void
+    {
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar pedido
+        $stmt = $db->prepare("
+            SELECT * FROM pedidos 
+            WHERE id = :id 
+            AND tenant_id = :tenant_id
+            LIMIT 1
+        ");
+        $stmt->execute(['id' => $id, 'tenant_id' => $tenantId]);
+        $pedido = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$pedido) {
+            $this->redirect("/admin/pedidos?error=pedido_nao_encontrado");
+            return;
+        }
+
+        $trackingCode = trim($_POST['tracking_code'] ?? '');
+
+        // Validar código de rastreamento (formato básico: não vazio, até 100 caracteres)
+        if (empty($trackingCode)) {
+            $this->redirect("/admin/pedidos/{$id}?error=rastreio_vazio");
+            return;
+        }
+
+        if (strlen($trackingCode) > 100) {
+            $this->redirect("/admin/pedidos/{$id}?error=rastreio_invalido");
+            return;
+        }
+
+        try {
+            // Atualizar código de rastreamento
+            $stmt = $db->prepare("
+                UPDATE pedidos 
+                SET tracking_code = :tracking_code,
+                    updated_at = NOW()
+                WHERE id = :id 
+                AND tenant_id = :tenant_id
+            ");
+            $stmt->execute([
+                'tracking_code' => $trackingCode,
+                'id' => $id,
+                'tenant_id' => $tenantId,
+            ]);
+
+            // Se status ainda não for 'shipped' ou 'completed', atualizar para 'shipped'
+            if (!in_array($pedido['status'], ['shipped', 'completed'])) {
+                $stmt = $db->prepare("
+                    UPDATE pedidos 
+                    SET status = 'shipped',
+                        updated_at = NOW()
+                    WHERE id = :id 
+                    AND tenant_id = :tenant_id
+                ");
+                $stmt->execute([
+                    'id' => $id,
+                    'tenant_id' => $tenantId,
+                ]);
+            }
+
+            $this->redirect("/admin/pedidos/{$id}?success=rastreio_salvo");
+        } catch (\Exception $e) {
+            error_log("Erro ao salvar rastreio do pedido #{$id}: " . $e->getMessage());
+            $this->redirect("/admin/pedidos/{$id}?error=erro_salvar_rastreio");
+        }
+    }
+
+    /**
+     * Marca pedido como enviado
+     * 
+     * POST /admin/pedidos/{id}/marcar-enviado
+     */
+    public function marcarEnviado(int $id): void
+    {
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar pedido
+        $stmt = $db->prepare("
+            SELECT * FROM pedidos 
+            WHERE id = :id 
+            AND tenant_id = :tenant_id
+            LIMIT 1
+        ");
+        $stmt->execute(['id' => $id, 'tenant_id' => $tenantId]);
+        $pedido = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$pedido) {
+            $this->redirect("/admin/pedidos?error=pedido_nao_encontrado");
+            return;
+        }
+
+        // Validar se pode marcar como enviado
+        if (in_array($pedido['status'], ['canceled'])) {
+            $this->redirect("/admin/pedidos/{$id}?error=pedido_cancelado");
+            return;
+        }
+
+        try {
+            // Atualizar status para 'shipped'
+            $stmt = $db->prepare("
+                UPDATE pedidos 
+                SET status = 'shipped',
+                    updated_at = NOW()
+                WHERE id = :id 
+                AND tenant_id = :tenant_id
+            ");
+            $stmt->execute([
+                'id' => $id,
+                'tenant_id' => $tenantId,
+            ]);
+
+            $this->redirect("/admin/pedidos/{$id}?success=pedido_marcado_enviado");
+        } catch (\Exception $e) {
+            error_log("Erro ao marcar pedido #{$id} como enviado: " . $e->getMessage());
+            $this->redirect("/admin/pedidos/{$id}?error=erro_marcar_enviado");
+        }
+    }
+
 }
 
 

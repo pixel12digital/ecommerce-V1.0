@@ -56,6 +56,23 @@ if (!function_exists('media_url')) {
                 </div>
                 
                 <div class="form-group">
+                    <label>Tipo *</label>
+                    <select name="tipo" id="produto_tipo" required>
+                        <option value="simple" <?= ($formData['tipo'] ?? 'simple') === 'simple' ? 'selected' : '' ?>>Produto Simples</option>
+                        <option value="variable" <?= ($formData['tipo'] ?? '') === 'variable' ? 'selected' : '' ?>>Produto Variável</option>
+                    </select>
+                    <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                        Produto variável permite criar variações (ex: tamanhos, cores)
+                    </small>
+                    <div id="variable-info" style="display: none; margin-top: 0.75rem; padding: 1rem; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px;">
+                        <p style="margin: 0; color: #0066cc; font-weight: 500;">
+                            <i class="bi bi-info-circle icon"></i>
+                            Produtos variáveis: depois de salvar, você poderá escolher Cor/Tamanho e gerar variações.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
                     <label>Status *</label>
                     <select name="status" required>
                         <option value="publish" <?= ($formData['status'] ?? 'draft') === 'publish' ? 'selected' : '' ?>>
@@ -122,13 +139,21 @@ if (!function_exists('media_url')) {
         </div>
 
         <!-- Seção: Estoque -->
-        <div class="info-section">
+        <div class="info-section" id="estoque-section">
             <h2 class="section-title">Estoque</h2>
+            
+            <!-- Aviso para produto variável -->
+            <div id="variable-stock-warning" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                <p style="margin: 0; color: #856404; font-weight: 500;">
+                    <i class="bi bi-exclamation-triangle icon"></i>
+                    <strong>Produto Variável:</strong> O estoque será gerenciado por variação. Após salvar, você poderá configurar estoque, preço e imagem para cada variação individualmente.
+                </p>
+            </div>
             
             <div class="form-grid">
                 <div class="form-group">
                     <label>
-                        <input type="checkbox" name="gerencia_estoque" value="1" 
+                        <input type="checkbox" name="gerencia_estoque" id="gerencia_estoque" value="1" 
                                <?= ($formData['gerencia_estoque'] ?? '0') == '1' ? 'checked' : '' ?>> 
                         Gerencia Estoque
                     </label>
@@ -136,13 +161,13 @@ if (!function_exists('media_url')) {
                 
                 <div class="form-group">
                     <label>Quantidade</label>
-                    <input type="number" name="quantidade_estoque" value="<?= $formData['quantidade_estoque'] ?? '0' ?>" 
+                    <input type="number" name="quantidade_estoque" id="quantidade_estoque" value="<?= $formData['quantidade_estoque'] ?? '0' ?>" 
                            min="0">
                 </div>
                 
                 <div class="form-group">
                     <label>Status de Estoque *</label>
-                    <select name="status_estoque" required>
+                    <select name="status_estoque" id="status_estoque" required>
                         <option value="instock" <?= ($formData['status_estoque'] ?? 'outofstock') === 'instock' ? 'selected' : '' ?>>
                             <?= \App\Support\LangHelper::stockStatusLabel('instock') ?>
                         </option>
@@ -385,10 +410,14 @@ if (!function_exists('media_url')) {
         </div>
 
         <!-- Botão Salvar -->
-        <div style="margin-top: 2rem; text-align: right;">
-            <button type="submit" class="admin-btn admin-btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
+            <button type="submit" name="go_variations" value="0" class="admin-btn admin-btn-primary" id="btn-save-normal" style="padding: 1rem 2rem; font-size: 1.1rem;">
                 <i class="bi bi-check-circle icon"></i>
                 Criar Produto
+            </button>
+            <button type="submit" name="go_variations" value="1" class="admin-btn admin-btn-success" id="btn-save-variations" style="padding: 1rem 2rem; font-size: 1.1rem; display: none; background: #28a745; color: white;">
+                <i class="bi bi-magic icon"></i>
+                Salvar e Configurar Variações
             </button>
         </div>
     </form>
@@ -630,6 +659,56 @@ function addNewVideoField() {
             previewContainer.style.display = 'none';
         }
     };
+})();
+
+// Mostrar/ocultar botão "Salvar e Configurar Variações" baseado no tipo
+(function() {
+    const produtoTipo = document.getElementById('produto_tipo');
+    const variableInfo = document.getElementById('variable-info');
+    const btnSaveNormal = document.getElementById('btn-save-normal');
+    const btnSaveVariations = document.getElementById('btn-save-variations');
+    const variableStockWarning = document.getElementById('variable-stock-warning');
+    const gerenciaEstoque = document.getElementById('gerencia_estoque');
+    const quantidadeEstoque = document.getElementById('quantidade_estoque');
+    const statusEstoque = document.getElementById('status_estoque');
+    
+    function toggleVariableUI() {
+        const isVariable = produtoTipo && produtoTipo.value === 'variable';
+        if (variableInfo) {
+            variableInfo.style.display = isVariable ? 'block' : 'none';
+        }
+        if (btnSaveVariations) {
+            btnSaveVariations.style.display = isVariable ? 'inline-flex' : 'none';
+        }
+        
+        // Desabilitar/ocultar campos de estoque para produto variável
+        if (variableStockWarning) {
+            variableStockWarning.style.display = isVariable ? 'block' : 'none';
+        }
+        if (gerenciaEstoque) {
+            gerenciaEstoque.disabled = isVariable;
+            if (isVariable) {
+                gerenciaEstoque.checked = false;
+            }
+        }
+        if (quantidadeEstoque) {
+            quantidadeEstoque.disabled = isVariable;
+            if (isVariable) {
+                quantidadeEstoque.value = '0';
+            }
+        }
+        if (statusEstoque) {
+            statusEstoque.disabled = isVariable;
+            if (isVariable) {
+                statusEstoque.value = 'outofstock';
+            }
+        }
+    }
+    
+    if (produtoTipo) {
+        produtoTipo.addEventListener('change', toggleVariableUI);
+        toggleVariableUI(); // Executar ao carregar
+    }
 })();
 
 </script>

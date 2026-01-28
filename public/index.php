@@ -43,6 +43,7 @@ use App\Http\Controllers\Storefront\CustomerAuthController;
 use App\Http\Controllers\Storefront\ShippingController;
 use App\Http\Controllers\Storefront\CustomerController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\ThemeController;
 use App\Http\Controllers\Admin\HomeConfigController;
 use App\Http\Controllers\Admin\HomeCategoriesController;
@@ -193,6 +194,64 @@ $router->post('/admin/produtos/{id}/atualizar-categorias', AdminProductControlle
     CheckPermissionMiddleware::class => 'manage_products'
 ]);
 $router->post('/admin/produtos/{id}/excluir', AdminProductController::class . '@destroy', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/produtos/{id}/atributos/salvar', AdminProductController::class . '@saveAttributes', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/produtos/{id}/atributos/salvar-e-gerar-variacoes', AdminProductController::class . '@saveAttributesAndGenerateVariations', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/produtos/{id}/variacoes/gerar', AdminProductController::class . '@generateVariations', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/produtos/{id}/variacoes/salvar-lote', AdminProductController::class . '@saveVariationsBulk', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+
+// Rotas Admin - Atributos
+$router->get('/admin/atributos', AttributeController::class . '@index', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->get('/admin/atributos/novo', AttributeController::class . '@create', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/atributos', AttributeController::class . '@store', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->get('/admin/atributos/{id}/editar', AttributeController::class . '@edit', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/atributos/{id}', AttributeController::class . '@update', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/atributos/{id}/excluir', AttributeController::class . '@destroy', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/atributos/{id}/termos', AttributeController::class . '@storeTerm', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/atributos/{id}/termos/{termId}', AttributeController::class . '@updateTerm', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/atributos/{id}/termos/{termId}/excluir', AttributeController::class . '@destroyTerm', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
+$router->post('/admin/atributos/{id}/termos/reordenar', AttributeController::class . '@reorderTerms', [
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'
 ]);

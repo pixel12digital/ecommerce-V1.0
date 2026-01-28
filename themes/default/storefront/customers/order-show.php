@@ -72,6 +72,29 @@ $itens = $itens ?? [];
     </div>
 </div>
 
+<?php if (!empty($pedido['tracking_code'])): ?>
+    <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #023A8D; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="margin: 0 0 1rem 0; font-size: 1.125rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-box-seam icon" style="color: #023A8D;"></i>
+            Rastreamento
+        </h3>
+        <div style="margin-bottom: 1rem;">
+            <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.95rem;">
+                <strong style="color: #333;">Código de rastreamento:</strong>
+            </p>
+            <p style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 700; color: #023A8D; font-family: monospace;">
+                <?= htmlspecialchars($pedido['tracking_code']) ?>
+            </p>
+        </div>
+        <a href="https://www.correios.com.br/precisa-de-ajuda/rastreamento-de-objetos" 
+           target="_blank"
+           style="display: inline-block; padding: 0.75rem 1.5rem; background: #023A8D; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; transition: background 0.2s;">
+            <i class="bi bi-box-arrow-up-right" style="margin-right: 0.5rem;"></i>
+            Rastrear nos Correios
+        </a>
+    </div>
+<?php endif; ?>
+
 <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Itens do Pedido</h3>
 <table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
     <thead>

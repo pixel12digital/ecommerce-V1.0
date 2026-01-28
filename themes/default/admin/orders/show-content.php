@@ -17,6 +17,10 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             $errors = [
                 'status_invalido' => 'Status inválido.',
                 'pedido_nao_encontrado' => 'Pedido não encontrado.',
+                'rastreio_vazio' => 'Código de rastreamento não pode estar vazio.',
+                'rastreio_invalido' => 'Código de rastreamento inválido.',
+                'erro_salvar_rastreio' => 'Erro ao salvar código de rastreamento.',
+                'erro_marcar_enviado' => 'Erro ao marcar pedido como enviado.',
             ];
             echo $errors[$_GET['error']] ?? 'Erro desconhecido.';
             ?>
@@ -126,7 +130,65 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         $hasEtiqueta = !empty($pedido['tracking_code']) || !empty($pedido['label_url']) || !empty($pedido['label_pdf_path']);
         $labelFormat = $pedido['label_format'] ?? 'A4';
         $labelGeneratedAt = $pedido['label_generated_at'] ?? null;
+        $trackingCode = $pedido['tracking_code'] ?? '';
         ?>
+        
+        <!-- Rastreio -->
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #023A8D;">
+            <h4 style="margin: 0 0 1rem 0; font-size: 1rem; color: #333;">Código de Rastreamento</h4>
+            <form method="POST" action="<?= $basePath ?>/admin/pedidos/<?= $pedido['id'] ?>/rastreio" class="tracking-form" style="display: flex; gap: 0.5rem; align-items: end;">
+                <div class="form-group" style="flex: 1;">
+                    <input type="text" 
+                           name="tracking_code" 
+                           id="tracking_code"
+                           value="<?= htmlspecialchars($trackingCode) ?>"
+                           placeholder="Ex: BR123456789BR"
+                           maxlength="100"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                        Informe o código de rastreamento fornecido pelos Correios.
+                    </small>
+                </div>
+                <button type="submit" class="btn" style="padding: 0.75rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                    <i class="bi bi-check-circle" style="margin-right: 0.5rem;"></i>
+                    Salvar Rastreio
+                </button>
+            </form>
+            
+            <?php if (!empty($trackingCode)): ?>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd;">
+                    <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #155724;">
+                        <i class="bi bi-check-circle"></i> Código registrado: 
+                        <strong><?= htmlspecialchars($trackingCode) ?></strong>
+                    </p>
+                    <a href="https://www.correios.com.br/precisa-de-ajuda/rastreamento-de-objetos" 
+                       target="_blank"
+                       class="btn" 
+                       style="display: inline-block; padding: 0.5rem 1rem; background: #023A8D; color: white; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 0.875rem;">
+                        <i class="bi bi-box-arrow-up-right" style="margin-right: 0.5rem;"></i>
+                        Rastrear nos Correios
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+        
+        <!-- Marcar como Enviado -->
+        <?php if ($pedido['status'] !== 'shipped' && $pedido['status'] !== 'completed'): ?>
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 4px; border-left: 4px solid #856404;">
+                <form method="POST" action="<?= $basePath ?>/admin/pedidos/<?= $pedido['id'] ?>/marcar-enviado" style="display: inline;">
+                    <button type="submit" 
+                            class="btn" 
+                            style="padding: 0.75rem 1.5rem; background: #F7931E; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;"
+                            onclick="return confirm('Deseja marcar este pedido como enviado? Isso alterará o status para \"Enviado\".');">
+                        <i class="bi bi-truck" style="margin-right: 0.5rem;"></i>
+                        Marcar como Enviado
+                    </button>
+                </form>
+                <small style="display: block; margin-top: 0.5rem; color: #856404;">
+                    Isso alterará o status do pedido para "Enviado" e notificará o cliente (se configurado).
+                </small>
+            </div>
+        <?php endif; ?>
         
         <!-- Status da Etiqueta -->
         <?php if ($hasEtiqueta): ?>

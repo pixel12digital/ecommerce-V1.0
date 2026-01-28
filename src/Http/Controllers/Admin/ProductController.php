@@ -281,6 +281,8 @@ class ProductController extends Controller
             }
             $sku = trim($_POST['sku'] ?? '');
             $status = $_POST['status'] ?? 'draft';
+            $tipo = $_POST['tipo'] ?? 'simple';
+            $goVariations = isset($_POST['go_variations']) && $_POST['go_variations'] == '1';
             
             // Processar preço regular (converter vírgula para ponto)
             $precoRegularStr = trim($_POST['preco_regular'] ?? '0');
@@ -297,20 +299,29 @@ class ProductController extends Controller
             
             $dataPromocaoInicio = !empty($_POST['data_promocao_inicio']) ? $_POST['data_promocao_inicio'] : null;
             $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
-            $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;
-            $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
             
-            // Determinar status_estoque baseado em gerencia_estoque e quantidade_estoque
-            // Se gerencia_estoque = 1 e quantidade_estoque > 0 → instock
-            // Se gerencia_estoque = 1 e quantidade_estoque = 0 → outofstock
-            // Se gerencia_estoque = 0 → usar valor do formulário ou padrão instock
-            $statusEstoqueInput = $_POST['status_estoque'] ?? null;
-            if ($gerenciaEstoque == 1) {
-                // Se gerencia estoque está ativo, determinar status baseado na quantidade
-                $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+            // Para produto variável, estoque é sempre 0 e gerencia_estoque = 0
+            // O estoque real é gerenciado por variação
+            if ($tipo === 'variable') {
+                $quantidadeEstoque = 0;
+                $gerenciaEstoque = 0;
+                $statusEstoque = 'outofstock';
             } else {
-                // Se não gerencia estoque, usar valor do formulário ou padrão instock
-                $statusEstoque = $statusEstoqueInput ?? 'instock';
+                $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;
+                $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
+                
+                // Determinar status_estoque baseado em gerencia_estoque e quantidade_estoque
+                // Se gerencia_estoque = 1 e quantidade_estoque > 0 → instock
+                // Se gerencia_estoque = 1 e quantidade_estoque = 0 → outofstock
+                // Se gerencia_estoque = 0 → usar valor do formulário ou padrão instock
+                $statusEstoqueInput = $_POST['status_estoque'] ?? null;
+                if ($gerenciaEstoque == 1) {
+                    // Se gerencia estoque está ativo, determinar status baseado na quantidade
+                    $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+                } else {
+                    // Se não gerencia estoque, usar valor do formulário ou padrão instock
+                    $statusEstoque = $statusEstoqueInput ?? 'instock';
+                }
             }
             
             $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
@@ -333,13 +344,13 @@ class ProductController extends Controller
 
             $stmt = $db->prepare("
                 INSERT INTO produtos (
-                    tenant_id, nome, slug, sku, status, exibir_no_catalogo,
+                    tenant_id, nome, slug, sku, tipo, status, exibir_no_catalogo,
                     preco, preco_regular, preco_promocional, data_promocao_inicio, data_promocao_fim,
                     quantidade_estoque, status_estoque, gerencia_estoque, permite_pedidos_falta,
                     descricao_curta, descricao, peso, comprimento, largura, altura,
                     created_at, updated_at
                 ) VALUES (
-                    :tenant_id, :nome, :slug, :sku, :status, :exibir_no_catalogo,
+                    :tenant_id, :nome, :slug, :sku, :tipo, :status, :exibir_no_catalogo,
                     :preco, :preco_regular, :preco_promocional, :data_promocao_inicio, :data_promocao_fim,
                     :quantidade_estoque, :status_estoque, :gerencia_estoque, :permite_pedidos_falta,
                     :descricao_curta, :descricao, :peso, :comprimento, :largura, :altura,
@@ -351,6 +362,7 @@ class ProductController extends Controller
                 'nome' => $nome,
                 'slug' => $slug,
                 'sku' => $sku,
+                'tipo' => $tipo,
                 'status' => $status,
                 'exibir_no_catalogo' => $exibirNoCatalogo,
                 'preco' => $precoPrincipal,
@@ -407,8 +419,13 @@ class ProductController extends Controller
             $db->commit();
             $_SESSION['product_edit_message'] = 'Produto criado com sucesso!';
             $_SESSION['product_edit_message_type'] = 'success';
-            header('Location: ' . $this->getBasePath() . '/admin/produtos/' . $produtoId);
-            exit;
+            
+            // Se for produto variável e go_variations = 1, redirecionar para edição com âncora
+            if ($tipo === 'variable' && $goVariations) {
+                $this->redirect('/admin/produtos/' . $produtoId . '/editar#atributos');
+            } else {
+                $this->redirect('/admin/produtos/' . $produtoId . '/editar');
+            }
         } catch (\Exception $e) {
             $db->rollBack();
             $_SESSION['product_create_message'] = 'Erro ao criar produto: ' . $e->getMessage();
@@ -535,6 +552,103 @@ class ProductController extends Controller
         ]);
         $tags = $stmt->fetchAll();
 
+        // Buscar atributos do produto (se tipo = variable)
+        $atributosProduto = [];
+        $atributosProdutoIds = [];
+        $termosPorAtributo = [];
+        $variacoes = [];
+
+        if ($produto['tipo'] === 'variable') {
+            // Buscar atributos associados ao produto
+            $stmt = $db->prepare("
+                SELECT a.*, pa.atributo_id, pa.usado_para_variacao, pa.ordem
+                FROM produto_atributos pa
+                INNER JOIN atributos a ON a.id = pa.atributo_id
+                WHERE pa.produto_id = :produto_id AND pa.tenant_id = :tenant_id
+                ORDER BY pa.ordem ASC, a.ordem ASC
+            ");
+            $stmt->execute(['produto_id' => $produto['id'], 'tenant_id' => $tenantId]);
+            $atributosProduto = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $atributosProdutoIds = array_column($atributosProduto, 'atributo_id');
+
+            // Para cada atributo, buscar termos selecionados
+            // Garantir que a coluna imagem_produto existe antes de fazer SELECT
+            $this->ensureImagemProdutoColumn($db);
+            
+            foreach ($atributosProduto as $attr) {
+                // Garantir que atributo_id existe (pode ser 'id' ou 'atributo_id')
+                $atributoId = $attr['atributo_id'] ?? $attr['id'] ?? null;
+                if (!$atributoId) {
+                    continue; // Pular se não tiver ID
+                }
+                
+                $stmtTermos = $db->prepare("
+                    SELECT at.*, pat.id as produto_atributo_termo_id, pat.imagem_produto
+                    FROM produto_atributo_termos pat
+                    INNER JOIN atributo_termos at ON at.id = pat.atributo_termo_id
+                    WHERE pat.produto_id = :produto_id
+                    AND pat.atributo_id = :atributo_id
+                    AND pat.tenant_id = :tenant_id
+                    ORDER BY at.ordem ASC, at.nome ASC
+                ");
+                $stmtTermos->execute([
+                    'produto_id' => $produto['id'],
+                    'atributo_id' => $atributoId,
+                    'tenant_id' => $tenantId
+                ]);
+                $termosPorAtributo[$atributoId] = $stmtTermos->fetchAll(\PDO::FETCH_ASSOC);
+            }
+
+            // Buscar variações do produto
+            $stmt = $db->prepare("
+                SELECT pv.*,
+                       GROUP_CONCAT(CONCAT(pva.atributo_id, ':', pva.atributo_termo_id) ORDER BY pva.atributo_id SEPARATOR '|') as signature
+                FROM produto_variacoes pv
+                LEFT JOIN produto_variacao_atributos pva ON pva.variacao_id = pv.id
+                WHERE pv.produto_id = :produto_id AND pv.tenant_id = :tenant_id
+                GROUP BY pv.id
+                ORDER BY pv.id ASC
+            ");
+            $stmt->execute(['produto_id' => $produto['id'], 'tenant_id' => $tenantId]);
+            $variacoesRaw = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Para cada variação, buscar atributos detalhados
+            foreach ($variacoesRaw as $variacao) {
+                $stmtAttr = $db->prepare("
+                    SELECT a.nome as atributo_nome, at.nome as termo_nome, pva.atributo_id, pva.atributo_termo_id
+                    FROM produto_variacao_atributos pva
+                    INNER JOIN atributos a ON a.id = pva.atributo_id
+                    INNER JOIN atributo_termos at ON at.id = pva.atributo_termo_id
+                    WHERE pva.variacao_id = :variacao_id AND pva.tenant_id = :tenant_id
+                    ORDER BY a.ordem ASC, at.ordem ASC
+                ");
+                $stmtAttr->execute(['variacao_id' => $variacao['id'], 'tenant_id' => $tenantId]);
+                $variacao['atributos'] = $stmtAttr->fetchAll(\PDO::FETCH_ASSOC);
+                $variacoes[] = $variacao;
+            }
+        }
+
+        // Buscar todos os atributos disponíveis (para seleção)
+        $stmt = $db->prepare("
+            SELECT * FROM atributos 
+            WHERE tenant_id = :tenant_id 
+            ORDER BY ordem ASC, nome ASC
+        ");
+        $stmt->execute(['tenant_id' => $tenantId]);
+        $todosAtributos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Para cada atributo disponível, buscar seus termos
+        $termosPorAtributoDisponivel = [];
+        foreach ($todosAtributos as $attr) {
+            $stmtTermos = $db->prepare("
+                SELECT * FROM atributo_termos 
+                WHERE atributo_id = :atributo_id AND tenant_id = :tenant_id 
+                ORDER BY ordem ASC, nome ASC
+            ");
+            $stmtTermos->execute(['atributo_id' => $attr['id'], 'tenant_id' => $tenantId]);
+            $termosPorAtributoDisponivel[$attr['id']] = $stmtTermos->fetchAll(\PDO::FETCH_ASSOC);
+        }
+
         // Capturar contexto de navegação (página, filtros, ordenação) para preservar ao voltar
         $navigationContext = [
             'page' => isset($_GET['page']) ? (int)$_GET['page'] : null,
@@ -559,6 +673,12 @@ class ProductController extends Controller
             'categoriasProdutoIds' => $categoriasProdutoIds,
             'todasCategorias' => $todasCategorias,
             'tags' => $tags,
+            'atributosProduto' => $atributosProduto,
+            'atributosProdutoIds' => $atributosProdutoIds,
+            'termosPorAtributo' => $termosPorAtributo,
+            'todosAtributos' => $todosAtributos,
+            'termosPorAtributoDisponivel' => $termosPorAtributoDisponivel,
+            'variacoes' => $variacoes,
             'message' => $_SESSION['product_edit_message'] ?? null,
             'messageType' => $_SESSION['product_edit_message_type'] ?? null,
             'navigationContext' => $navigationContext
@@ -641,23 +761,36 @@ class ProductController extends Controller
             
             $dataPromocaoInicio = !empty($_POST['data_promocao_inicio']) ? $_POST['data_promocao_inicio'] : null;
             $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
-            $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;
-            $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
             
-            // Determinar status_estoque baseado em gerencia_estoque e quantidade_estoque
-            // Se gerencia_estoque = 1 e quantidade_estoque > 0 → instock
-            // Se gerencia_estoque = 1 e quantidade_estoque = 0 → outofstock
-            // Se gerencia_estoque = 0 → usar valor do formulário ou padrão instock
-            $statusEstoqueInput = $_POST['status_estoque'] ?? null;
-            if ($gerenciaEstoque == 1) {
-                // Se gerencia estoque está ativo, determinar status baseado na quantidade
-                $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+            $tipo = $_POST['tipo'] ?? 'simple';
+            
+            // Para produto variável, estoque é sempre 0 e gerencia_estoque = 0
+            // O estoque real é gerenciado por variação
+            if ($tipo === 'variable') {
+                $quantidadeEstoque = 0;
+                $gerenciaEstoque = 0;
+                $statusEstoque = 'outofstock';
+                $permitePedidosFalta = 0; // Backorder é por variação
             } else {
-                // Se não gerencia estoque, usar valor do formulário ou padrão instock
-                $statusEstoque = $statusEstoqueInput ?? 'instock';
+                $quantidadeEstoque = !empty($_POST['quantidade_estoque']) ? (int)$_POST['quantidade_estoque'] : 0;
+                $gerenciaEstoque = isset($_POST['gerencia_estoque']) ? 1 : 0;
+                
+                // Determinar status_estoque baseado em gerencia_estoque e quantidade_estoque
+                // Se gerencia_estoque = 1 e quantidade_estoque > 0 → instock
+                // Se gerencia_estoque = 1 e quantidade_estoque = 0 → outofstock
+                // Se gerencia_estoque = 0 → usar valor do formulário ou padrão instock
+                $statusEstoqueInput = $_POST['status_estoque'] ?? null;
+                if ($gerenciaEstoque == 1) {
+                    // Se gerencia estoque está ativo, determinar status baseado na quantidade
+                    $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+                } else {
+                    // Se não gerencia estoque, usar valor do formulário ou padrão instock
+                    $statusEstoque = $statusEstoqueInput ?? 'instock';
+                }
+                
+                $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
             }
             
-            $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
             $exibirNoCatalogo = isset($_POST['exibir_no_catalogo']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
@@ -676,6 +809,7 @@ class ProductController extends Controller
                     nome = :nome,
                     slug = :slug,
                     sku = :sku,
+                    tipo = :tipo,
                     status = :status,
                     exibir_no_catalogo = :exibir_no_catalogo,
                     preco = :preco,
@@ -700,6 +834,7 @@ class ProductController extends Controller
                 'nome' => $nome,
                 'slug' => $slug,
                 'sku' => $sku,
+                'tipo' => $tipo,
                 'status' => $status,
                 'exibir_no_catalogo' => $exibirNoCatalogo,
                 'preco' => $precoPrincipal,
@@ -721,6 +856,17 @@ class ProductController extends Controller
                 'tenant_id' => $tenantId
             ]);
 
+            // Processar atributos do produto (se tipo = variable)
+            if ($tipo === 'variable') {
+                $this->processProductAttributes($db, $tenantId, $id);
+            } else {
+                // Se não é variável, remover atributos e variações
+                $stmt = $db->prepare("DELETE FROM produto_atributos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
+                $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
+                $stmt = $db->prepare("DELETE FROM produto_atributo_termos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
+                $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
+            }
+
             // 2. Processar imagem de destaque
             $this->processMainImage($db, $tenantId, $id, $produto);
 
@@ -730,7 +876,89 @@ class ProductController extends Controller
             // 4. Processar vídeos
             $this->processVideos($db, $tenantId, $id);
 
-            // 5. Atualizar categorias (sync: remover antigas e adicionar novas)
+            // 5. Processar variações em lote (se tipo = variable)
+            if ($tipo === 'variable' && !empty($_POST['variacoes_json'])) {
+                $variacoes = json_decode($_POST['variacoes_json'], true);
+                if (is_array($variacoes)) {
+                    foreach ($variacoes as $variacaoData) {
+                        $variacaoId = (int)($variacaoData['id'] ?? 0);
+                        if ($variacaoId <= 0) continue;
+
+                        $sku = trim($variacaoData['sku'] ?? '');
+                        $precoRegularStr = trim($variacaoData['preco_regular'] ?? '');
+                        $precoPromocionalStr = trim($variacaoData['preco_promocional'] ?? '');
+                        
+                        $precoRegular = null;
+                        if (!empty($precoRegularStr)) {
+                            $precoRegularStr = str_replace(',', '.', $precoRegularStr);
+                            $precoRegular = (float)$precoRegularStr;
+                        }
+                        
+                        $precoPromocional = null;
+                        if (!empty($precoPromocionalStr)) {
+                            $precoPromocionalStr = str_replace(',', '.', $precoPromocionalStr);
+                            $precoPromocional = (float)$precoPromocionalStr;
+                        }
+                        
+                        $gerenciaEstoque = isset($variacaoData['gerencia_estoque']) && $variacaoData['gerencia_estoque'] == 1 ? 1 : 0;
+                        $quantidadeEstoque = (int)($variacaoData['quantidade_estoque'] ?? 0);
+                        $status = $variacaoData['status'] ?? 'publish';
+                        $permitePedidosFalta = $variacaoData['permite_pedidos_falta'] ?? 'no';
+
+                        // Processar upload de imagem da variação
+                        $imagemPath = null;
+                        $imagemKey = 'variacoes_' . $variacaoId . '_imagem';
+                        $imagemPathKey = 'variacoes_' . $variacaoId . '_imagem_path';
+                        
+                        // Verificar se veio arquivo novo
+                        if (isset($_FILES['variacoes']['name'][$variacaoId]['imagem']) && 
+                            $_FILES['variacoes']['error'][$variacaoId]['imagem'] === UPLOAD_ERR_OK) {
+                            $imagemPath = $this->processVariationImageUpload($db, $tenantId, $variacaoId, $id);
+                        } elseif (isset($variacaoData['imagem_path']) && !empty($variacaoData['imagem_path'])) {
+                            $imagemPath = $variacaoData['imagem_path'];
+                        }
+
+                        // Calcular status_estoque
+                        $statusEstoque = 'instock';
+                        if ($gerenciaEstoque == 1) {
+                            $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+                        }
+
+                        $stmt = $db->prepare("
+                            UPDATE produto_variacoes 
+                            SET sku = :sku,
+                                preco_regular = :preco_regular,
+                                preco_promocional = :preco_promocional,
+                                gerencia_estoque = :gerencia_estoque,
+                                quantidade_estoque = :quantidade_estoque,
+                                status_estoque = :status_estoque,
+                                permite_pedidos_falta = :permite_pedidos_falta,
+                                imagem = :imagem,
+                                status = :status,
+                                updated_at = NOW()
+                            WHERE id = :variacao_id 
+                            AND produto_id = :produto_id
+                            AND tenant_id = :tenant_id
+                        ");
+                        $stmt->execute([
+                            'variacao_id' => $variacaoId,
+                            'produto_id' => $id,
+                            'tenant_id' => $tenantId,
+                            'sku' => !empty($sku) ? $sku : null,
+                            'preco_regular' => $precoRegular,
+                            'preco_promocional' => $precoPromocional,
+                            'gerencia_estoque' => $gerenciaEstoque,
+                            'quantidade_estoque' => $quantidadeEstoque,
+                            'status_estoque' => $statusEstoque,
+                            'permite_pedidos_falta' => $permitePedidosFalta,
+                            'imagem' => $imagemPath,
+                            'status' => $status
+                        ]);
+                    }
+                }
+            }
+
+            // 6. Atualizar categorias (sync: remover antigas e adicionar novas)
             // Remover todas as categorias atuais do produto
             $stmt = $db->prepare("
                 DELETE FROM produto_categorias 
@@ -1626,6 +1854,122 @@ class ProductController extends Controller
         return $fileName;
     }
 
+    /**
+     * Processa upload de swatch (imagem miniatura do termo)
+     */
+    private function processSwatchUpload($db, $tenantId, $fileKey, $termoId): ?string
+    {
+        if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $paths = require __DIR__ . '/../../../../config/paths.php';
+        $uploadsBasePath = $paths['uploads_produtos_base_path'];
+        $uploadsPath = $uploadsBasePath . '/' . $tenantId . '/atributos/swatches';
+        
+        if (!is_dir($uploadsPath)) {
+            mkdir($uploadsPath, 0755, true);
+        }
+
+        $file = $_FILES[$fileKey];
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (!in_array($file['type'], $allowedTypes)) {
+            return null;
+        }
+
+        $fileName = $this->sanitizeFileName($file['name']);
+        $info = pathinfo($fileName);
+        $fileName = 'swatch_' . $termoId . '_' . time() . '.' . $info['extension'];
+        $destFile = $uploadsPath . '/' . $fileName;
+
+        if (move_uploaded_file($file['tmp_name'], $destFile)) {
+            return "/uploads/tenants/{$tenantId}/atributos/swatches/{$fileName}";
+        }
+
+        return null;
+    }
+
+    /**
+     * Processa upload de imagem do produto para um termo específico
+     */
+    private function processProductImageUpload($db, $tenantId, $fileKey, $produtoId): ?string
+    {
+        if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $paths = require __DIR__ . '/../../../../config/paths.php';
+        $uploadsBasePath = $paths['uploads_produtos_base_path'];
+        $uploadsPath = $uploadsBasePath . '/' . $tenantId . '/produtos';
+        
+        if (!is_dir($uploadsPath)) {
+            mkdir($uploadsPath, 0755, true);
+        }
+
+        $file = $_FILES[$fileKey];
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (!in_array($file['type'], $allowedTypes)) {
+            return null;
+        }
+
+        $fileName = $this->sanitizeFileName($file['name']);
+        $info = pathinfo($fileName);
+        $fileName = 'produto_' . $produtoId . '_termo_' . time() . '.' . $info['extension'];
+        $destFile = $uploadsPath . '/' . $fileName;
+
+        if (move_uploaded_file($file['tmp_name'], $destFile)) {
+            return "/uploads/tenants/{$tenantId}/produtos/{$fileName}";
+        }
+
+        return null;
+    }
+
+    /**
+     * Processa upload de imagem da variação
+     */
+    private function processVariationImageUpload($db, $tenantId, $variacaoId, $produtoId): ?string
+    {
+        if (!isset($_FILES['variacoes']['name'][$variacaoId]['imagem']) || 
+            $_FILES['variacoes']['error'][$variacaoId]['imagem'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $paths = require __DIR__ . '/../../../../config/paths.php';
+        $uploadsBasePath = $paths['uploads_produtos_base_path'];
+        $uploadsPath = $uploadsBasePath . '/' . $tenantId . '/produtos';
+        
+        if (!is_dir($uploadsPath)) {
+            mkdir($uploadsPath, 0755, true);
+        }
+
+        $file = [
+            'name' => $_FILES['variacoes']['name'][$variacaoId]['imagem'],
+            'type' => $_FILES['variacoes']['type'][$variacaoId]['imagem'],
+            'tmp_name' => $_FILES['variacoes']['tmp_name'][$variacaoId]['imagem'],
+            'error' => $_FILES['variacoes']['error'][$variacaoId]['imagem'],
+            'size' => $_FILES['variacoes']['size'][$variacaoId]['imagem']
+        ];
+
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (!in_array($file['type'], $allowedTypes)) {
+            return null;
+        }
+
+        $fileName = $this->sanitizeFileName($file['name']);
+        $info = pathinfo($fileName);
+        $fileName = 'variacao_' . $variacaoId . '_' . time() . '.' . $info['extension'];
+        $destFile = $uploadsPath . '/' . $fileName;
+
+        if (move_uploaded_file($file['tmp_name'], $destFile)) {
+            return "/uploads/tenants/{$tenantId}/produtos/{$fileName}";
+        }
+
+        return null;
+    }
+
     private function generateSlug($text): string
     {
         $text = mb_strtolower($text, 'UTF-8');
@@ -2161,6 +2505,739 @@ class ProductController extends Controller
                         strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false;
         
         return $isXmlHttpRequest || $isJsonAccept;
+    }
+
+    /**
+     * Gera variações para um produto variável (IDEMPOTENTE)
+     */
+    public function generateVariations(int $id): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar produto
+        $stmt = $db->prepare("SELECT * FROM produtos WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
+        $stmt->execute(['id' => $id, 'tenant_id' => $tenantId]);
+        $produto = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$produto || $produto['tipo'] !== 'variable') {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Produto não é variável']);
+            return;
+        }
+
+        try {
+            $db->beginTransaction();
+
+            // Buscar atributos marcados como usado_para_variacao
+            $stmt = $db->prepare("
+                SELECT pa.atributo_id, a.nome as atributo_nome
+                FROM produto_atributos pa
+                INNER JOIN atributos a ON a.id = pa.atributo_id
+                WHERE pa.produto_id = :produto_id 
+                AND pa.tenant_id = :tenant_id
+                AND pa.usado_para_variacao = 1
+                ORDER BY pa.ordem ASC, a.ordem ASC
+            ");
+            $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
+            $atributosVariacao = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (empty($atributosVariacao)) {
+                $db->rollBack();
+                http_response_code(400);
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Nenhum atributo marcado para variação. Selecione atributos e marque "Usar para gerar variações" na seção "Atributos do Produto".'
+                ]);
+                exit;
+            }
+
+            // Para cada atributo, buscar termos selecionados
+            $atributosComTermos = [];
+            foreach ($atributosVariacao as $attr) {
+                $stmtTermos = $db->prepare("
+                    SELECT at.id as termo_id, at.nome as termo_nome
+                    FROM produto_atributo_termos pat
+                    INNER JOIN atributo_termos at ON at.id = pat.atributo_termo_id
+                    WHERE pat.produto_id = :produto_id
+                    AND pat.atributo_id = :atributo_id
+                    AND pat.tenant_id = :tenant_id
+                    ORDER BY at.ordem ASC, at.nome ASC
+                ");
+                $stmtTermos->execute([
+                    'produto_id' => $id,
+                    'atributo_id' => $attr['atributo_id'],
+                    'tenant_id' => $tenantId
+                ]);
+                $termos = $stmtTermos->fetchAll(\PDO::FETCH_ASSOC);
+
+                if (empty($termos)) {
+                    continue; // Pular atributos sem termos
+                }
+
+                $atributosComTermos[] = [
+                    'atributo_id' => (int)$attr['atributo_id'],
+                    'atributo_nome' => $attr['atributo_nome'],
+                    'termos' => $termos
+                ];
+            }
+
+            if (empty($atributosComTermos)) {
+                $db->rollBack();
+                http_response_code(400);
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Nenhum termo selecionado para os atributos de variação. Selecione pelo menos um termo para cada atributo marcado para variação.'
+                ]);
+                exit;
+            }
+
+            // Gerar produto cartesiano das listas de termos
+            $combinacoes = $this->cartesianProduct($atributosComTermos);
+
+            // Buscar assinaturas existentes (prioriza coluna signature, fallback para GROUP_CONCAT)
+            $stmt = $db->prepare("
+                SELECT pv.id as variacao_id,
+                       COALESCE(
+                           pv.signature,
+                           (SELECT GROUP_CONCAT(CONCAT(pva.atributo_id, ':', pva.atributo_termo_id) ORDER BY pva.atributo_id SEPARATOR '|')
+                            FROM produto_variacao_atributos pva
+                            WHERE pva.variacao_id = pv.id)
+                       ) as signature
+                FROM produto_variacoes pv
+                WHERE pv.produto_id = :produto_id AND pv.tenant_id = :tenant_id
+            ");
+            $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
+            $variacoesExistentes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $assinaturasExistentes = [];
+            foreach ($variacoesExistentes as $v) {
+                if (!empty($v['signature'])) {
+                    $assinaturasExistentes[$v['signature']] = (int)$v['variacao_id'];
+                }
+            }
+
+            $criadas = 0;
+            $ignoradas = 0;
+
+            // Criar variações apenas para combinações novas
+            foreach ($combinacoes as $combinacao) {
+                // Montar assinatura ordenada
+                $assinatura = $this->buildVariationSignature($combinacao);
+
+                // Verificar se já existe
+                if (isset($assinaturasExistentes[$assinatura])) {
+                    $ignoradas++;
+                    continue;
+                }
+
+                // Criar variação com signature
+                $stmtVariacao = $db->prepare("
+                    INSERT INTO produto_variacoes (
+                        tenant_id, produto_id, gerencia_estoque, quantidade_estoque, 
+                        status_estoque, permite_pedidos_falta, status, signature, created_at, updated_at
+                    ) VALUES (
+                        :tenant_id, :produto_id, :gerencia_estoque, 0,
+                        'instock', :permite_pedidos_falta, 'publish', :signature, NOW(), NOW()
+                    )
+                ");
+                $stmtVariacao->execute([
+                    'tenant_id' => $tenantId,
+                    'produto_id' => $id,
+                    'gerencia_estoque' => $produto['gerencia_estoque'] ?? 1,
+                    'permite_pedidos_falta' => $produto['permite_pedidos_falta'] ?? 'no',
+                    'signature' => $assinatura
+                ]);
+
+                $variacaoId = $db->lastInsertId();
+
+                // Criar registros de atributos da variação
+                foreach ($combinacao as $item) {
+                    $stmtAttr = $db->prepare("
+                        INSERT INTO produto_variacao_atributos (
+                            tenant_id, variacao_id, atributo_id, atributo_termo_id, created_at, updated_at
+                        ) VALUES (
+                            :tenant_id, :variacao_id, :atributo_id, :atributo_termo_id, NOW(), NOW()
+                        )
+                    ");
+                    $stmtAttr->execute([
+                        'tenant_id' => $tenantId,
+                        'variacao_id' => $variacaoId,
+                        'atributo_id' => $item['atributo_id'],
+                        'atributo_termo_id' => $item['termo_id'] // termo_id do array = atributo_termo_id na tabela
+                    ]);
+                }
+
+                $criadas++;
+            }
+
+            $db->commit();
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => "Variações geradas: {$criadas} criadas, {$ignoradas} já existiam",
+                'criadas' => $criadas,
+                'ignoradas' => $ignoradas
+            ]);
+            exit;
+
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ]);
+            exit;
+        } catch (\PDOException $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Erro no banco de dados: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
+    /**
+     * Salva variações em lote
+     */
+    public function saveVariationsBulk(int $id): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        $variacoes = json_decode($_POST['variacoes'] ?? '[]', true);
+
+        if (empty($variacoes)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Nenhuma variação enviada']);
+            return;
+        }
+
+        try {
+            $db->beginTransaction();
+
+            foreach ($variacoes as $variacaoData) {
+                $variacaoId = (int)($variacaoData['id'] ?? 0);
+                if ($variacaoId <= 0) continue;
+
+                $sku = trim($variacaoData['sku'] ?? '');
+                $precoRegular = !empty($variacaoData['preco_regular']) ? (float)$variacaoData['preco_regular'] : null;
+                $precoPromocional = !empty($variacaoData['preco_promocional']) ? (float)$variacaoData['preco_promocional'] : null;
+                $gerenciaEstoque = isset($variacaoData['gerencia_estoque']) ? 1 : 0;
+                $quantidadeEstoque = (int)($variacaoData['quantidade_estoque'] ?? 0);
+                $permitePedidosFalta = $variacaoData['permite_pedidos_falta'] ?? 'no';
+                $status = $variacaoData['status'] ?? 'publish';
+
+                // Calcular status_estoque
+                $statusEstoque = 'instock';
+                if ($gerenciaEstoque == 1) {
+                    $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
+                }
+
+                $stmt = $db->prepare("
+                    UPDATE produto_variacoes 
+                    SET sku = :sku,
+                        preco_regular = :preco_regular,
+                        preco_promocional = :preco_promocional,
+                        gerencia_estoque = :gerencia_estoque,
+                        quantidade_estoque = :quantidade_estoque,
+                        status_estoque = :status_estoque,
+                        permite_pedidos_falta = :permite_pedidos_falta,
+                        status = :status,
+                        updated_at = NOW()
+                    WHERE id = :variacao_id 
+                    AND produto_id = :produto_id
+                    AND tenant_id = :tenant_id
+                ");
+                $stmt->execute([
+                    'variacao_id' => $variacaoId,
+                    'produto_id' => $id,
+                    'tenant_id' => $tenantId,
+                    'sku' => !empty($sku) ? $sku : null,
+                    'preco_regular' => $precoRegular,
+                    'preco_promocional' => $precoPromocional,
+                    'gerencia_estoque' => $gerenciaEstoque,
+                    'quantidade_estoque' => $quantidadeEstoque,
+                    'status_estoque' => $statusEstoque,
+                    'permite_pedidos_falta' => $permitePedidosFalta,
+                    'status' => $status
+                ]);
+            }
+
+            $db->commit();
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Variações atualizadas com sucesso']);
+
+        } catch (\Exception $e) {
+            $db->rollBack();
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Gera produto cartesiano de arrays
+     */
+    private function cartesianProduct(array $arrays): array
+    {
+        if (empty($arrays)) {
+            return [];
+        }
+
+        $result = [[]];
+        foreach ($arrays as $array) {
+            $temp = [];
+            foreach ($result as $product) {
+                foreach ($array['termos'] as $termo) {
+                    $temp[] = array_merge($product, [[
+                        'atributo_id' => $array['atributo_id'],
+                        'atributo_nome' => $array['atributo_nome'],
+                        'termo_id' => (int)$termo['termo_id'],
+                        'termo_nome' => $termo['termo_nome']
+                    ]]);
+                }
+            }
+            $result = $temp;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Salva apenas os atributos do produto (endpoint AJAX)
+     */
+    public function saveAttributes(int $id): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar produto
+        $stmt = $db->prepare("SELECT * FROM produtos WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
+        $stmt->execute(['id' => $id, 'tenant_id' => $tenantId]);
+        $produto = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$produto || $produto['tipo'] !== 'variable') {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Produto não é variável']);
+            return;
+        }
+
+        try {
+            $db->beginTransaction();
+
+            // Processar atributos (mesma lógica do update)
+            $this->processProductAttributes($db, $tenantId, $id);
+
+            $db->commit();
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => 'Atributos salvos com sucesso!'
+            ]);
+
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Salva atributos e gera variações em uma única operação
+     */
+    public function saveAttributesAndGenerateVariations(int $id): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Buscar produto
+        $stmt = $db->prepare("SELECT * FROM produtos WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
+        $stmt->execute(['id' => $id, 'tenant_id' => $tenantId]);
+        $produto = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$produto || $produto['tipo'] !== 'variable') {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Produto não é variável']);
+            return;
+        }
+
+        try {
+            $db->beginTransaction();
+
+            // 1. Salvar atributos
+            $this->processProductAttributes($db, $tenantId, $id);
+
+            // 2. Gerar variações (lógica extraída do generateVariations)
+            $this->generateVariationsInternal($db, $tenantId, $id);
+
+            $db->commit();
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => 'Atributos salvos e variações geradas com sucesso!'
+            ]);
+
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Processa atributos do produto (extraído do método update para reutilização)
+     */
+    private function processProductAttributes($db, $tenantId, $produtoId): void
+    {
+        // Remover atributos antigos
+        $stmt = $db->prepare("DELETE FROM produto_atributos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
+        $stmt->execute(['produto_id' => $produtoId, 'tenant_id' => $tenantId]);
+
+        // Remover termos antigos
+        $stmt = $db->prepare("DELETE FROM produto_atributo_termos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
+        $stmt->execute(['produto_id' => $produtoId, 'tenant_id' => $tenantId]);
+
+        // Adicionar novos atributos
+        if (!empty($_POST['atributos']) && is_array($_POST['atributos'])) {
+            $ordem = 0;
+            foreach ($_POST['atributos'] as $atributoId) {
+                $atributoId = (int)$atributoId;
+                if ($atributoId <= 0) continue;
+
+                $usadoParaVariacao = isset($_POST['atributos_para_variacao'][$atributoId]) ? 1 : 0;
+
+                $stmt = $db->prepare("
+                    INSERT INTO produto_atributos (tenant_id, produto_id, atributo_id, usado_para_variacao, ordem, created_at, updated_at)
+                    VALUES (:tenant_id, :produto_id, :atributo_id, :usado_para_variacao, :ordem, NOW(), NOW())
+                ");
+                $stmt->execute([
+                    'tenant_id' => $tenantId,
+                    'produto_id' => $produtoId,
+                    'atributo_id' => $atributoId,
+                    'usado_para_variacao' => $usadoParaVariacao,
+                    'ordem' => $ordem++
+                ]);
+
+                // Adicionar termos selecionados para este atributo
+                $termosKey = 'atributo_' . $atributoId . '_termos';
+                if (!empty($_POST[$termosKey]) && is_array($_POST[$termosKey])) {
+                    foreach ($_POST[$termosKey] as $termoId) {
+                        $termoId = (int)$termoId;
+                        if ($termoId <= 0) continue;
+
+                        // Processar upload de swatch (se houver)
+                        $swatchPath = null;
+                        $swatchKey = 'atributo_' . $atributoId . '_termo_' . $termoId . '_swatch';
+                        $swatchPathKey = 'atributo_' . $atributoId . '_termo_' . $termoId . '_swatch_path';
+                        
+                        if (isset($_FILES[$swatchKey]) && $_FILES[$swatchKey]['error'] === UPLOAD_ERR_OK) {
+                            $swatchPath = $this->processSwatchUpload($db, $tenantId, $swatchKey, $termoId);
+                        } elseif (isset($_POST[$swatchPathKey]) && !empty($_POST[$swatchPathKey])) {
+                            $swatchPath = $_POST[$swatchPathKey];
+                        }
+
+                        // Se swatch foi enviado, atualizar atributo_termos
+                        if ($swatchPath) {
+                            $stmtUpdateTermo = $db->prepare("
+                                UPDATE atributo_termos 
+                                SET imagem = :imagem, updated_at = NOW()
+                                WHERE id = :termo_id AND tenant_id = :tenant_id
+                            ");
+                            $stmtUpdateTermo->execute([
+                                'imagem' => $swatchPath,
+                                'termo_id' => $termoId,
+                                'tenant_id' => $tenantId
+                            ]);
+                        }
+
+                        // Processar upload de imagem do produto para este termo (se houver)
+                        $produtoImagePath = null;
+                        $produtoImageKey = 'atributo_' . $atributoId . '_termo_' . $termoId . '_produto_image';
+                        $produtoImagePathKey = 'atributo_' . $atributoId . '_termo_' . $termoId . '_produto_image_path';
+                        
+                        if (isset($_FILES[$produtoImageKey]) && $_FILES[$produtoImageKey]['error'] === UPLOAD_ERR_OK) {
+                            $produtoImagePath = $this->processProductImageUpload($db, $tenantId, $produtoImageKey, $produtoId);
+                        } elseif (isset($_POST[$produtoImagePathKey]) && !empty($_POST[$produtoImagePathKey])) {
+                            $produtoImagePath = $_POST[$produtoImagePathKey];
+                        }
+
+                        // Processar hex color (se atributo for tipo color)
+                        $hexKey = 'atributo_' . $atributoId . '_termo_' . $termoId . '_hex_text';
+                        if (isset($_POST[$hexKey]) && !empty($_POST[$hexKey])) {
+                            $hexColor = trim($_POST[$hexKey]);
+                            if (preg_match('/^#[0-9A-Fa-f]{6}$/', $hexColor)) {
+                                $stmtUpdateColor = $db->prepare("
+                                    UPDATE atributo_termos 
+                                    SET valor_cor = :valor_cor, updated_at = NOW()
+                                    WHERE id = :termo_id AND tenant_id = :tenant_id
+                                ");
+                                $stmtUpdateColor->execute([
+                                    'valor_cor' => strtoupper($hexColor),
+                                    'termo_id' => $termoId,
+                                    'tenant_id' => $tenantId
+                                ]);
+                            }
+                        }
+
+                        // Verificar se a coluna imagem_produto existe
+                        $this->ensureImagemProdutoColumn($db);
+                        
+                        $stmtTermo = $db->prepare("
+                            INSERT INTO produto_atributo_termos (tenant_id, produto_id, atributo_id, atributo_termo_id, imagem_produto, created_at, updated_at)
+                            VALUES (:tenant_id, :produto_id, :atributo_id, :termo_id, :imagem_produto, NOW(), NOW())
+                            ON DUPLICATE KEY UPDATE imagem_produto = :imagem_produto_update, updated_at = NOW()
+                        ");
+                        $stmtTermo->execute([
+                            'tenant_id' => $tenantId,
+                            'produto_id' => $produtoId,
+                            'atributo_id' => $atributoId,
+                            'termo_id' => $termoId,
+                            'imagem_produto' => $produtoImagePath,
+                            'imagem_produto_update' => $produtoImagePath
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Gera variações internamente (extraído do generateVariations para reutilização)
+     */
+    private function generateVariationsInternal($db, $tenantId, $produtoId): void
+    {
+        // Buscar atributos marcados como usado_para_variacao
+        $stmt = $db->prepare("
+            SELECT pa.atributo_id, a.nome as atributo_nome
+            FROM produto_atributos pa
+            INNER JOIN atributos a ON a.id = pa.atributo_id
+            WHERE pa.produto_id = :produto_id 
+            AND pa.tenant_id = :tenant_id
+            AND pa.usado_para_variacao = 1
+            ORDER BY pa.ordem ASC, a.ordem ASC
+        ");
+        $stmt->execute(['produto_id' => $produtoId, 'tenant_id' => $tenantId]);
+        $atributosVariacao = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (empty($atributosVariacao)) {
+            throw new \Exception('Nenhum atributo marcado para variação. Selecione atributos e marque "Usar para gerar variações".');
+        }
+
+        // Para cada atributo, buscar termos selecionados
+        $atributosComTermos = [];
+        foreach ($atributosVariacao as $attr) {
+            $stmtTermos = $db->prepare("
+                SELECT at.id as termo_id, at.nome as termo_nome
+                FROM produto_atributo_termos pat
+                INNER JOIN atributo_termos at ON at.id = pat.atributo_termo_id
+                WHERE pat.produto_id = :produto_id
+                AND pat.atributo_id = :atributo_id
+                AND pat.tenant_id = :tenant_id
+                ORDER BY at.ordem ASC, at.nome ASC
+            ");
+            $stmtTermos->execute([
+                'produto_id' => $produtoId,
+                'atributo_id' => $attr['atributo_id'],
+                'tenant_id' => $tenantId
+            ]);
+            $termos = $stmtTermos->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (empty($termos)) {
+                continue;
+            }
+
+            $atributosComTermos[] = [
+                'atributo_id' => (int)$attr['atributo_id'],
+                'atributo_nome' => $attr['atributo_nome'],
+                'termos' => $termos
+            ];
+        }
+
+        if (empty($atributosComTermos)) {
+            throw new \Exception('Nenhum termo selecionado para os atributos de variação.');
+        }
+
+        // Gerar produto cartesiano
+        $combinacoes = $this->cartesianProduct($atributosComTermos);
+
+        // Buscar assinaturas existentes
+        $stmt = $db->prepare("
+            SELECT pv.id as variacao_id,
+                   COALESCE(
+                       pv.signature,
+                       (SELECT GROUP_CONCAT(CONCAT(pva.atributo_id, ':', pva.atributo_termo_id) ORDER BY pva.atributo_id SEPARATOR '|')
+                        FROM produto_variacao_atributos pva
+                        WHERE pva.variacao_id = pv.id)
+                   ) as signature
+            FROM produto_variacoes pv
+            WHERE pv.produto_id = :produto_id AND pv.tenant_id = :tenant_id
+        ");
+        $stmt->execute(['produto_id' => $produtoId, 'tenant_id' => $tenantId]);
+        $variacoesExistentes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $assinaturasExistentes = [];
+        foreach ($variacoesExistentes as $v) {
+            if (!empty($v['signature'])) {
+                $assinaturasExistentes[$v['signature']] = (int)$v['variacao_id'];
+            }
+        }
+
+        $criadas = 0;
+        $ignoradas = 0;
+
+        // Criar variações apenas para combinações novas
+        foreach ($combinacoes as $combinacao) {
+            $assinatura = $this->buildVariationSignature($combinacao);
+
+            if (isset($assinaturasExistentes[$assinatura])) {
+                $ignoradas++;
+                continue;
+            }
+
+            // Buscar produto para pegar configurações padrão
+            $stmtProduto = $db->prepare("SELECT * FROM produtos WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
+            $stmtProduto->execute(['id' => $produtoId, 'tenant_id' => $tenantId]);
+            $produto = $stmtProduto->fetch(\PDO::FETCH_ASSOC);
+
+            // Criar variação
+            $stmtVariacao = $db->prepare("
+                INSERT INTO produto_variacoes (
+                    tenant_id, produto_id, gerencia_estoque, quantidade_estoque, 
+                    status_estoque, permite_pedidos_falta, status, signature, created_at, updated_at
+                ) VALUES (
+                    :tenant_id, :produto_id, :gerencia_estoque, 0,
+                    'instock', :permite_pedidos_falta, 'publish', :signature, NOW(), NOW()
+                )
+            ");
+            $stmtVariacao->execute([
+                'tenant_id' => $tenantId,
+                'produto_id' => $produtoId,
+                'gerencia_estoque' => $produto['gerencia_estoque'] ?? 1,
+                'permite_pedidos_falta' => $produto['permite_pedidos_falta'] ?? 'no',
+                'signature' => $assinatura
+            ]);
+
+            $variacaoId = $db->lastInsertId();
+
+            // Criar registros de atributos da variação
+            foreach ($combinacao as $item) {
+                $stmtAttr = $db->prepare("
+                    INSERT INTO produto_variacao_atributos (
+                        tenant_id, variacao_id, atributo_id, atributo_termo_id, created_at, updated_at
+                    ) VALUES (
+                        :tenant_id, :variacao_id, :atributo_id, :atributo_termo_id, NOW(), NOW()
+                    )
+                ");
+                $stmtAttr->execute([
+                    'tenant_id' => $tenantId,
+                    'variacao_id' => $variacaoId,
+                    'atributo_id' => $item['atributo_id'],
+                    'atributo_termo_id' => $item['termo_id']
+                ]);
+            }
+
+            $criadas++;
+        }
+
+        if ($criadas == 0 && $ignoradas > 0) {
+            throw new \Exception("Todas as variações já existem. {$ignoradas} variações já estavam cadastradas.");
+        }
+    }
+
+    /**
+     * Garante que a coluna imagem_produto existe na tabela produto_atributo_termos
+     */
+    private function ensureImagemProdutoColumn($db): void
+    {
+        try {
+            // Verificar se a coluna já existe
+            $stmt = $db->query("SHOW COLUMNS FROM produto_atributo_termos LIKE 'imagem_produto'");
+            if ($stmt->rowCount() == 0) {
+                // Adicionar coluna imagem_produto
+                $db->exec("
+                    ALTER TABLE produto_atributo_termos
+                    ADD COLUMN imagem_produto VARCHAR(255) NULL COMMENT 'Imagem do produto associada a este termo (para troca na loja)'
+                    AFTER atributo_termo_id
+                ");
+            }
+        } catch (\Exception $e) {
+            // Se der erro, apenas logar (não quebrar o fluxo)
+            error_log("Erro ao verificar/criar coluna imagem_produto: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Monta assinatura ordenada de uma combinação de atributos
+     */
+    private function buildVariationSignature(array $combinacao): string
+    {
+        // Ordenar por atributo_id
+        usort($combinacao, function($a, $b) {
+            return $a['atributo_id'] <=> $b['atributo_id'];
+        });
+
+        // Montar string "atributo_id:atributo_termo_id|atributo_id:atributo_termo_id|..."
+        // Nota: $item['termo_id'] é o ID de atributo_termos, que corresponde a atributo_termo_id na tabela
+        $parts = [];
+        foreach ($combinacao as $item) {
+            $parts[] = $item['atributo_id'] . ':' . $item['termo_id'];
+        }
+
+        return implode('|', $parts);
     }
 }
 
