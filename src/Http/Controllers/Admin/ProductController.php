@@ -428,12 +428,31 @@ class ProductController extends Controller
             }
         } catch (\Exception $e) {
             $db->rollBack();
-            $_SESSION['product_create_message'] = 'Erro ao criar produto: ' . $e->getMessage();
+            $_SESSION['product_create_message'] = $this->formatProductErrorMessage($e, 'criar');
             $_SESSION['product_create_message_type'] = 'error';
             $_SESSION['product_create_form_data'] = $_POST;
             header('Location: ' . $this->getBasePath() . '/admin/produtos/novo');
             exit;
         }
+    }
+
+    /**
+     * Retorna mensagem amigável para erros de produto (ex.: slug duplicado)
+     */
+    private function formatProductErrorMessage(\Exception $e, string $acao = 'salvar'): string
+    {
+        $msg = $e->getMessage();
+        $code = $e->getCode();
+
+        // Erro de slug duplicado (unique_produtos_tenant_slug)
+        if ($code === '23000' || strpos($msg, '23000') !== false) {
+            if (strpos($msg, 'unique_produtos_tenant_slug') !== false || strpos($msg, 'Duplicate entry') !== false) {
+                return 'Já existe um produto com este nome ou identificador (slug) na loja. '
+                    . 'Por favor, altere o nome do produto ou informe um slug diferente no campo "Slug".';
+            }
+        }
+
+        return 'Erro ao ' . $acao . ' produto: ' . $msg;
     }
 
     public function edit(int $id): void
@@ -999,7 +1018,7 @@ class ProductController extends Controller
             $_SESSION['product_edit_message_type'] = 'success';
         } catch (\Exception $e) {
             $db->rollBack();
-            $_SESSION['product_edit_message'] = 'Erro ao atualizar produto: ' . $e->getMessage();
+            $_SESSION['product_edit_message'] = $this->formatProductErrorMessage($e, 'atualizar');
             $_SESSION['product_edit_message_type'] = 'error';
         }
 
