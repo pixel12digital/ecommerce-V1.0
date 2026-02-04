@@ -421,10 +421,11 @@ class ProductController extends Controller
             $_SESSION['product_edit_message_type'] = 'success';
             
             // Se for produto variável e go_variations = 1, redirecionar para edição com âncora
+            // Rota: /admin/produtos/{id} (não /editar)
             if ($tipo === 'variable' && $goVariations) {
-                $this->redirect('/admin/produtos/' . $produtoId . '/editar#atributos');
+                $this->redirect('/admin/produtos/' . $produtoId . '#atributos');
             } else {
-                $this->redirect('/admin/produtos/' . $produtoId . '/editar');
+                $this->redirect('/admin/produtos/' . $produtoId);
             }
         } catch (\Exception $e) {
             $db->rollBack();

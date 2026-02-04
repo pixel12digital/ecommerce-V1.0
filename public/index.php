@@ -181,6 +181,10 @@ $router->get('/admin/produtos/{id}', AdminProductController::class . '@edit', [
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'
 ]);
+$router->get('/admin/produtos/{id}/editar', AdminProductController::class . '@edit', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
 $router->post('/admin/produtos/{id}', AdminProductController::class . '@update', [
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'
