@@ -413,26 +413,29 @@ if (!function_exists('media_url')) {
                 </small>
             </div>
 
-            <div id="variacoes-container">
+            <div id="variacoes-container" class="variacoes-table-wrapper">
                 <?php if (!empty($variacoes)): ?>
-                    <table class="variacoes-table" style="width: 100%; border-collapse: collapse;">
+                    <table class="variacoes-table">
                         <thead>
-                            <tr style="background: #f5f5f5;">
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Combinação</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">SKU</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Preço Regular</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Preço Promo</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Gerencia Estoque</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Quantidade</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Backorder</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Imagem</th>
-                                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Status</th>
+                            <tr>
+                                <th class="th-combinacao" title="Combinação de atributos (ex: Cor: Verde, Tamanho: P)">Combinação</th>
+                                <th class="th-sku" title="Código SKU da variação">SKU</th>
+                                <th class="th-preco" title="Preço regular">R$</th>
+                                <th class="th-preco" title="Preço promocional">Promo</th>
+                                <th class="th-estoque" title="Gerencia estoque">Estoque</th>
+                                <th class="th-qtd" title="Quantidade em estoque">Qtd.</th>
+                                <th class="th-backorder" title="Permitir pedidos com falta de estoque">Backord.</th>
+                                <th class="th-imagem" title="Imagem da variação">Imagem</th>
+                                <th class="th-status" title="Status da variação">Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($variacoes as $variacao): ?>
+                            <?php foreach ($variacoes as $variacao): 
+                                $imgPath = $variacao['imagem'] ?? '';
+                                $imgPathId = 'variacao_' . $variacao['id'] . '_imagem_path';
+                            ?>
                                 <tr data-variacao-id="<?= $variacao['id'] ?>">
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                                    <td class="td-combinacao">
                                         <?php 
                                         $combinacao = [];
                                         foreach ($variacao['atributos'] ?? [] as $attr) {
@@ -441,68 +444,83 @@ if (!function_exists('media_url')) {
                                         echo htmlspecialchars(implode(', ', $combinacao));
                                         ?>
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                                    <td class="td-sku">
                                         <input type="text" 
                                                name="variacoes[<?= $variacao['id'] ?>][sku]" 
                                                value="<?= htmlspecialchars($variacao['sku'] ?? '') ?>"
-                                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                               class="variacao-input">
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                                    <td class="td-preco">
                                         <input type="text" 
                                                name="variacoes[<?= $variacao['id'] ?>][preco_regular]" 
                                                value="<?= $variacao['preco_regular'] ? number_format($variacao['preco_regular'], 2, ',', '') : '' ?>"
-                                               placeholder="Herdar do produto"
-                                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                               placeholder="—"
+                                               class="variacao-input">
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                                    <td class="td-preco">
                                         <input type="text" 
                                                name="variacoes[<?= $variacao['id'] ?>][preco_promocional]" 
                                                value="<?= $variacao['preco_promocional'] ? number_format($variacao['preco_promocional'], 2, ',', '') : '' ?>"
-                                               placeholder="Herdar do produto"
-                                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                               placeholder="—"
+                                               class="variacao-input">
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                                    <td class="td-estoque">
                                         <input type="checkbox" 
                                                name="variacoes[<?= $variacao['id'] ?>][gerencia_estoque]" 
                                                value="1"
                                                <?= ($variacao['gerencia_estoque'] ?? 0) == 1 ? 'checked' : '' ?>>
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                                    <td class="td-qtd">
                                         <input type="number" 
                                                name="variacoes[<?= $variacao['id'] ?>][quantidade_estoque]" 
                                                value="<?= (int)($variacao['quantidade_estoque'] ?? 0) ?>"
                                                min="0"
-                                               style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                               class="variacao-input variacao-input-num">
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
-                                        <select name="variacoes[<?= $variacao['id'] ?>][permite_pedidos_falta]">
+                                    <td class="td-backorder">
+                                        <select name="variacoes[<?= $variacao['id'] ?>][permite_pedidos_falta]" class="variacao-select">
                                             <option value="no" <?= ($variacao['permite_pedidos_falta'] ?? 'no') === 'no' ? 'selected' : '' ?>>Não</option>
-                                            <option value="notify" <?= ($variacao['permite_pedidos_falta'] ?? '') === 'notify' ? 'selected' : '' ?>>Notificar</option>
+                                            <option value="notify" <?= ($variacao['permite_pedidos_falta'] ?? '') === 'notify' ? 'selected' : '' ?>>Notif.</option>
                                             <option value="yes" <?= ($variacao['permite_pedidos_falta'] ?? '') === 'yes' ? 'selected' : '' ?>>Sim</option>
                                         </select>
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
-                                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                            <?php if (!empty($variacao['imagem'])): ?>
-                                                <img src="<?= media_url($variacao['imagem']) ?>" alt="Variação" class="variacao-image-preview" style="width: 60px; height: 60px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
-                                            <?php else: ?>
-                                                <div class="variacao-image-preview" style="width: 60px; height: 60px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.75rem;">Sem</div>
-                                            <?php endif; ?>
-                                            <input type="file" 
-                                                   name="variacoes[<?= $variacao['id'] ?>][imagem]" 
-                                                   accept="image/*"
-                                                   class="variacao-image-upload"
-                                                   data-variacao-id="<?= $variacao['id'] ?>"
-                                                   style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
-                                            <?php if (!empty($variacao['imagem'])): ?>
-                                                <input type="hidden" name="variacoes[<?= $variacao['id'] ?>][imagem_path]" value="<?= htmlspecialchars($variacao['imagem']) ?>">
-                                            <?php endif; ?>
+                                    <td class="td-imagem">
+                                        <div class="variacao-imagem-cell">
+                                            <input type="hidden" 
+                                                   id="<?= $imgPathId ?>" 
+                                                   name="variacoes[<?= $variacao['id'] ?>][imagem_path]" 
+                                                   value="<?= htmlspecialchars($imgPath) ?>"
+                                                   data-preview="variacao_<?= $variacao['id'] ?>_preview">
+                                            <div class="variacao-imagem-preview-wrap" id="variacao_<?= $variacao['id'] ?>_preview">
+                                                <?php if (!empty($imgPath)): ?>
+                                                    <img src="<?= media_url($imgPath) ?>" alt="Variação" class="variacao-image-preview">
+                                                <?php else: ?>
+                                                    <div class="variacao-image-preview variacao-image-placeholder">Sem</div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="variacao-imagem-actions">
+                                                <button type="button" class="variacao-btn-media js-open-media-library" 
+                                                        data-media-target="#<?= $imgPathId ?>" 
+                                                        data-folder="produtos"
+                                                        title="Selecionar da biblioteca">
+                                                    <i class="bi bi-images"></i>
+                                                </button>
+                                                <button type="button" class="variacao-btn-upload" title="Enviar arquivo">
+                                                    <i class="bi bi-upload"></i>
+                                                    <input type="file" 
+                                                           name="variacoes[<?= $variacao['id'] ?>][imagem]" 
+                                                           accept="image/*"
+                                                           class="variacao-image-upload"
+                                                           data-variacao-id="<?= $variacao['id'] ?>"
+                                                           aria-label="Enviar imagem da variação">
+                                                </button>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
-                                        <select name="variacoes[<?= $variacao['id'] ?>][status]">
-                                            <option value="publish" <?= ($variacao['status'] ?? 'publish') === 'publish' ? 'selected' : '' ?>>Publicado</option>
-                                            <option value="draft" <?= ($variacao['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Rascunho</option>
+                                    <td class="td-status">
+                                        <select name="variacoes[<?= $variacao['id'] ?>][status]" class="variacao-select" title="Status: Publicado ou Rascunho">
+                                            <option value="publish" <?= ($variacao['status'] ?? 'publish') === 'publish' ? 'selected' : '' ?>>Pub.</option>
+                                            <option value="draft" <?= ($variacao['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Rasc.</option>
                                         </select>
                                     </td>
                                 </tr>
@@ -2030,6 +2048,126 @@ window.removeFeaturedImage = function() {
     margin-bottom: 2rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+/* Tabela de variações — compacta */
+.variacoes-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.variacoes-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+.variacoes-table th,
+.variacoes-table td {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #ddd;
+    text-align: left;
+    vertical-align: middle;
+}
+.variacoes-table thead tr {
+    background: #f5f5f5;
+}
+.variacoes-table th {
+    font-weight: 600;
+    color: #555;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+.variacoes-table tbody tr:hover {
+    background: #fafafa;
+}
+.th-combinacao, .td-combinacao { min-width: 180px; max-width: 280px; }
+.th-sku, .td-sku { width: 90px; min-width: 80px; }
+.th-preco, .td-preco { width: 85px; min-width: 75px; }
+.th-estoque, .td-estoque { width: 60px; min-width: 50px; text-align: center; }
+.th-qtd, .td-qtd { width: 65px; min-width: 55px; }
+.th-backorder, .td-backorder { width: 75px; min-width: 65px; }
+.th-imagem, .td-imagem { width: 100px; min-width: 90px; }
+.th-status, .td-status { width: 70px; min-width: 60px; }
+.variacao-input {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+.variacao-input-num { width: 4rem; }
+.variacao-select {
+    padding: 0.35rem 0.4rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    min-width: 0;
+}
+/* Coluna Imagem — compacta */
+.variacao-imagem-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+}
+.variacao-imagem-preview-wrap {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
+}
+.variacao-image-preview {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    display: block;
+}
+.variacao-image-placeholder {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 0.65rem;
+}
+.variacao-imagem-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+.variacao-btn-media,
+.variacao-btn-upload {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    color: #555;
+    transition: background 0.2s, color 0.2s;
+}
+.variacao-btn-media:hover,
+.variacao-btn-upload:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+.variacao-btn-upload {
+    position: relative;
+}
+.variacao-image-upload {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
 .section-title {
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
@@ -2485,27 +2623,62 @@ window.removeFeaturedImage = function() {
         });
     });
 
-    // Preview de imagem de variação
+    // Preview de imagem de variação (upload via file input)
     document.querySelectorAll('.variacao-image-upload').forEach(function(input) {
         input.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = input.previousElementSibling;
-                    if (preview && preview.classList.contains('variacao-image-preview')) {
-                        if (preview.tagName === 'IMG') {
-                            preview.src = e.target.result;
-                        } else {
-                            const img = document.createElement('img');
-                            img.src = e.target.result;
-                            img.style.cssText = 'width: 60px; height: 60px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;';
-                            img.alt = 'Variação';
-                            preview.replaceWith(img);
-                        }
+                reader.onload = function(ev) {
+                    const cell = input.closest('.variacao-imagem-cell');
+                    const previewWrap = cell ? cell.querySelector('.variacao-imagem-preview-wrap') : null;
+                    if (previewWrap) {
+                        const img = document.createElement('img');
+                        img.src = ev.target.result;
+                        img.className = 'variacao-image-preview';
+                        img.alt = 'Variação';
+                        previewWrap.innerHTML = '';
+                        previewWrap.appendChild(img);
                     }
                 };
                 reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    // Botão upload: disparar clique no input file
+    document.querySelectorAll('.variacao-btn-upload').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const input = btn.querySelector('.variacao-image-upload');
+            if (input) input.click();
+        });
+    });
+
+    // Preview quando Media Picker seleciona imagem (hidden imagem_path)
+    document.querySelectorAll('input[id^="variacao_"][id$="_imagem_path"]').forEach(function(input) {
+        input.addEventListener('change', function() {
+            const path = (this.value || '').trim();
+            const previewId = this.getAttribute('data-preview');
+            const previewWrap = previewId ? document.getElementById(previewId) : null;
+            const cell = this.closest('.variacao-imagem-cell');
+            const fileInput = cell ? cell.querySelector('.variacao-image-upload') : null;
+            if (fileInput) fileInput.value = '';
+            if (!previewWrap) return;
+            if (path) {
+                let src = path;
+                if (!src.startsWith('http')) {
+                    const bp = (typeof window.basePath !== 'undefined' && window.basePath) ? window.basePath : '';
+                    src = (bp ? bp.replace(/\/$/, '') : '') + (path.startsWith('/') ? path : '/' + path);
+                }
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = 'variacao-image-preview';
+                img.alt = 'Variação';
+                img.onerror = function() { previewWrap.innerHTML = '<div class="variacao-image-preview variacao-image-placeholder">Sem</div>'; };
+                previewWrap.innerHTML = '';
+                previewWrap.appendChild(img);
+            } else {
+                previewWrap.innerHTML = '<div class="variacao-image-preview variacao-image-placeholder">Sem</div>';
             }
         });
     });
