@@ -65,8 +65,11 @@ abstract class Controller
     }
 
     /**
-     * Detecta o caminho base da aplicação a partir do REQUEST_URI.
+     * Detecta o caminho base da aplicação a partir do REQUEST_URI ou HTTP_REFERER.
      * Usado em redirects e links para manter consistência com a URL atual.
+     * 
+     * Em POST (ex: criar produto), REQUEST_URI pode ser /admin/produtos (form action).
+     * Nesse caso, HTTP_REFERER traz a página de origem (ex: /public/admin/produtos/novo).
      */
     protected function detectBasePath(): string
     {
@@ -79,6 +82,20 @@ abstract class Controller
         if (strpos($requestUri, '/public') === 0) {
             return '/public';
         }
+
+        // Em POST, REQUEST_URI pode não ter /public (ex: form action="/admin/produtos")
+        // Usar HTTP_REFERER para detectar se a página de origem usava /public
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        if ($referer !== '') {
+            $refererPath = parse_url($referer, PHP_URL_PATH);
+            if ($refererPath && strpos($refererPath, '/ecommerce-v1.0/public') === 0) {
+                return '/ecommerce-v1.0/public';
+            }
+            if ($refererPath && strpos($refererPath, '/public') === 0) {
+                return '/public';
+            }
+        }
+
         return '';
     }
 }

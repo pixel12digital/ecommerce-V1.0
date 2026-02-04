@@ -1,8 +1,11 @@
 <?php
 $basePath = $basePath ?? '';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
+$requestUriPath = strtok($requestUri, '?');
+if (strpos($requestUriPath, '/ecommerce-v1.0/public') === 0) {
     $basePath = '/ecommerce-v1.0/public';
+} elseif (strpos($requestUriPath, '/public') === 0) {
+    $basePath = '/public';
 }
 $message = $message ?? null;
 $messageType = $messageType ?? 'success';

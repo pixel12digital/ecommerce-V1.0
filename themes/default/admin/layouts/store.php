@@ -561,24 +561,23 @@
     // Obter caminho base se necessário
     $basePath = '';
     $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+    $requestUriPath = strtok($requestUri, '?');
     
     // Detectar basePath de forma mais robusta
-    // Verificar REQUEST_URI primeiro
-    if (strpos($requestUri, '/ecommerce-v1.0/public') !== false) {
+    if (strpos($requestUriPath, '/ecommerce-v1.0/public') === 0) {
         $basePath = '/ecommerce-v1.0/public';
-    } 
-    // Verificar SCRIPT_NAME
+    }
+    elseif (strpos($requestUriPath, '/public') === 0) {
+        $basePath = '/public';
+    }
     elseif (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/ecommerce-v1.0/public') !== false) {
         $basePath = '/ecommerce-v1.0/public';
     }
-    // Verificar PHP_SELF
-    elseif (isset($_SERVER['PHP_SELF']) && strpos($_SERVER['PHP_SELF'], '/ecommerce-v1.0/public') !== false) {
-        $basePath = '/ecommerce-v1.0/public';
+    elseif (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/public') !== false) {
+        $basePath = '/public';
     }
-    // Em produção (Hostinger), basePath deve ser vazio (DocumentRoot = public_html/)
-    // Se nenhum contiver /ecommerce-v1.0/public, assumir produção (basePath vazio)
     else {
-        $basePath = ''; // Produção: DocumentRoot aponta para raiz
+        $basePath = '';
     }
     
     // Determinar rota atual para highlight do menu
