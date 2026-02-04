@@ -337,11 +337,48 @@
             position: fixed;
             height: 100vh;
             overflow-y: auto;
-            transition: transform 0.3s ease;
+            overflow-x: hidden;
+            transition: width 0.25s ease, transform 0.3s ease;
             z-index: 1000;
         }
-        .admin-sidebar.collapsed {
-            transform: translateX(-100%);
+        /* Modo compacto (desktop): apenas ícones */
+        .admin-sidebar.sidebar--collapsed {
+            width: 64px;
+        }
+        .admin-sidebar.sidebar--collapsed .pg-admin-brand-text,
+        .admin-sidebar.sidebar--collapsed .sidebar-menu span {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            margin: 0;
+            padding: 0;
+            transition: opacity 0.2s ease;
+        }
+        .admin-sidebar.sidebar--collapsed .pg-admin-brand {
+            justify-content: center;
+            padding: 12px 8px;
+        }
+        .admin-sidebar.sidebar--collapsed .pg-admin-brand-logo,
+        .admin-sidebar.sidebar--collapsed .pg-admin-brand-logo-placeholder {
+            margin: 0 auto;
+        }
+        .admin-sidebar.sidebar--collapsed .sidebar-menu a {
+            justify-content: center;
+            padding: 0.875rem 0.75rem;
+        }
+        .admin-sidebar.sidebar--collapsed .sidebar-menu a[style*="padding-left"] {
+            padding-left: 0.75rem !important;
+        }
+        .admin-sidebar.sidebar--collapsed .sidebar-menu a .icon {
+            margin-right: 0;
+        }
+        .admin-sidebar.sidebar--collapsed .sidebar-toggle-btn {
+            padding: 0.75rem 0.5rem;
+            margin: 0.5rem 0.5rem;
+        }
+        .admin-sidebar.sidebar--collapsed .sidebar-toggle-btn .toggle-text {
+            display: none;
         }
         
         /* Brand/Logo na Sidebar */
@@ -469,10 +506,10 @@
             margin-left: 240px;
             display: flex;
             flex-direction: column;
-            transition: margin-left 0.3s ease;
+            transition: margin-left 0.25s ease;
         }
         .admin-main.sidebar-collapsed {
-            margin-left: 0;
+            margin-left: 64px;
         }
         /* Topbar */
         .admin-topbar {
@@ -534,19 +571,55 @@
             padding: 2rem;
             overflow-y: auto;
         }
+        /* Botão de colapsar/expandir (desktop) */
+        .sidebar-toggle-btn {
+            display: none;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 1rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: var(--pg-admin-sidebar-text);
+            cursor: pointer;
+            font-size: 0.875rem;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+        .sidebar-toggle-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        .sidebar-toggle-btn .icon {
+            font-size: 1.1rem;
+        }
+        @media (min-width: 769px) {
+            .sidebar-toggle-btn {
+                display: flex;
+            }
+        }
         /* Responsive */
         @media (max-width: 768px) {
             .admin-sidebar {
+                width: 240px;
                 transform: translateX(-100%);
+            }
+            .admin-sidebar.sidebar--collapsed {
+                width: 240px;
             }
             .admin-sidebar.show {
                 transform: translateX(0);
             }
-            .admin-main {
+            .admin-main,
+            .admin-main.sidebar-collapsed {
                 margin-left: 0;
             }
             .menu-toggle {
                 display: block;
+            }
+            .sidebar-toggle-btn {
+                display: none;
             }
         }
     </style>
@@ -649,10 +722,14 @@
             $canManageMedia = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_media');
             $canManageStoreUsers = $currentUserId && \App\Services\StoreUserService::can($currentUserId, 'manage_store_users');
             ?>
+            <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Recolher menu" aria-label="Recolher menu">
+                <i class="bi bi-chevron-double-left icon toggle-icon"></i>
+                <span class="toggle-text">Recolher menu</span>
+            </button>
             <ul class="sidebar-menu">
                 <?php if ($canViewDashboard): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin" class="<?= $isActive('/admin') && $currentPath === '/admin' ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin" class="<?= $isActive('/admin') && $currentPath === '/admin' ? 'active' : '' ?>" title="Dashboard">
                         <i class="bi bi-speedometer2 icon"></i>
                         <span>Dashboard</span>
                     </a>
@@ -660,7 +737,7 @@
                 <?php endif; ?>
                 <?php if ($canManageOrders): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/pedidos" class="<?= $isActive('/admin/pedidos') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/pedidos" class="<?= $isActive('/admin/pedidos') ? 'active' : '' ?>" title="Pedidos">
                         <i class="bi bi-receipt icon"></i>
                         <span>Pedidos</span>
                     </a>
@@ -668,7 +745,7 @@
                 <?php endif; ?>
                 <?php if ($canManageCustomers): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/clientes" class="<?= $isActive('/admin/clientes') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/clientes" class="<?= $isActive('/admin/clientes') ? 'active' : '' ?>" title="Clientes">
                         <i class="bi bi-people icon"></i>
                         <span>Clientes</span>
                     </a>
@@ -677,19 +754,19 @@
                 <?php if ($canManageProducts): ?>
                 <!-- DEBUG: Menu Produtos/Categorias - canManageProducts = true -->
                 <li>
-                    <a href="<?= $basePath ?>/admin/produtos" class="<?= $isActive('/admin/produtos') && !$isActive('/admin/categorias') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/produtos" class="<?= $isActive('/admin/produtos') && !$isActive('/admin/categorias') ? 'active' : '' ?>" title="Produtos">
                         <i class="bi bi-box-seam icon"></i>
                         <span>Produtos</span>
                     </a>
                 </li>
                 <li>
-                    <a href="<?= $basePath ?>/admin/categorias" class="<?= $isActive('/admin/categorias') ? 'active' : '' ?>" style="padding-left: 2.5rem;">
+                    <a href="<?= $basePath ?>/admin/categorias" class="<?= $isActive('/admin/categorias') ? 'active' : '' ?>" style="padding-left: 2.5rem;" title="Categorias">
                         <i class="bi bi-tags icon"></i>
                         <span>Categorias</span>
                     </a>
                 </li>
                 <li>
-                    <a href="<?= $basePath ?>/admin/atributos" class="<?= $isActive('/admin/atributos') ? 'active' : '' ?>" style="padding-left: 2.5rem;">
+                    <a href="<?= $basePath ?>/admin/atributos" class="<?= $isActive('/admin/atributos') ? 'active' : '' ?>" style="padding-left: 2.5rem;" title="Atributos">
                         <i class="bi bi-list-ul icon"></i>
                         <span>Atributos</span>
                     </a>
@@ -699,7 +776,7 @@
                 <?php endif; ?>
                 <?php if ($canManageReviews): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/avaliacoes" class="<?= $isActive('/admin/avaliacoes') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/avaliacoes" class="<?= $isActive('/admin/avaliacoes') ? 'active' : '' ?>" title="Avaliações">
                         <i class="bi bi-star icon"></i>
                         <span>Avaliações</span>
                     </a>
@@ -707,7 +784,7 @@
                 <?php endif; ?>
                 <?php if ($canManageHomePage): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/home" class="<?= $isActive('/admin/home') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/home" class="<?= $isActive('/admin/home') ? 'active' : '' ?>" title="Home da Loja">
                         <i class="bi bi-house icon"></i>
                         <span>Home da Loja</span>
                     </a>
@@ -720,7 +797,7 @@
                 if ($canManageStoreUsers):
                 ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/usuarios" class="<?= $isActive('/admin/usuarios') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/usuarios" class="<?= $isActive('/admin/usuarios') ? 'active' : '' ?>" title="Usuários e Perfis">
                         <i class="bi bi-shield-check icon"></i>
                         <span>Usuários e Perfis</span>
                     </a>
@@ -728,7 +805,7 @@
                 <?php endif; ?>
                 <?php if ($canManageStoreUsers): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/usuarios" class="<?= $isActive('/admin/usuarios') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/usuarios" class="<?= $isActive('/admin/usuarios') ? 'active' : '' ?>" title="Usuários e Perfis">
                         <i class="bi bi-shield-check icon"></i>
                         <span>Usuários e Perfis</span>
                     </a>
@@ -736,7 +813,7 @@
                 <?php endif; ?>
                 <?php if ($canManageTheme): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/tema" class="<?= $isActive('/admin/tema') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/tema" class="<?= $isActive('/admin/tema') ? 'active' : '' ?>" title="Tema da Loja">
                         <i class="bi bi-palette icon"></i>
                         <span>Tema da Loja</span>
                     </a>
@@ -744,7 +821,7 @@
                 <?php endif; ?>
                 <?php if ($canManageGateways): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/configuracoes/gateways" class="<?= $isActive('/admin/configuracoes/gateways') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/configuracoes/gateways" class="<?= $isActive('/admin/configuracoes/gateways') ? 'active' : '' ?>" title="Gateways">
                         <i class="bi bi-credit-card icon"></i>
                         <span>Gateways</span>
                     </a>
@@ -752,7 +829,7 @@
                 <?php endif; ?>
                 <?php if ($canManageNewsletter): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/newsletter" class="<?= $isActive('/admin/newsletter') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/newsletter" class="<?= $isActive('/admin/newsletter') ? 'active' : '' ?>" title="Newsletter">
                         <i class="bi bi-envelope icon"></i>
                         <span>Newsletter</span>
                     </a>
@@ -760,14 +837,14 @@
                 <?php endif; ?>
                 <?php if ($canManageMedia): ?>
                 <li>
-                    <a href="<?= $basePath ?>/admin/midias" class="<?= $isActive('/admin/midias') ? 'active' : '' ?>">
+                    <a href="<?= $basePath ?>/admin/midias" class="<?= $isActive('/admin/midias') ? 'active' : '' ?>" title="Biblioteca de Mídia">
                         <i class="bi bi-images icon"></i>
                         <span>Biblioteca de Mídia</span>
                     </a>
                 </li>
                 <?php endif; ?>
                 <li style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <a href="<?= $basePath ?>/" target="_blank" style="color: var(--pg-admin-primary); font-weight: 600;">
+                    <a href="<?= $basePath ?>/" target="_blank" style="color: var(--pg-admin-primary); font-weight: 600;" title="Ver Site">
                         <i class="bi bi-eye icon"></i>
                         <span>Ver Site</span>
                     </a>
@@ -793,17 +870,99 @@
     </div>
     
     <script>
+        (function() {
+            const STORAGE_KEY = 'admin_sidebar_collapsed';
+            const sidebar = document.getElementById('sidebar');
+            const adminMain = document.querySelector('.admin-main');
+            const toggleBtn = document.getElementById('sidebarToggleBtn');
+            const menuToggle = document.getElementById('menuToggle');
+
+            function isCollapsed() {
+                return sidebar && sidebar.classList.contains('sidebar--collapsed');
+            }
+
+            function setCollapsed(collapsed) {
+                if (!sidebar || !adminMain) return;
+                if (collapsed) {
+                    sidebar.classList.add('sidebar--collapsed');
+                    adminMain.classList.add('sidebar-collapsed');
+                    if (toggleBtn) {
+                        toggleBtn.innerHTML = '<i class="bi bi-chevron-double-right icon toggle-icon"></i><span class="toggle-text">Expandir menu</span>';
+                        toggleBtn.title = 'Expandir menu';
+                    }
+                } else {
+                    sidebar.classList.remove('sidebar--collapsed');
+                    adminMain.classList.remove('sidebar-collapsed');
+                    if (toggleBtn) {
+                        toggleBtn.innerHTML = '<i class="bi bi-chevron-double-left icon toggle-icon"></i><span class="toggle-text">Recolher menu</span>';
+                        toggleBtn.title = 'Recolher menu';
+                    }
+                }
+                try {
+                    localStorage.setItem(STORAGE_KEY, collapsed ? 'true' : 'false');
+                } catch (e) {}
+            }
+
+            function toggleCollapse() {
+                setCollapsed(!isCollapsed());
+            }
+
+            function initSidebar() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('sidebar--collapsed');
+                    if (adminMain) adminMain.classList.remove('sidebar-collapsed');
+                    return;
+                }
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    let collapsed;
+                    if (saved !== null) {
+                        collapsed = saved === 'true';
+                    } else {
+                        collapsed = window.innerWidth < 1024;
+                    }
+                    setCollapsed(collapsed);
+                } catch (e) {
+                    setCollapsed(false);
+                }
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', toggleCollapse);
+            }
+
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.toggle('show');
+                    } else {
+                        toggleCollapse();
+                    }
+                });
+            }
+
+            initSidebar();
+            window.addEventListener('resize', function() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('sidebar--collapsed');
+                    if (adminMain) adminMain.classList.remove('sidebar-collapsed');
+                } else {
+                    initSidebar();
+                }
+            });
+        })();
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('show');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('show');
+            }
         }
-        
-        // Fechar sidebar ao clicar fora (mobile)
+
         document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('sidebar');
             const menuToggle = document.getElementById('menuToggle');
-            
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 768 && sidebar && menuToggle) {
                 if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
                     sidebar.classList.remove('show');
                 }
