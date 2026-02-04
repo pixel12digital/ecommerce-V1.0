@@ -2700,53 +2700,44 @@ window.removeFeaturedImage = function() {
                 if (aid) atributosIdsComTermos.add(aid);
             });
             if (atributosParaVariacao.length === 0 && atributosIdsComTermos.size === 0) {
-                alert('⚠️ ATENÇÃO:\n\nSelecione pelo menos um valor nos atributos acima e clique em "Salvar e Gerar Variações" para salvar e gerar as variações em um único passo.');
+                alert('⚠️ ATENÇÃO:\n\nSelecione pelo menos um valor nos atributos acima (ex.: Verde, Vermelho, Azul) e clique novamente em "Gerar Variações".');
                 return;
             }
 
             // Verificar se há termos selecionados
             let termosSelecionados = 0;
             atributosParaVariacao.forEach(function(checkbox) {
-                const atributoId = checkbox.name.match(/\[(\d+)\]/)[1];
-                const termos = document.querySelectorAll(`input[name="atributo_${atributoId}_termos[]"]:checked`);
-                termosSelecionados += termos.length;
+                const match = checkbox.name.match(/\[(\d+)\]/);
+                if (match) {
+                    const termos = document.querySelectorAll(`input[name="atributo_${match[1]}_termos[]"]:checked`);
+                    termosSelecionados += termos.length;
+                }
             });
+            if (termosSelecionados === 0) termosSelecionados = termosCheckboxes.length;
 
             if (termosSelecionados === 0) {
-                alert('⚠️ ATENÇÃO:\n\nVocê precisa selecionar pelo menos um termo para cada atributo marcado para variação.\n\nDepois de selecionar os termos, SALVE o formulário e então gere as variações.');
+                alert('⚠️ ATENÇÃO:\n\nSelecione pelo menos um valor (termo) para cada atributo que deseja usar nas variações.');
                 return;
             }
 
-            if (!confirm('Isso irá gerar todas as combinações possíveis dos atributos marcados para variação.\n\nIMPORTANTE: Certifique-se de que você já SALVOU o formulário com os atributos e termos selecionados.\n\nContinuar?')) {
+            if (!confirm('Isso irá salvar os atributos e gerar todas as combinações possíveis.\n\nContinuar?')) {
                 return;
             }
 
             btnGerarVariacoes.disabled = true;
-            btnGerarVariacoes.textContent = 'Gerando...';
+            btnGerarVariacoes.innerHTML = '<i class="bi bi-hourglass-split icon"></i> Processando...';
 
-            fetch(basePath + '/admin/produtos/' + produtoId + '/variacoes/gerar', {
+            // IMPORTANTE: variacoes/gerar lê do BANCO. Se o usuário não salvou antes, o banco está vazio → 400.
+            // Solução: usar salvar-e-gerar-variacoes (envia form e salva antes de gerar) quando há termos no form.
+            const formData = collectAttributesData();
+            fetch(basePath + '/admin/produtos/' + produtoId + '/atributos/salvar-e-gerar-variacoes', {
                 method: 'POST',
+                body: formData,
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => {
-                const contentType = response.headers.get('content-type') || '';
-                if (!contentType.includes('application/json')) {
-                    return response.text().then(text => {
-                        throw new Error('Resposta não é JSON. Status: ' + response.status + '. Resposta: ' + text.substring(0, 200));
-                    });
-                }
-                
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Erro HTTP ' + response.status);
-                    });
-                }
-                
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     alert('✓ ' + (data.message || 'Variações geradas com sucesso!'));
