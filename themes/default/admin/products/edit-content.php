@@ -473,12 +473,6 @@ if (!function_exists('media_url')) {
                                                placeholder="—"
                                                class="variacao-input">
                                     </td>
-                                    <td class="td-estoque">
-                                        <input type="checkbox" 
-                                               name="variacoes[<?= $variacao['id'] ?>][gerencia_estoque]" 
-                                               value="1"
-                                               <?= ($variacao['gerencia_estoque'] ?? 0) == 1 ? 'checked' : '' ?>>
-                                    </td>
                                     <td class="td-qtd">
                                         <input type="number" 
                                                name="variacoes[<?= $variacao['id'] ?>][quantidade_estoque]" 
