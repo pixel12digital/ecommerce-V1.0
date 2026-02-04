@@ -1,15 +1,18 @@
 <?php
 $basePath = $basePath ?? '';
-$requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-$requestUriPath = strtok($requestUri, '?');
-if (strpos($requestUriPath, '/ecommerce-v1.0/public') === 0) {
-    $basePath = '/ecommerce-v1.0/public';
-} elseif (strpos($requestUriPath, '/public') === 0) {
-    $basePath = '/public';
-} else {
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-    $isProduction = (strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false);
-    $basePath = $isProduction ? '/public' : '';
+if ($basePath === '' && ($envBase = $_ENV['BASE_PATH'] ?? '') !== '') {
+    $basePath = rtrim($envBase, '/');
+} elseif ($basePath === '') {
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+    $requestUriPath = strtok($requestUri, '?');
+    $refererPath = isset($_SERVER['HTTP_REFERER']) ? parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH) : '';
+    if (strpos($requestUriPath, '/ecommerce-v1.0/public') === 0 || ($refererPath && strpos($refererPath, '/ecommerce-v1.0/public') === 0)) {
+        $basePath = '/ecommerce-v1.0/public';
+    } elseif (strpos($requestUriPath, '/public') === 0 || ($refererPath && strpos($refererPath, '/public') === 0)) {
+        $basePath = '/public';
+    } else {
+        $basePath = ''; // Hostinger: DocumentRoot em public_html → /admin/... sem /public
+    }
 }
 $message = $message ?? null;
 $messageType = $messageType ?? 'success';

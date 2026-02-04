@@ -558,30 +558,24 @@
         $tenant = \App\Tenant\TenantContext::tenant();
     }
     
-    // Obter caminho base se necessário
-    $basePath = '';
+    // Obter caminho base (alinhado com Controller::detectBasePath)
     $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-    $requestUriPath = strtok($requestUri, '?');
-    
-    // Detectar basePath de forma mais robusta
-    if (strpos($requestUriPath, '/ecommerce-v1.0/public') === 0) {
-        $basePath = '/ecommerce-v1.0/public';
-    }
-    elseif (strpos($requestUriPath, '/public') === 0) {
-        $basePath = '/public';
-    }
-    elseif (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/ecommerce-v1.0/public') !== false) {
-        $basePath = '/ecommerce-v1.0/public';
-    }
-    elseif (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/public') !== false) {
-        $basePath = '/public';
-    }
-    else {
-        // Produção Hostinger: assets em /public/admin/... e rotas precisam de /public.
-        // Só aplicar se o host for de produção (não localhost).
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        $isProduction = (strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false);
-        $basePath = $isProduction ? '/public' : '';
+    $basePath = $_ENV['BASE_PATH'] ?? '';
+    if ($basePath !== '') {
+        $basePath = rtrim($basePath, '/');
+    } else {
+        $requestUriPath = strtok($requestUri, '?');
+        $refererPath = isset($_SERVER['HTTP_REFERER']) ? parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH) : '';
+        if (strpos($requestUriPath, '/ecommerce-v1.0/public') === 0 || ($refererPath && strpos($refererPath, '/ecommerce-v1.0/public') === 0)) {
+            $basePath = '/ecommerce-v1.0/public';
+        } elseif (strpos($requestUriPath, '/public') === 0 || ($refererPath && strpos($refererPath, '/public') === 0)) {
+            $basePath = '/public';
+        } elseif (isset($_SERVER['SCRIPT_NAME']) && (strpos($_SERVER['SCRIPT_NAME'], '/ecommerce-v1.0/public') !== false || strpos($_SERVER['SCRIPT_NAME'], '/public') !== false)) {
+            $basePath = strpos($_SERVER['SCRIPT_NAME'], '/ecommerce-v1.0/public') !== false ? '/ecommerce-v1.0/public' : '/public';
+        } else {
+            // Hostinger: DocumentRoot em public_html → URLs /admin/... sem /public
+            $basePath = '';
+        }
     }
     
     // Determinar rota atual para highlight do menu

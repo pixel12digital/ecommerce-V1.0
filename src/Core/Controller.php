@@ -67,12 +67,20 @@ abstract class Controller
     /**
      * Detecta o caminho base da aplicação a partir do REQUEST_URI ou HTTP_REFERER.
      * Usado em redirects e links para manter consistência com a URL atual.
-     * 
-     * Em POST (ex: criar produto), REQUEST_URI pode ser /admin/produtos (form action).
-     * Nesse caso, HTTP_REFERER traz a página de origem (ex: /public/admin/produtos/novo).
+     *
+     * Prioridade:
+     * 1. BASE_PATH no .env (configuração explícita)
+     * 2. REQUEST_URI ou HTTP_REFERER (mesmo padrão da página atual)
+     * 3. '' (vazio) - Hostinger com DocumentRoot em public_html usa /admin/... sem /public
      */
     protected function detectBasePath(): string
     {
+        // 1. Configuração explícita no .env (ex: BASE_PATH=/public para subpasta)
+        $envBase = $_ENV['BASE_PATH'] ?? null;
+        if ($envBase !== null && $envBase !== '') {
+            return rtrim($envBase, '/');
+        }
+
         $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
         $requestUri = strtok($requestUri, '?'); // Remover query string
 
@@ -83,8 +91,8 @@ abstract class Controller
             return '/public';
         }
 
-        // Em POST, REQUEST_URI pode não ter /public (ex: form action="/admin/produtos")
-        // Usar HTTP_REFERER para detectar se a página de origem usava /public
+        // Em POST, REQUEST_URI pode não ter o prefixo (ex: form action="/admin/produtos")
+        // Usar HTTP_REFERER para manter o mesmo padrão da página de origem
         $referer = $_SERVER['HTTP_REFERER'] ?? '';
         if ($referer !== '') {
             $refererPath = parse_url($referer, PHP_URL_PATH);
@@ -96,10 +104,9 @@ abstract class Controller
             }
         }
 
-        // Produção Hostinger: assets em /public/, redirects devem usar /public
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        $isProduction = (strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false);
-        return $isProduction ? '/public' : '';
+        // Hostinger: DocumentRoot em public_html → URLs são /admin/... (sem /public)
+        // Desenvolvimento local em subpasta: usar '' para /pontodogolfe/ ou similar
+        return '';
     }
 }
 
