@@ -2499,7 +2499,7 @@ window.removeFeaturedImage = function() {
     // Botões de ação rápida na seção de atributos
     const btnSaveAttributes = document.getElementById('btn-save-attributes');
     const btnSaveAndGenerate = document.getElementById('btn-save-and-generate');
-    const form = document.querySelector('form[method="POST"]');
+    const mainForm = document.querySelector('form[method="POST"]');
 
     // Função para coletar dados do formulário de atributos
     function collectAttributesData() {
@@ -2748,9 +2748,8 @@ window.removeFeaturedImage = function() {
     }
 
     // Salvar variações em lote ao submeter formulário
-    const form = document.querySelector('form[method="POST"]');
-    if (form && secaoVariacoes && secaoVariacoes.style.display !== 'none') {
-        form.addEventListener('submit', function(e) {
+    if (mainForm && secaoVariacoes && secaoVariacoes.style.display !== 'none') {
+        mainForm.addEventListener('submit', function(e) {
             const variacoes = [];
             document.querySelectorAll('tr[data-variacao-id]').forEach(function(row) {
                 const variacaoId = row.getAttribute('data-variacao-id');
@@ -2783,7 +2782,7 @@ window.removeFeaturedImage = function() {
                     hiddenInput.type = 'hidden';
                     hiddenInput.id = 'variacoes_json';
                     hiddenInput.name = 'variacoes_json';
-                    form.appendChild(hiddenInput);
+                    mainForm.appendChild(hiddenInput);
                 }
                 hiddenInput.value = JSON.stringify(variacoes);
             }
