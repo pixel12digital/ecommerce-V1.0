@@ -195,7 +195,9 @@
         }
         
         modalElement.style.display = 'flex';
-        loadImages(folder);
+        // Passar URL já selecionada (se houver) para exibir no topo e destacar
+        var selectedUrl = targetInput.value ? targetInput.value.trim() : null;
+        loadImages(folder, selectedUrl);
         setupEventListeners();
     }
 
@@ -383,8 +385,9 @@
     /**
      * Carrega as imagens da biblioteca
      * @param {string} folder Pasta opcional para filtrar (ex: 'banners', 'category-pills')
+     * @param {string} selectedUrl URL da imagem já selecionada (ex: destaque) - aparece no topo e destacada
      */
-    function loadImages(folder) {
+    function loadImages(folder, selectedUrl) {
         var loading = document.getElementById('pg-media-picker-loading');
         var erro = document.getElementById('pg-media-picker-erro');
         var grid = document.getElementById('pg-media-picker-grid');
@@ -480,8 +483,24 @@
                     return;
                 }
 
-                console.log('[Media Picker] Renderizando', data.files.length, 'imagens');
-                data.files.forEach(function(file) {
+                // Colocar imagem selecionada (destaque) no topo para facilitar identificação
+                var files = data.files.slice();
+                if (selectedUrl && selectedUrl !== '') {
+                    var normSelected = (selectedUrl || '').replace(/^\/|\/$/g, '');
+                    var idx = files.findIndex(function(f) {
+                        var url = (f.url || '').replace(/^\/|\/$/g, '');
+                        return url === normSelected || url.endsWith('/' + normSelected) || normSelected.endsWith('/' + url);
+                    });
+                    if (idx > 0) {
+                        var sel = files.splice(idx, 1)[0];
+                        files.unshift(sel);
+                    } else if (idx === 0) {
+                        // Já está no topo (backend retorna mais recentes primeiro)
+                    }
+                }
+
+                console.log('[Media Picker] Renderizando', files.length, 'imagens');
+                files.forEach(function(file) {
                     // Construir URL da imagem corretamente
                     // file.url já vem como /uploads/tenants/1/... do backend (relativa à raiz do domínio)
                     // NÃO usar basePath para imagens, pois as URLs já são relativas à raiz
@@ -496,9 +515,18 @@
                     var item = document.createElement('div');
                     item.className = 'pg-midia-item';
                     item.dataset.url = file.url; // Guardar URL relativa original
-                    item.style.cssText = 'border: 2px solid #ddd; border-radius: 8px; padding: 0.5rem; background: white; cursor: pointer; transition: all 0.2s; text-align: center;';
+                    var normFileUrl = (file.url || '').replace(/^\/|\/$/g, '');
+                    var normSel = (selectedUrl || '').replace(/^\/|\/$/g, '');
+                    var isSelected = selectedUrl && (normFileUrl === normSel || normFileUrl.endsWith('/' + normSel) || normSel.endsWith('/' + normFileUrl));
+                    var borderStyle = isSelected ? '3px solid var(--pg-admin-primary, #F7931E); box-shadow: 0 0 0 2px rgba(247,147,30,0.3);' : '2px solid #ddd;';
+                    item.style.cssText = 'border: ' + borderStyle + ' border-radius: 8px; padding: 0.5rem; background: white; cursor: pointer; transition: all 0.2s; text-align: center;';
+                    if (isSelected) {
+                        item.classList.add('selected');
+                        selectedImageUrl = file.url;
+                    }
                     
                     var folderBadge = file.folderLabel ? '<span style="font-size: 0.7rem; color: #666; display: block; margin-top: 0.25rem;">' + escapeHtml(file.folderLabel) + '</span>' : '';
+                    var destaqueBadge = isSelected ? '<span style="font-size: 0.65rem; font-weight: 600; color: var(--pg-admin-primary, #F7931E); display: block; margin-top: 0.25rem; text-transform: uppercase;">★ Destaque</span>' : '';
                     var fileName = file.filename || file.name || 'Sem nome';
 
                     item.innerHTML =
@@ -506,13 +534,23 @@
                             '<img src="' + fullImageUrl + '" alt="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" onerror="console.error(\'[Media Picker] Erro ao carregar imagem:\', this.src); this.parentElement.parentElement.style.display=\'none\';">' +
                         '</div>' +
                         '<div class="pg-midia-item-name" style="margin-top: 0.5rem; font-size: 0.75rem; color: #666; word-break: break-word; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;" title="' + escapeHtml(fileName) + '">' + escapeHtml(fileName) + '</div>' +
-                        folderBadge;
+                        destaqueBadge + folderBadge;
 
                     grid.appendChild(item);
                 });
 
                 grid.style.display = 'grid';
                 console.log('[Media Picker] Grid renderizado com', data.files.length, 'itens');
+
+                // Se havia imagem pré-selecionada (destaque), habilitar botão "Usar imagem selecionada"
+                if (!isMultipleMode && selectedImageUrl) {
+                    var useBtn = document.getElementById('pg-media-picker-use-selected');
+                    if (useBtn) {
+                        useBtn.disabled = false;
+                        useBtn.style.opacity = '1';
+                        useBtn.style.pointerEvents = 'auto';
+                    }
+                }
             })
             .catch(function(err) {
                 console.error('[Media Picker] Erro ao carregar imagens:', err);

@@ -97,12 +97,14 @@ class MediaLibraryService
                             continue; // Removido log de arquivo ignorado para reduzir verbosidade
                         }
 
+                        $filePath = $baseDir . '/' . $file;
                         $arquivos[] = [
                             'url' => $baseUrl . '/' . $file,
                             'filename' => $file,
                             'folder' => $pasta,
                             'folderLabel' => $label,
-                            'size' => file_exists($baseDir . '/' . $file) ? filesize($baseDir . '/' . $file) : 0,
+                            'size' => file_exists($filePath) ? filesize($filePath) : 0,
+                            'mtime' => file_exists($filePath) ? filemtime($filePath) : 0,
                         ];
                         $filesInDir++;
                     }
@@ -149,12 +151,14 @@ class MediaLibraryService
                                 continue;
                             }
 
+                            $filePath = $baseDir . '/' . $file;
                             $arquivos[] = [
                                 'url' => $baseUrl . '/' . $file,
                                 'filename' => $file,
                                 'folder' => $pasta,
                                 'folderLabel' => $label,
-                                'size' => file_exists($baseDir . '/' . $file) ? filesize($baseDir . '/' . $file) : 0,
+                                'size' => file_exists($filePath) ? filesize($filePath) : 0,
+                                'mtime' => file_exists($filePath) ? filemtime($filePath) : 0,
                             ];
                         }
                         closedir($handle);
@@ -165,9 +169,14 @@ class MediaLibraryService
             self::debugLog('[MEDIA SERVICE DEBUG] [FALLBACK] Total após fallback: ' . count($arquivos));
         }
 
-        // Ordenar por nome
+        // Ordenar por mais recentes primeiro (mtime DESC) - estilo WordPress
         usort($arquivos, function($a, $b) {
-            return strcmp($a['filename'], $b['filename']);
+            $mtimeA = $a['mtime'] ?? 0;
+            $mtimeB = $b['mtime'] ?? 0;
+            if ($mtimeA !== $mtimeB) {
+                return $mtimeB - $mtimeA; // DESC: mais recente primeiro
+            }
+            return strcmp($a['filename'], $b['filename']); // desempate por nome
         });
 
         // Log final (apenas em modo debug)
