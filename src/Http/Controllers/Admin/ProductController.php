@@ -2000,11 +2000,7 @@ class ProductController extends Controller
 
     private function getBasePath(): string
     {
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-        if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
-            return '/ecommerce-v1.0/public';
-        }
-        return '';
+        return $this->detectBasePath();
     }
 
     /**

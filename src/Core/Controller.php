@@ -56,20 +56,30 @@ abstract class Controller
     {
         // Se a URL não começar com http, adicionar caminho base se necessário
         if (strpos($url, 'http') !== 0) {
-            // Verificar se há um caminho base no REQUEST_URI
-            $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-            $basePath = '';
-            
-            // Se o REQUEST_URI contém /ecommerce-v1.0/public, usar como base
-            if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
-                $basePath = '/ecommerce-v1.0/public';
-            }
-            
+            $basePath = $this->detectBasePath();
             $url = $basePath . $url;
         }
         
         header("Location: {$url}");
         exit;
+    }
+
+    /**
+     * Detecta o caminho base da aplicação a partir do REQUEST_URI.
+     * Usado em redirects e links para manter consistência com a URL atual.
+     */
+    protected function detectBasePath(): string
+    {
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        $requestUri = strtok($requestUri, '?'); // Remover query string
+
+        if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
+            return '/ecommerce-v1.0/public';
+        }
+        if (strpos($requestUri, '/public') === 0) {
+            return '/public';
+        }
+        return '';
     }
 }
 
