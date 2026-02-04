@@ -409,12 +409,7 @@ if (!function_exists('media_url')) {
                     Gerar Variações
                 </button>
                 <small style="color: #666; display: block; margin-top: 0.5rem;">
-                    <strong>⚠️ IMPORTANTE:</strong> Antes de gerar variações, você deve:<br>
-                    1. Adicionar os atributos (Cor, Tamanho) na seção "Atributos do Produto" acima<br>
-                    2. Marcar "Usar para gerar variações" para cada atributo<br>
-                    3. Selecionar os termos de cada atributo<br>
-                    4. <strong>SALVAR o formulário</strong> (botão "Salvar" no final da página)<br>
-                    5. Depois, clique em "Gerar Variações" novamente
+                    Selecione os valores desejados na seção "Atributos do Produto" acima (ex.: Verde, Vermelho, Azul) e clique em "Gerar Variações" ou "Salvar e Gerar Variações".
                 </small>
             </div>
 
@@ -2386,6 +2381,22 @@ window.removeFeaturedImage = function() {
         });
     });
 
+    // Sincronizar "usar para gerar variações" com seleção de termos (UX simplificada)
+    // Ao selecionar qualquer termo → marca automaticamente; ao desmarcar todos → desmarca
+    function syncUsadoParaVariacaoFromTermos(atributoItem) {
+        if (!atributoItem) return;
+        const atributoId = atributoItem.querySelector('.atributo-checkbox')?.getAttribute('data-atributo-id');
+        if (!atributoId) return;
+        const termosChecked = atributoItem.querySelectorAll(`input[name="atributo_${atributoId}_termos[]"]:checked`);
+        const usadoCheckbox = atributoItem.querySelector('.usado-para-variacao-checkbox');
+        if (!usadoCheckbox) return;
+        if (termosChecked.length > 0) {
+            usadoCheckbox.checked = true;
+        } else {
+            usadoCheckbox.checked = false;
+        }
+    }
+
     // Mostrar/ocultar campos de configuração quando termo é marcado/desmarcado
     document.querySelectorAll('.termo-checkbox').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
@@ -2394,6 +2405,9 @@ window.removeFeaturedImage = function() {
             if (termoConfig) {
                 termoConfig.style.display = this.checked ? 'block' : 'none';
             }
+            // UX: ao selecionar termo, marcar "usar para gerar variações" automaticamente
+            const atributoItem = this.closest('.atributo-item');
+            syncUsadoParaVariacaoFromTermos(atributoItem);
         });
         // Executar ao carregar para mostrar campos de termos já marcados
         if (checkbox.checked) {
@@ -2608,10 +2622,16 @@ window.removeFeaturedImage = function() {
             const basePath = '<?= $basePath ?>';
             const formData = collectAttributesData();
 
-            // Validações
+            // Validações: atributos com termos selecionados são tratados como variantes (checkbox auto-marcado ao selecionar termos)
             const atributosParaVariacao = document.querySelectorAll('input[name^="atributos_para_variacao"]:checked');
-            if (atributosParaVariacao.length === 0) {
-                alert('⚠️ ATENÇÃO:\n\nVocê precisa marcar "Usar para gerar variações" para pelo menos um atributo.');
+            const atributosComTermos = document.querySelectorAll('input[name^="atributo_"]:checked[name$="_termos[]"]');
+            const atributosIdsComTermos = new Set();
+            atributosComTermos.forEach(cb => {
+                const m = cb.name.match(/atributo_(\d+)_termos/);
+                if (m) atributosIdsComTermos.add(m[1]);
+            });
+            if (atributosParaVariacao.length === 0 && atributosIdsComTermos.size === 0) {
+                alert('⚠️ ATENÇÃO:\n\nSelecione pelo menos um valor (ex.: Verde, Vermelho, Azul) nos atributos acima. O atributo será usado automaticamente para gerar variações.');
                 return;
             }
 
@@ -2668,11 +2688,19 @@ window.removeFeaturedImage = function() {
             const produtoId = <?= $produto['id'] ?>;
             const basePath = '<?= $basePath ?>';
             const form = document.querySelector('form[method="POST"]');
+            // Sincronizar checkbox "usar para gerar variações" com termos selecionados antes de validar
+            document.querySelectorAll('.atributo-item').forEach(syncUsadoParaVariacaoFromTermos);
 
-            // Verificar se há atributos marcados para variação no formulário
+            // Verificar: atributos com termos selecionados (checkbox auto-marcado ao selecionar termos)
             const atributosParaVariacao = document.querySelectorAll('input[name^="atributos_para_variacao"]:checked');
-            if (atributosParaVariacao.length === 0) {
-                alert('⚠️ ATENÇÃO:\n\nVocê precisa:\n1. Marcar os atributos (Cor, Tamanho)\n2. Marcar "Usar para gerar variações" para cada atributo\n3. Selecionar os termos de cada atributo\n4. SALVAR o formulário antes de gerar variações\n\nDepois de salvar, você poderá gerar as variações.');
+            const termosCheckboxes = document.querySelectorAll('.termo-checkbox:checked');
+            const atributosIdsComTermos = new Set();
+            termosCheckboxes.forEach(cb => {
+                const aid = cb.getAttribute('data-atributo-id');
+                if (aid) atributosIdsComTermos.add(aid);
+            });
+            if (atributosParaVariacao.length === 0 && atributosIdsComTermos.size === 0) {
+                alert('⚠️ ATENÇÃO:\n\nSelecione pelo menos um valor nos atributos acima e clique em "Salvar e Gerar Variações" para salvar e gerar as variações em um único passo.');
                 return;
             }
 
@@ -2721,7 +2749,7 @@ window.removeFeaturedImage = function() {
             })
             .then(data => {
                 if (data.success) {
-                    alert(data.message || 'Variações geradas com sucesso!');
+                    alert('✓ ' + (data.message || 'Variações geradas com sucesso!'));
                     location.reload();
                 } else {
                     throw new Error(data.message || 'Erro ao gerar variações');
@@ -2729,18 +2757,7 @@ window.removeFeaturedImage = function() {
             })
             .catch(error => {
                 console.error('Erro ao gerar variações:', error);
-                let mensagem = 'Erro ao gerar variações:\n\n' + error.message;
-                
-                if (error.message.includes('Nenhum atributo marcado') || error.message.includes('Nenhum termo selecionado')) {
-                    mensagem += '\n\n⚠️ SOLUÇÃO:\n';
-                    mensagem += '1. Marque os atributos (Cor, Tamanho) na seção "Atributos do Produto"\n';
-                    mensagem += '2. Marque "Usar para gerar variações" para cada atributo\n';
-                    mensagem += '3. Selecione os termos de cada atributo\n';
-                    mensagem += '4. Clique em "Salvar" no final do formulário\n';
-                    mensagem += '5. Depois, clique novamente em "Gerar Variações"';
-                }
-                
-                alert(mensagem);
+                alert('Erro ao gerar variações:\n\n' + error.message);
                 btnGerarVariacoes.disabled = false;
                 btnGerarVariacoes.innerHTML = '<i class="bi bi-magic icon"></i> Gerar Variações';
             });
