@@ -413,6 +413,17 @@ if (!function_exists('media_url')) {
                 </small>
             </div>
 
+            <?php 
+            $gerenciaEstoquePadrao = !empty($variacoes) && (($variacoes[0]['gerencia_estoque'] ?? 0) == 1);
+            ?>
+            <?php if (!empty($variacoes)): ?>
+            <div class="variacoes-gerencia-estoque" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: #f8f9fa; border-radius: 6px; display: flex; align-items: center; gap: 0.75rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500; cursor: pointer;">
+                    <input type="checkbox" id="variacoes_gerencia_estoque_global" value="1" <?= $gerenciaEstoquePadrao ? 'checked' : '' ?>>
+                    <span>Gerencia estoque (aplica a todas as variações)</span>
+                </label>
+            </div>
+            <?php endif; ?>
             <div id="variacoes-container" class="variacoes-table-wrapper">
                 <?php if (!empty($variacoes)): ?>
                     <table class="variacoes-table">
@@ -422,9 +433,7 @@ if (!function_exists('media_url')) {
                                 <th class="th-sku" title="Código SKU da variação">SKU</th>
                                 <th class="th-preco" title="Preço regular">R$</th>
                                 <th class="th-preco" title="Preço promocional">Promo</th>
-                                <th class="th-estoque" title="Gerencia estoque">Estoque</th>
                                 <th class="th-qtd" title="Quantidade em estoque">Qtd.</th>
-                                <th class="th-backorder" title="Permitir pedidos com falta de estoque">Backord.</th>
                                 <th class="th-imagem" title="Imagem da variação">Imagem</th>
                                 <th class="th-status" title="Status da variação">Status</th>
                             </tr>
@@ -477,15 +486,14 @@ if (!function_exists('media_url')) {
                                                min="0"
                                                class="variacao-input variacao-input-num">
                                     </td>
-                                    <td class="td-backorder">
-                                        <select name="variacoes[<?= $variacao['id'] ?>][permite_pedidos_falta]" class="variacao-select">
-                                            <option value="no" <?= ($variacao['permite_pedidos_falta'] ?? 'no') === 'no' ? 'selected' : '' ?>>Não</option>
-                                            <option value="notify" <?= ($variacao['permite_pedidos_falta'] ?? '') === 'notify' ? 'selected' : '' ?>>Notif.</option>
-                                            <option value="yes" <?= ($variacao['permite_pedidos_falta'] ?? '') === 'yes' ? 'selected' : '' ?>>Sim</option>
-                                        </select>
-                                    </td>
                                     <td class="td-imagem">
-                                        <div class="variacao-imagem-cell">
+                                        <div class="variacao-imagem-cell variacao-imagem-clickable js-open-media-library" 
+                                             data-media-target="#<?= $imgPathId ?>" 
+                                             data-folder="produtos"
+                                             title="Clique para selecionar da biblioteca"
+                                             role="button"
+                                             tabindex="0"
+                                             aria-label="Selecionar imagem da variação">
                                             <input type="hidden" 
                                                    id="<?= $imgPathId ?>" 
                                                    name="variacoes[<?= $variacao['id'] ?>][imagem_path]" 
@@ -495,32 +503,15 @@ if (!function_exists('media_url')) {
                                                 <?php if (!empty($imgPath)): ?>
                                                     <img src="<?= media_url($imgPath) ?>" alt="Variação" class="variacao-image-preview">
                                                 <?php else: ?>
-                                                    <div class="variacao-image-preview variacao-image-placeholder">Sem</div>
+                                                    <div class="variacao-image-preview variacao-image-placeholder"><i class="bi bi-image"></i></div>
                                                 <?php endif; ?>
-                                            </div>
-                                            <div class="variacao-imagem-actions">
-                                                <button type="button" class="variacao-btn-media js-open-media-library" 
-                                                        data-media-target="#<?= $imgPathId ?>" 
-                                                        data-folder="produtos"
-                                                        title="Selecionar da biblioteca">
-                                                    <i class="bi bi-images"></i>
-                                                </button>
-                                                <button type="button" class="variacao-btn-upload" title="Enviar arquivo">
-                                                    <i class="bi bi-upload"></i>
-                                                    <input type="file" 
-                                                           name="variacoes[<?= $variacao['id'] ?>][imagem]" 
-                                                           accept="image/*"
-                                                           class="variacao-image-upload"
-                                                           data-variacao-id="<?= $variacao['id'] ?>"
-                                                           aria-label="Enviar imagem da variação">
-                                                </button>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="td-status">
                                         <select name="variacoes[<?= $variacao['id'] ?>][status]" class="variacao-select" title="Status: Publicado ou Rascunho">
-                                            <option value="publish" <?= ($variacao['status'] ?? 'publish') === 'publish' ? 'selected' : '' ?>>Pub.</option>
-                                            <option value="draft" <?= ($variacao['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Rasc.</option>
+                                            <option value="publish" <?= ($variacao['status'] ?? 'publish') === 'publish' ? 'selected' : '' ?>>Publicado</option>
+                                            <option value="draft" <?= ($variacao['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Rascunho</option>
                                         </select>
                                     </td>
                                 </tr>
@@ -2057,7 +2048,7 @@ window.removeFeaturedImage = function() {
 .variacoes-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 680px;
 }
 .variacoes-table th,
 .variacoes-table td {
@@ -2081,7 +2072,6 @@ window.removeFeaturedImage = function() {
 .th-combinacao, .td-combinacao { min-width: 180px; max-width: 280px; }
 .th-sku, .td-sku { width: 90px; min-width: 80px; }
 .th-preco, .td-preco { width: 85px; min-width: 75px; }
-.th-estoque, .td-estoque { width: 60px; min-width: 50px; text-align: center; }
 .th-qtd, .td-qtd { width: 65px; min-width: 55px; }
 .th-backorder, .td-backorder { width: 75px; min-width: 65px; }
 .th-imagem, .td-imagem { width: 100px; min-width: 90px; }
@@ -2101,16 +2091,24 @@ window.removeFeaturedImage = function() {
     font-size: 0.8rem;
     min-width: 0;
 }
-/* Coluna Imagem — compacta */
+/* Coluna Imagem — apenas preview clicável */
 .variacao-imagem-cell {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 0.35rem;
+    justify-content: center;
+}
+.variacao-imagem-clickable {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.variacao-imagem-clickable:hover {
+    background: #eee;
 }
 .variacao-imagem-preview-wrap {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
     border-radius: 4px;
     overflow: hidden;
@@ -2118,55 +2116,22 @@ window.removeFeaturedImage = function() {
     background: #f5f5f5;
 }
 .variacao-image-preview {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     object-fit: cover;
     display: block;
 }
 .variacao-image-placeholder {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #999;
-    font-size: 0.65rem;
+    color: #bbb;
+    font-size: 1rem;
 }
-.variacao-imagem-actions {
-    display: flex;
-    gap: 0.25rem;
-}
-.variacao-btn-media,
-.variacao-btn-upload {
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    color: #555;
-    transition: background 0.2s, color 0.2s;
-}
-.variacao-btn-media:hover,
-.variacao-btn-upload:hover {
-    background: #f0f0f0;
-    color: #333;
-}
-.variacao-btn-upload {
-    position: relative;
-}
-.variacao-image-upload {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
+.variacao-image-placeholder .bi {
+    font-size: 1.1rem;
 }
 .section-title {
     font-size: 1.5rem;
@@ -2623,34 +2588,13 @@ window.removeFeaturedImage = function() {
         });
     });
 
-    // Preview de imagem de variação (upload via file input)
-    document.querySelectorAll('.variacao-image-upload').forEach(function(input) {
-        input.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    const cell = input.closest('.variacao-imagem-cell');
-                    const previewWrap = cell ? cell.querySelector('.variacao-imagem-preview-wrap') : null;
-                    if (previewWrap) {
-                        const img = document.createElement('img');
-                        img.src = ev.target.result;
-                        img.className = 'variacao-image-preview';
-                        img.alt = 'Variação';
-                        previewWrap.innerHTML = '';
-                        previewWrap.appendChild(img);
-                    }
-                };
-                reader.readAsDataURL(file);
+    // Acessibilidade: Enter/Space no preview de imagem abre biblioteca
+    document.querySelectorAll('.variacao-imagem-clickable').forEach(function(el) {
+        el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                el.click();
             }
-        });
-    });
-
-    // Botão upload: disparar clique no input file
-    document.querySelectorAll('.variacao-btn-upload').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const input = btn.querySelector('.variacao-image-upload');
-            if (input) input.click();
         });
     });
 
@@ -2660,9 +2604,6 @@ window.removeFeaturedImage = function() {
             const path = (this.value || '').trim();
             const previewId = this.getAttribute('data-preview');
             const previewWrap = previewId ? document.getElementById(previewId) : null;
-            const cell = this.closest('.variacao-imagem-cell');
-            const fileInput = cell ? cell.querySelector('.variacao-image-upload') : null;
-            if (fileInput) fileInput.value = '';
             if (!previewWrap) return;
             if (path) {
                 let src = path;
@@ -2678,7 +2619,7 @@ window.removeFeaturedImage = function() {
                 previewWrap.innerHTML = '';
                 previewWrap.appendChild(img);
             } else {
-                previewWrap.innerHTML = '<div class="variacao-image-preview variacao-image-placeholder">Sem</div>';
+                previewWrap.innerHTML = '<div class="variacao-image-preview variacao-image-placeholder"><i class="bi bi-image"></i></div>';
             }
         });
     });
@@ -2932,16 +2873,24 @@ window.removeFeaturedImage = function() {
     if (mainForm && secaoVariacoes && secaoVariacoes.style.display !== 'none') {
         mainForm.addEventListener('submit', function(e) {
             const variacoes = [];
+            const gerenciaEstoqueGlobal = document.getElementById('variacoes_gerencia_estoque_global');
+            const gerenciaEstoqueVal = (gerenciaEstoqueGlobal && gerenciaEstoqueGlobal.checked) ? 1 : 0;
+            
             document.querySelectorAll('tr[data-variacao-id]').forEach(function(row) {
                 const variacaoId = row.getAttribute('data-variacao-id');
                 const inputs = row.querySelectorAll('input, select');
-                const variacaoData = { id: variacaoId };
+                const variacaoData = { 
+                    id: variacaoId,
+                    gerencia_estoque: gerenciaEstoqueVal,
+                    permite_pedidos_falta: 'no'
+                };
                 
                 inputs.forEach(function(input) {
                     const name = input.name;
                     const match = name.match(/variacoes\[(\d+)\]\[(\w+)\]/);
                     if (match && match[1] === variacaoId) {
                         const field = match[2];
+                        if (field === 'gerencia_estoque') return;
                         if (input.type === 'checkbox') {
                             variacaoData[field] = input.checked ? 1 : 0;
                         } else if (input.type === 'number') {
