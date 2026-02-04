@@ -577,7 +577,11 @@
         $basePath = '/public';
     }
     else {
-        $basePath = '';
+        // Produção Hostinger: assets em /public/admin/... e rotas precisam de /public.
+        // Só aplicar se o host for de produção (não localhost).
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $isProduction = (strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false);
+        $basePath = $isProduction ? '/public' : '';
     }
     
     // Determinar rota atual para highlight do menu

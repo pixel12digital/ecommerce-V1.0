@@ -96,7 +96,10 @@ abstract class Controller
             }
         }
 
-        return '';
+        // Produção Hostinger: assets em /public/, redirects devem usar /public
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $isProduction = (strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false);
+        return $isProduction ? '/public' : '';
     }
 }
 

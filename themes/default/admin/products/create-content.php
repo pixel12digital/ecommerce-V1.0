@@ -6,6 +6,10 @@ if (strpos($requestUriPath, '/ecommerce-v1.0/public') === 0) {
     $basePath = '/ecommerce-v1.0/public';
 } elseif (strpos($requestUriPath, '/public') === 0) {
     $basePath = '/public';
+} else {
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    $isProduction = (strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false);
+    $basePath = $isProduction ? '/public' : '';
 }
 $message = $message ?? null;
 $messageType = $messageType ?? 'success';
