@@ -474,6 +474,10 @@ $router->post('/admin/gateways/correios/test', GatewayConfigController::class . 
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_gateways'
 ]);
+$router->post('/admin/gateways/cielo/test', GatewayConfigController::class . '@testCielo', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_gateways'
+]);
 
 // Rotas Admin - Usuários e Perfis
 $router->get('/admin/usuarios', StoreUsersController::class . '@index', [

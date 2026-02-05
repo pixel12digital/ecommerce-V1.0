@@ -5,6 +5,7 @@ namespace App\Services\Payment;
 use App\Core\Database;
 use App\Tenant\TenantContext;
 use App\Services\Payment\Providers\ManualPaymentProvider;
+use App\Services\Payment\Providers\CieloPaymentProvider;
 
 class PaymentService
 {
@@ -16,16 +17,28 @@ class PaymentService
      */
     public static function listarMetodosDisponiveis(int $tenantId): array
     {
-        // Por enquanto, apenas método manual/PIX
-        // No futuro, pode verificar configurações do gateway para habilitar outros métodos
-        return [
-            [
-                'codigo' => 'manual_pix',
-                'titulo' => 'PIX / Transferência',
-                'descricao' => 'Você receberá as instruções de pagamento após finalizar o pedido.',
+        $gateway = self::getGatewayConfig($tenantId, 'payment');
+        $codigo = $gateway['codigo'] ?? 'manual';
+
+        $metodos = [];
+
+        if ($codigo === 'cielo') {
+            $metodos[] = [
+                'codigo' => 'cielo_pix',
+                'titulo' => 'PIX (Cielo)',
+                'descricao' => 'Pague com PIX via Cielo. QR Code será exibido após finalizar.',
                 'icone' => 'pix'
-            ]
+            ];
+            return $metodos;
+        }
+
+        $metodos[] = [
+            'codigo' => 'manual_pix',
+            'titulo' => 'PIX / Transferência',
+            'descricao' => 'Você receberá as instruções de pagamento após finalizar o pedido.',
+            'icone' => 'pix'
         ];
+        return $metodos;
     }
 
     /**
@@ -42,8 +55,8 @@ class PaymentService
         $provider = self::getProvider($tenantId);
         $config = self::getProviderConfig($tenantId, 'payment');
         
-        // Extrair apenas o método base (ex: 'manual_pix' -> 'pix')
-        $metodoBase = str_replace('manual_', '', $metodoEscolhido);
+        // Extrair apenas o método base (ex: 'manual_pix' -> 'pix', 'cielo_pix' -> 'pix')
+        $metodoBase = preg_replace('/^(manual_|cielo_)/', '', $metodoEscolhido) ?: $metodoEscolhido;
         
         return $provider->createPayment($pedido, $cliente, $metodoBase, $config);
     }
@@ -62,9 +75,7 @@ class PaymentService
         // Mapear código para classe do provider
         $providers = [
             'manual' => ManualPaymentProvider::class,
-            // Futuro: 'mercadopago' => MercadoPagoProvider::class,
-            // Futuro: 'asaas' => AsaasProvider::class,
-            // Futuro: 'pagarme' => PagarmeProvider::class,
+            'cielo' => CieloPaymentProvider::class,
         ];
 
         $providerClass = $providers[$codigo] ?? ManualPaymentProvider::class;
@@ -142,7 +153,9 @@ class PaymentService
         if ($metodo === 'manual_pix') {
             return 'Enviaremos os dados de pagamento (chave PIX ou dados bancários) por e-mail/WhatsApp em breve. Após o pagamento, seu pedido será processado.';
         }
-        
+        if ($metodo === 'cielo_pix') {
+            return 'O QR Code PIX será exibido na próxima tela. Escaneie ou copie o código para pagar.';
+        }
         return 'Instruções de pagamento não disponíveis.';
     }
 }

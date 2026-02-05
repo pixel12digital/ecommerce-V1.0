@@ -96,11 +96,27 @@ class GatewayConfigController extends Controller
         $db = Database::getConnection();
 
         $paymentGatewayCode = trim($_POST['payment_gateway_code'] ?? 'manual');
-        $paymentConfigJson = trim($_POST['payment_config_json'] ?? '');
         $shippingGatewayCode = trim($_POST['shipping_gateway_code'] ?? 'simples');
         $shippingConfigJson = trim($_POST['shipping_config_json'] ?? '');
 
         $errors = [];
+
+        // Buscar gateway de pagamento atual (para manter MerchantKey se mascarada)
+        $stmt = $db->prepare("
+            SELECT tipo, codigo, config_json, ativo 
+            FROM tenant_gateways 
+            WHERE tenant_id = :tenant_id 
+            AND tipo = 'payment'
+            LIMIT 1
+        ");
+        $stmt->execute(['tenant_id' => $tenantId]);
+        $paymentGateway = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$paymentGateway) {
+            $paymentGateway = ['codigo' => 'manual', 'config_json' => null, 'ativo' => 1];
+        }
+
+        // Processar configuração de pagamento (campos específicos)
+        $paymentConfigJson = self::processarConfigPayment($_POST, $paymentGateway, $errors);
 
         // Buscar gateway de frete atual do banco (se existir)
         $stmt = $db->prepare("
@@ -116,14 +132,6 @@ class GatewayConfigController extends Controller
         // Se não existir, criar estrutura padrão
         if (!$shippingGateway) {
             $shippingGateway = ['codigo' => $shippingGatewayCode, 'config_json' => null, 'ativo' => 1];
-        }
-
-        // Validar JSON se fornecido
-        if (!empty($paymentConfigJson)) {
-            $decoded = json_decode($paymentConfigJson, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $errors[] = 'JSON de configuração de pagamento inválido: ' . json_last_error_msg();
-            }
         }
 
         // Processar configuração de frete (campos específicos ou JSON avançado)
@@ -218,6 +226,78 @@ class GatewayConfigController extends Controller
         }
 
         $this->redirect('/admin/configuracoes/gateways');
+    }
+
+    /**
+     * Processa campos específicos de pagamento e retorna JSON
+     *
+     * @param array $post Dados do POST
+     * @param array $paymentGateway Configuração atual do gateway
+     * @param array &$errors Array de erros (por referência)
+     * @return string|null JSON da configuração ou null
+     */
+    private static function processarConfigPayment(array $post, array $paymentGateway, array &$errors): ?string
+    {
+        $codigo = trim($post['payment_gateway_code'] ?? 'manual');
+
+        if ($codigo === 'manual') {
+            $mensagem = trim($post['manual_mensagem_instrucoes'] ?? 'Você receberá as instruções de pagamento por e-mail/WhatsApp.');
+            $instrucoes = trim($post['manual_instrucoes'] ?? '');
+            $config = [
+                'mensagem_instrucoes' => $mensagem ?: 'Você receberá as instruções de pagamento por e-mail/WhatsApp.',
+                'instrucoes' => $instrucoes,
+            ];
+            return json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        if ($codigo === 'cielo') {
+            $merchantId = trim($post['cielo_merchant_id'] ?? '');
+            $merchantKeyNovo = trim($post['cielo_merchant_key'] ?? '');
+            $ambiente = trim($post['cielo_ambiente'] ?? 'sandbox');
+            $keyKeep = isset($post['cielo_merchant_key_keep']) && $post['cielo_merchant_key_keep'] === '1';
+
+            if (empty($merchantId)) {
+                $errors[] = 'MerchantId da Cielo é obrigatório.';
+                return null;
+            }
+
+            $merchantKey = '';
+            if ($keyKeep && (empty($merchantKeyNovo) || $merchantKeyNovo === '********')) {
+                $configAtual = [];
+                if (!empty($paymentGateway['config_json'])) {
+                    $decoded = json_decode($paymentGateway['config_json'], true);
+                    if (is_array($decoded)) {
+                        $cieloAtual = $decoded['cielo'] ?? $decoded;
+                        $merchantKey = trim($cieloAtual['merchant_key'] ?? '');
+                    }
+                }
+                if (empty($merchantKey) || $merchantKey === '********') {
+                    $errors[] = 'MerchantKey da Cielo é obrigatório. Preencha o campo ou use a chave já salva.';
+                    return null;
+                }
+            } else {
+                $merchantKey = $merchantKeyNovo;
+                if (empty($merchantKey) || $merchantKey === '********') {
+                    $errors[] = 'MerchantKey da Cielo é obrigatório.';
+                    return null;
+                }
+            }
+
+            if (!in_array($ambiente, ['sandbox', 'producao'])) {
+                $ambiente = 'sandbox';
+            }
+
+            $config = [
+                'cielo' => [
+                    'merchant_id' => $merchantId,
+                    'merchant_key' => $merchantKey,
+                    'ambiente' => $ambiente,
+                ],
+            ];
+            return json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        return null;
     }
 
     /**
@@ -891,6 +971,109 @@ class GatewayConfigController extends Controller
             exit;
         } finally {
             // Restaurar configurações de erro
+            error_reporting($oldErrorReporting);
+            ini_set('display_errors', $oldDisplayErrors);
+        }
+    }
+
+    /**
+     * Testa conexão com a API Cielo E-commerce.
+     * Faz uma requisição GET de consulta para validar MerchantId e MerchantKey.
+     */
+    public function testCielo(): void
+    {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        ob_start();
+        $oldErrorReporting = error_reporting(0);
+        $oldDisplayErrors = ini_set('display_errors', 0);
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $tenantId = TenantContext::id();
+            $db = Database::getConnection();
+
+            $merchantId = trim($_POST['merchant_id'] ?? '');
+            $merchantKeyNovo = trim($_POST['merchant_key'] ?? '');
+            $ambiente = trim($_POST['ambiente'] ?? 'sandbox');
+            $keyKeep = ($_POST['merchant_key_keep'] ?? '0') === '1';
+
+            $merchantKey = '';
+            if ($keyKeep && (empty($merchantKeyNovo) || $merchantKeyNovo === '********')) {
+                $stmt = $db->prepare("
+                    SELECT config_json FROM tenant_gateways 
+                    WHERE tenant_id = :tenant_id AND tipo = 'payment' AND codigo = 'cielo' LIMIT 1
+                ");
+                $stmt->execute(['tenant_id' => $tenantId]);
+                $gateway = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($gateway && !empty($gateway['config_json'])) {
+                    $decoded = json_decode($gateway['config_json'], true);
+                    if (is_array($decoded)) {
+                        $cielo = $decoded['cielo'] ?? $decoded;
+                        $merchantKey = trim($cielo['merchant_key'] ?? '');
+                    }
+                }
+            } else {
+                $merchantKey = $merchantKeyNovo;
+            }
+
+            if (empty($merchantId)) {
+                echo json_encode(['success' => false, 'message' => 'MerchantId é obrigatório.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            if (empty($merchantKey) || $merchantKey === '********') {
+                echo json_encode(['success' => false, 'message' => 'MerchantKey é obrigatório. Preencha o campo ou salve a configuração primeiro.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $baseUrl = $ambiente === 'producao'
+                ? 'https://apiquery.cieloecommerce.cielo.com.br'
+                : 'https://apiquerysandbox.cieloecommerce.cielo.com.br';
+
+            $url = $baseUrl . '/1/sales?merchantOrderId=test-' . time();
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'MerchantId: ' . $merchantId,
+                    'MerchantKey: ' . $merchantKey,
+                    'Content-Type: application/json',
+                ],
+                CURLOPT_TIMEOUT => 15,
+            ]);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                echo json_encode(['success' => false, 'message' => 'Erro de conexão: ' . $curlError], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            if ($httpCode === 200 || $httpCode === 201 || $httpCode === 204 || $httpCode === 404) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Credenciais válidas. A API Cielo respondeu corretamente.',
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            if ($httpCode === 401 || $httpCode === 403) {
+                echo json_encode(['success' => false, 'message' => 'Credenciais inválidas. Verifique MerchantId e MerchantKey no portal Cielo.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $decoded = json_decode($response, true);
+            $msg = $decoded['message'] ?? $decoded['Message'] ?? 'HTTP ' . $httpCode;
+            echo json_encode(['success' => false, 'message' => $msg], JSON_UNESCAPED_UNICODE);
+            exit;
+        } catch (\Exception $e) {
+            ob_clean();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            exit;
+        } finally {
             error_reporting($oldErrorReporting);
             ini_set('display_errors', $oldDisplayErrors);
         }

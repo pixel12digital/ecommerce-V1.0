@@ -162,6 +162,32 @@ ob_start();
             </div>
         </div>
     <?php endif; ?>
+
+    <?php 
+    $paymentDetails = $paymentDetails ?? [];
+    if (($paymentDetails['tipo'] ?? '') === 'cielo_pix'): 
+        $qrBase64 = $paymentDetails['qr_code_base64'] ?? null;
+        $qrString = $paymentDetails['qr_code_string'] ?? null;
+        $mensagem = $paymentDetails['mensagem'] ?? 'Escaneie o QR Code ou copie o código PIX para pagar.';
+    ?>
+        <div class="order-info">
+            <h3 class="info-title">Pagamento PIX (Cielo)</h3>
+            <div class="payment-instructions">
+                <p><?= htmlspecialchars($mensagem) ?></p>
+                <?php if ($qrBase64): ?>
+                    <div style="margin: 1.5rem 0; padding: 1rem; background: white; border-radius: 8px; display: inline-block;">
+                        <img src="data:image/png;base64,<?= htmlspecialchars($qrBase64) ?>" alt="QR Code PIX" style="max-width: 256px; height: auto;" />
+                    </div>
+                <?php endif; ?>
+                <?php if ($qrString): ?>
+                    <div style="margin-top: 1rem;">
+                        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Código PIX (copiar e colar):</label>
+                        <textarea readonly rows="4" style="width: 100%; padding: 0.75rem; font-family: monospace; font-size: 0.85rem; border: 1px solid #ddd; border-radius: 4px;"><?= htmlspecialchars($qrString) ?></textarea>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
     
     <div style="text-align: center;">
         <a href="<?= $basePath ?>/produtos" class="btn">Continuar Comprando</a>

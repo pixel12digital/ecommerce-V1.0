@@ -49,10 +49,18 @@ class OrderController extends Controller
         // Buscar instruções de pagamento
         $instrucoesPagamento = PaymentService::getInstrucoes($pedido['metodo_pagamento']);
 
+        // Decodificar payment_details (ex: QR PIX Cielo)
+        $paymentDetails = [];
+        if (!empty($pedido['payment_details'])) {
+            $decoded = json_decode($pedido['payment_details'], true);
+            $paymentDetails = is_array($decoded) ? $decoded : [];
+        }
+
         $this->view('storefront/orders/thank_you', [
             'pedido' => $pedido,
             'itens' => $itens,
             'instrucoesPagamento' => $instrucoesPagamento,
+            'paymentDetails' => $paymentDetails,
         ]);
     }
 }

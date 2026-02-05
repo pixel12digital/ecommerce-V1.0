@@ -521,11 +521,13 @@ class CheckoutController extends Controller
             
             $paymentResult = PaymentService::processarPagamento($metodoPagamento, $pedidoData, $cliente);
             
-            // Atualizar pedido com código de transação e status
+            // Atualizar pedido com código de transação, status e detalhes de pagamento (ex: QR PIX)
+            $paymentDetailsJson = !empty($paymentResult->dadosExibicao) ? json_encode($paymentResult->dadosExibicao, JSON_UNESCAPED_UNICODE) : null;
             $stmtUpdate = $db->prepare("
                 UPDATE pedidos 
                 SET codigo_transacao = :codigo_transacao,
                     status = :status,
+                    payment_details = :payment_details,
                     updated_at = NOW()
                 WHERE id = :pedido_id 
                 AND tenant_id = :tenant_id
@@ -533,6 +535,7 @@ class CheckoutController extends Controller
             $stmtUpdate->execute([
                 'codigo_transacao' => $paymentResult->codigoTransacao,
                 'status' => $paymentResult->statusInicial,
+                'payment_details' => $paymentDetailsJson,
                 'pedido_id' => $pedidoId,
                 'tenant_id' => $tenantId,
             ]);

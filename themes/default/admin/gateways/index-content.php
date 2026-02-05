@@ -6,6 +6,11 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 }
 $paymentGateway = $paymentGateway ?? ['codigo' => 'manual', 'config_json' => null];
 $shippingGateway = $shippingGateway ?? ['codigo' => 'simples', 'config_json' => null];
+$paymentConfig = [];
+if (!empty($paymentGateway['config_json'])) {
+    $decoded = json_decode($paymentGateway['config_json'], true);
+    $paymentConfig = is_array($decoded) ? $decoded : [];
+}
 $message = $message ?? null;
 $messageType = $messageType ?? 'success';
 ?>
@@ -31,30 +36,104 @@ $messageType = $messageType ?? 'success';
             <div class="card-body">
                 <div class="form-group">
                     <label for="payment_gateway_code">Provedor de Pagamento *</label>
-                    <select id="payment_gateway_code" name="payment_gateway_code" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    <select id="payment_gateway_code" name="payment_gateway_code" required 
+                            onchange="togglePaymentConfig()"
+                            style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
                         <option value="manual" <?= $paymentGateway['codigo'] === 'manual' ? 'selected' : '' ?>>Manual / PIX</option>
-                        <!-- Futuro: outras opções aparecerão aqui quando implementadas -->
-                        <!-- <option value="mercadopago">Mercado Pago</option> -->
-                        <!-- <option value="asaas">Asaas</option> -->
-                        <!-- <option value="pagarme">Pagarme</option> -->
+                        <option value="cielo" <?= $paymentGateway['codigo'] === 'cielo' ? 'selected' : '' ?>>Cielo</option>
                     </select>
                     <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.5rem;">
-                        Por enquanto, apenas "Manual / PIX" está implementado. Outros gateways podem ser adicionados no futuro.
+                        Selecione o provedor de pagamento da sua loja.
                     </small>
                 </div>
 
-                <div class="form-group" style="margin-top: 1.5rem;">
-                    <label for="payment_config_json">Configurações JSON (Opcional)</label>
-                    <textarea 
-                        id="payment_config_json" 
-                        name="payment_config_json" 
-                        rows="6" 
-                        placeholder='{"mensagem_instrucoes": "Instruções personalizadas", "instrucoes": "Texto adicional"}'
-                        style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; font-family: monospace;"><?= htmlspecialchars($paymentGateway['config_json'] ?? '') ?></textarea>
-                    <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.5rem;">
-                        Configure credenciais e parâmetros específicos do gateway em formato JSON. 
-                        Exemplo para Manual: <code>{"mensagem_instrucoes": "Sua mensagem personalizada"}</code>
-                    </small>
+                <!-- Configuração Manual / PIX -->
+                <div id="payment_config_manual" class="payment-config-section" style="display: <?= $paymentGateway['codigo'] === 'manual' ? 'block' : 'none' ?>; margin-top: 1.5rem;">
+                    <div style="padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #6c757d;">
+                        <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.125rem; color: #495057;">
+                            <i class="bi bi-chat-text-fill icon"></i> Mensagem para o cliente
+                        </h3>
+                        <div class="form-group">
+                            <label for="manual_mensagem_instrucoes">Mensagem de instruções *</label>
+                            <input type="text" id="manual_mensagem_instrucoes" name="manual_mensagem_instrucoes" 
+                                   value="<?= htmlspecialchars($paymentConfig['mensagem_instrucoes'] ?? 'Você receberá as instruções de pagamento por e-mail/WhatsApp.') ?>"
+                                   placeholder="Ex: Você receberá os dados PIX por e-mail após finalizar o pedido."
+                                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                            <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.5rem;">
+                                Texto exibido ao cliente após finalizar o pedido.
+                            </small>
+                        </div>
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="manual_instrucoes">Instruções adicionais <small style="color: #666;">(opcional)</small></label>
+                            <textarea id="manual_instrucoes" name="manual_instrucoes" rows="3"
+                                      placeholder="Ex: Chave PIX: seu@email.com"
+                                      style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;"><?= htmlspecialchars($paymentConfig['instrucoes'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuração Cielo -->
+                <div id="payment_config_cielo" class="payment-config-section" style="display: <?= $paymentGateway['codigo'] === 'cielo' ? 'block' : 'none' ?>; margin-top: 1.5rem;">
+                    <?php 
+                    $cieloConfig = $paymentConfig['cielo'] ?? $paymentConfig;
+                    $cieloMerchantId = $cieloConfig['merchant_id'] ?? '';
+                    $cieloMerchantKey = $cieloConfig['merchant_key'] ?? '';
+                    $cieloAmbiente = $cieloConfig['ambiente'] ?? 'sandbox';
+                    $cieloMerchantKeyMasked = !empty($cieloMerchantKey) && $cieloMerchantKey !== '********' && strlen($cieloMerchantKey) > 5;
+                    ?>
+                    <div style="padding: 1.5rem; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #0066cc; margin-bottom: 1.5rem;">
+                        <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.125rem; color: #0066cc;">
+                            <i class="bi bi-key-fill icon"></i> Credenciais Cielo
+                        </h3>
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+                            Obtenha o MerchantId e MerchantKey em <a href="https://minhaconta2.cielo.com.br" target="_blank" rel="noopener">minhaconta2.cielo.com.br</a> → E-commerce → API e-commerce Cielo → Credenciais.
+                        </p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="cielo_merchant_id">MerchantId *</label>
+                                <input type="text" id="cielo_merchant_id" name="cielo_merchant_id" 
+                                       value="<?= htmlspecialchars($cieloMerchantId) ?>"
+                                       placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="cielo_merchant_key">MerchantKey *</label>
+                                <input type="password" id="cielo_merchant_key" name="cielo_merchant_key" 
+                                       value="<?= $cieloMerchantKeyMasked ? '********' : htmlspecialchars($cieloMerchantKey) ?>"
+                                       placeholder="Sua chave de acesso"
+                                       autocomplete="new-password"
+                                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                                <?php if ($cieloMerchantKeyMasked): ?>
+                                <input type="hidden" id="cielo_merchant_key_keep" name="cielo_merchant_key_keep" value="1">
+                                <small style="color: #666; font-size: 0.8rem;">Deixe em branco para manter a chave atual.</small>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="cielo_ambiente">Ambiente</label>
+                            <select id="cielo_ambiente" name="cielo_ambiente" 
+                                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                                <option value="sandbox" <?= $cieloAmbiente === 'sandbox' ? 'selected' : '' ?>>Testes (Sandbox)</option>
+                                <option value="producao" <?= $cieloAmbiente === 'producao' ? 'selected' : '' ?>>Produção</option>
+                            </select>
+                            <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.5rem;">
+                                Use Sandbox para testar antes de ir para Produção.
+                            </small>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #856404;">
+                        <h3 style="margin-top: 0; margin-bottom: 0.75rem; font-size: 1rem; color: #856404;">
+                            <i class="bi bi-play-circle icon"></i> Testar conexão
+                        </h3>
+                        <p style="color: #666; font-size: 0.875rem; margin-bottom: 1rem;">
+                            Valide suas credenciais antes de salvar. O teste faz uma requisição à API Cielo.
+                        </p>
+                        <button type="button" id="btn_testar_cielo" onclick="testarCielo()" 
+                                style="padding: 0.5rem 1rem; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                            <i class="bi bi-play-circle icon"></i> Testar Conexão Cielo
+                        </button>
+                        <div id="cielo_test_result" style="margin-top: 1rem; display: none;"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -732,8 +811,47 @@ function toggleShippingConfig() {
     }
 }
 
+// Toggle configuração de pagamento
+function togglePaymentConfig() {
+    const select = document.getElementById('payment_gateway_code');
+    const selectedValue = select ? select.value : 'manual';
+    const manualSection = document.getElementById('payment_config_manual');
+    const cieloSection = document.getElementById('payment_config_cielo');
+    
+    if (manualSection) manualSection.style.display = selectedValue === 'manual' ? 'block' : 'none';
+    if (cieloSection) cieloSection.style.display = selectedValue === 'cielo' ? 'block' : 'none';
+    
+    // Remover/adicionar required nos campos Cielo
+    const cieloMerchantId = document.getElementById('cielo_merchant_id');
+    const cieloMerchantKey = document.getElementById('cielo_merchant_key');
+    if (cieloMerchantId) {
+        if (selectedValue === 'cielo') {
+            cieloMerchantId.setAttribute('required', 'required');
+            cieloMerchantId.disabled = false;
+        } else {
+            cieloMerchantId.removeAttribute('required');
+            cieloMerchantId.disabled = true;
+        }
+    }
+    if (cieloMerchantKey) {
+        if (selectedValue === 'cielo') {
+            const keyKeep = document.getElementById('cielo_merchant_key_keep');
+            if (!keyKeep) {
+                cieloMerchantKey.setAttribute('required', 'required');
+            } else {
+                cieloMerchantKey.removeAttribute('required');
+            }
+            cieloMerchantKey.disabled = false;
+        } else {
+            cieloMerchantKey.removeAttribute('required');
+            cieloMerchantKey.disabled = true;
+        }
+    }
+}
+
 // Executar ao carregar a página
 document.addEventListener('DOMContentLoaded', function() {
+    togglePaymentConfig();
     // Primeiro configurar o gateway (isso vai desabilitar campos se não for Correios)
     toggleShippingConfig();
     // Depois configurar o modo Correios (isso vai aplicar required corretamente)
@@ -1122,6 +1240,63 @@ function testarCorreios() {
     });
 }
 
+// Testar conexão Cielo
+function testarCielo() {
+    const btn = document.getElementById('btn_testar_cielo');
+    const resultDiv = document.getElementById('cielo_test_result');
+    
+    if (!btn || !resultDiv) return;
+    
+    const merchantId = document.getElementById('cielo_merchant_id')?.value?.trim() || '';
+    const merchantKey = document.getElementById('cielo_merchant_key')?.value || '';
+    const ambiente = document.getElementById('cielo_ambiente')?.value || 'sandbox';
+    const keyKeep = document.getElementById('cielo_merchant_key_keep');
+    
+    if (!merchantId) {
+        resultDiv.innerHTML = '<div style="padding: 1rem; background: #f8d7da; border-radius: 4px; color: #721c24;">❌ Preencha o MerchantId antes de testar.</div>';
+        resultDiv.style.display = 'block';
+        return;
+    }
+    
+    if ((!merchantKey || merchantKey === '********') && !keyKeep) {
+        resultDiv.innerHTML = '<div style="padding: 1rem; background: #f8d7da; border-radius: 4px; color: #721c24;">❌ Preencha o MerchantKey antes de testar. Se já salvou, o teste usará a chave salva.</div>';
+        resultDiv.style.display = 'block';
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split icon"></i> Testando...';
+    resultDiv.innerHTML = '<div style="padding: 1rem; background: #d1ecf1; border-radius: 4px; color: #0c5460;">⏳ Testando conexão com API Cielo...</div>';
+    resultDiv.style.display = 'block';
+    
+    const formData = new FormData();
+    formData.append('merchant_id', merchantId);
+    formData.append('merchant_key', merchantKey);
+    formData.append('ambiente', ambiente);
+    formData.append('merchant_key_keep', keyKeep ? '1' : '0');
+    
+    fetch('<?= $basePath ?>/admin/gateways/cielo/test', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle icon"></i> Testar Conexão Cielo';
+        
+        if (data.success) {
+            resultDiv.innerHTML = '<div style="padding: 1rem; background: #d4edda; border-radius: 4px; color: #155724;">✅ <strong>Conexão OK!</strong> Credenciais válidas. ' + (data.message || '') + '</div>';
+        } else {
+            resultDiv.innerHTML = '<div style="padding: 1rem; background: #f8d7da; border-radius: 4px; color: #721c24;">❌ <strong>Erro:</strong> ' + (data.message || 'Erro desconhecido') + '</div>';
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle icon"></i> Testar Conexão Cielo';
+        resultDiv.innerHTML = '<div style="padding: 1rem; background: #f8d7da; border-radius: 4px; color: #721c24;">❌ <strong>Erro de conexão:</strong> ' + error.message + '</div>';
+    });
+}
+
 // Copiar resultado do teste (sem credenciais)
 function copiarResultadoTeste() {
     if (!window.ultimoResultadoTeste) {
@@ -1185,12 +1360,11 @@ function validarCepOrigem(input) {
 function prepararSubmitFormulario() {
     const modoSelect = document.getElementById('correios_modo_integracao');
     const shippingGateway = document.getElementById('shipping_gateway_code');
+    const paymentGateway = document.getElementById('payment_gateway_code');
     
     if (shippingGateway && shippingGateway.value === 'correios' && modoSelect) {
         const modo = modoSelect.value;
-        
         if (modo === 'cws') {
-            // Garantir que campos CWS estejam habilitados
             const contratoCws = document.getElementById('correios_contrato_cws');
             if (contratoCws) {
                 contratoCws.disabled = false;
@@ -1199,7 +1373,14 @@ function prepararSubmitFormulario() {
         }
     }
     
-    return true; // Permitir submit
+    if (paymentGateway && paymentGateway.value === 'cielo') {
+        const cieloMerchantId = document.getElementById('cielo_merchant_id');
+        const cieloMerchantKey = document.getElementById('cielo_merchant_key');
+        if (cieloMerchantId) cieloMerchantId.disabled = false;
+        if (cieloMerchantKey) cieloMerchantKey.disabled = false;
+    }
+    
+    return true;
 }
 </script>
 
