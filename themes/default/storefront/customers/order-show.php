@@ -15,7 +15,7 @@ $itens = $itens ?? [];
     </p>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="order-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
     <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
             <i class="bi bi-info-circle icon" style="font-size: 1.5rem; color: #023A8D;"></i>
@@ -36,7 +36,7 @@ $itens = $itens ?? [];
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="order-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
     <div style="background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
         <h3 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 0.5rem;">
             <i class="bi bi-geo-alt icon" style="color: #023A8D;"></i>
@@ -96,7 +96,8 @@ $itens = $itens ?? [];
 <?php endif; ?>
 
 <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Itens do Pedido</h3>
-<table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
+<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem; min-width: 400px;">
     <thead>
         <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
             <th style="padding: 0.75rem; text-align: left;">Produto</th>
@@ -153,6 +154,14 @@ $itens = $itens ?? [];
         </tr>
     </tfoot>
 </table>
+</div>
+
+<style>
+@media (max-width: 768px) {
+    .order-stats, .order-details { grid-template-columns: 1fr !important; }
+    .order-stats > div, .order-details > div { padding: 1rem !important; }
+}
+</style>
 
 <div style="text-align: center; margin-top: 2rem;">
     <a href="<?= $basePath ?>/minha-conta/pedidos" style="color: #023A8D; text-decoration: none;">

@@ -16,6 +16,10 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f5f5;
@@ -63,6 +67,7 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
         }
         .container {
             max-width: 1200px;
+            width: 100%;
             margin: 2rem auto;
             padding: 0 1rem;
             display: grid;
@@ -114,6 +119,8 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
             border-radius: 8px;
             padding: 2rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 0;
+            overflow: hidden;
         }
         .content-header {
             margin-bottom: 2rem;
@@ -185,21 +192,20 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
                 padding: 0.5rem;
                 border-radius: 6px;
             }
+            .sidebar {
+                overflow: hidden;
+            }
             .sidebar-menu {
                 display: flex;
-                flex-wrap: nowrap;
+                flex-wrap: wrap;
                 gap: 0.25rem;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
+                justify-content: center;
             }
-            .sidebar-menu::-webkit-scrollbar { display: none; }
             .sidebar-menu li {
                 margin-bottom: 0;
-                flex: 0 0 auto;
             }
             .sidebar-menu a {
-                padding: 0.5rem 0.6rem;
+                padding: 0.45rem 0.65rem;
                 font-size: 0.75rem;
                 white-space: nowrap;
                 border-left: none !important;

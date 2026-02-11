@@ -20,22 +20,26 @@ $registered = isset($_GET['registered']) ? true : false;
     </div>
 <?php endif; ?>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-    <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <i class="bi bi-receipt icon" style="font-size: 1.5rem; color: #023A8D;"></i>
-            <span style="color: #666; font-size: 0.9rem; font-weight: 500;">Total de Pedidos</span>
+<div class="dashboard-stats">
+    <div style="background: #e3f2fd; padding: 1.25rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <i class="bi bi-receipt" style="font-size: 1.25rem; color: #023A8D;"></i>
+            <span style="color: #666; font-size: 0.85rem; font-weight: 500;">Total de Pedidos</span>
         </div>
-        <div style="font-size: 2.5rem; font-weight: 700; color: #023A8D;"><?= $totalPedidos ?></div>
+        <div style="font-size: 2rem; font-weight: 700; color: #023A8D;"><?= $totalPedidos ?></div>
     </div>
-    <div style="background: #fff3e0; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <i class="bi bi-clock-history icon" style="font-size: 1.5rem; color: #e65100;"></i>
-            <span style="color: #666; font-size: 0.9rem; font-weight: 500;">Últimos Pedidos</span>
+    <div style="background: #fff3e0; padding: 1.25rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <i class="bi bi-clock-history" style="font-size: 1.25rem; color: #e65100;"></i>
+            <span style="color: #666; font-size: 0.85rem; font-weight: 500;">Últimos Pedidos</span>
         </div>
-        <div style="font-size: 2.5rem; font-weight: 700; color: #e65100;"><?= count($pedidos) ?></div>
+        <div style="font-size: 2rem; font-weight: 700; color: #e65100;"><?= count($pedidos) ?></div>
     </div>
 </div>
+<style>
+    .dashboard-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 400px) { .dashboard-stats { grid-template-columns: 1fr; } }
+</style>
 
 <?php if (!empty($pedidos)): ?>
     <div>
