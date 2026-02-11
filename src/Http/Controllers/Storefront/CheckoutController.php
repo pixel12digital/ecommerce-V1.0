@@ -392,6 +392,15 @@ class CheckoutController extends Controller
                 throw new \Exception('Erro ao processar conta do cliente. Tente novamente.');
             }
 
+            // Validar que customer_id existe no banco para este tenant
+            $stmtCheck = $db->prepare("SELECT id FROM customers WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
+            $stmtCheck->execute(['id' => $customerId, 'tenant_id' => $tenantId]);
+            if (!$stmtCheck->fetch()) {
+                // customer_id inválido na sessão - limpar sessão
+                unset($_SESSION['customer_id'], $_SESSION['customer_name'], $_SESSION['customer_email']);
+                throw new \Exception('Sessão expirada. Por favor, faça login novamente e tente finalizar o pedido.');
+            }
+
             // Criar pedido
             $stmt = $db->prepare("
                 INSERT INTO pedidos (
