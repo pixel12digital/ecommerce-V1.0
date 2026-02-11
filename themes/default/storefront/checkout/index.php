@@ -212,9 +212,14 @@ ob_start();
                 <div id="checkout-shipping-options" class="shipping-options">
                     <?php if (empty($opcoesFrete)): ?>
                         <?php if (empty($freteErro)): ?>
-                            <p id="checkout-shipping-placeholder" style="color: #666; font-size: 0.9rem; padding: 1rem; text-align: center;">
-                                Informe o CEP de entrega para calcular o frete.
-                            </p>
+                            <div id="checkout-shipping-placeholder" style="padding: 1.5rem; text-align: center;">
+                                <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.75rem;">
+                                    Preencha o CEP no endereço de entrega acima para calcular o frete.
+                                </p>
+                                <button type="button" onclick="document.getElementById('entrega_cep').scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){document.getElementById('entrega_cep').focus();},400);" style="background: var(--pg-color-primary); color: #fff; border: none; padding: 0.5rem 1.25rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                                    <i class="bi bi-geo-alt" style="margin-right: 0.3rem;"></i> Preencher CEP
+                                </button>
+                            </div>
                         <?php endif; ?>
                     <?php else: ?>
                         <?php foreach ($opcoesFrete as $opcao): ?>
