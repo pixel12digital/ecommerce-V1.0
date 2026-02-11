@@ -9,7 +9,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 // Carregar dados necessários para o layout base
 if (empty($loja) || empty($loja['nome'])) {
     $tenant = \App\Tenant\TenantContext::tenant();
-    $loja = ['nome' => $tenant['nome'] ?? 'Loja'];
+    $loja = ['nome' => $tenant->name ?? 'Loja'];
 }
 
 // Carregar menu_main se não estiver definido
