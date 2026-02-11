@@ -1140,10 +1140,26 @@ $additionalScripts = '
                 if (resultsDiv) resultsDiv.style.display = "block";
             }
             
+            // Atualizar links "Finalizar Compra" com o CEP calculado
+            function updateCheckoutLinks(cep) {
+                if (!cep) return;
+                var cleanCep = cep.replace(/\D/g, "");
+                var links = document.querySelectorAll("#checkout-btn-desktop, #checkout-btn-mobile");
+                links.forEach(function(link) {
+                    var baseUrl = link.href.split("?")[0];
+                    link.href = baseUrl + "?cep=" + cleanCep;
+                });
+            }
+            
             // Mostrar opções de frete
             function showOptions(opcoes) {
                 if (!optionsDiv) return;
                 optionsDiv.innerHTML = "";
+                
+                // Atualizar link do checkout com o CEP
+                if (cepInput && cepInput.value) {
+                    updateCheckoutLinks(cepInput.value);
+                }
                 
                 opcoes.forEach(function(opcao) {
                     const optionDiv = document.createElement("label");

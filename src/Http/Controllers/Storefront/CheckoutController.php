@@ -13,6 +13,40 @@ use App\Services\ThemeConfig;
 
 class CheckoutController extends Controller
 {
+    /**
+     * Converte itens do carrinho (chaves v:123 ou p:456) para formato
+     * esperado pelo ShippingService (indexado por produto_id inteiro).
+     */
+    private function converterItensParaFrete(array $cartItems): array
+    {
+        $itensParaFrete = [];
+        foreach ($cartItems as $itemKey => $item) {
+            $produtoId = (int)($item['produto_id'] ?? 0);
+            if ($produtoId <= 0) {
+                if (preg_match('/^p:(\d+)$/', $itemKey, $m)) {
+                    $produtoId = (int)$m[1];
+                } elseif (preg_match('/^v:(\d+)$/', $itemKey, $m)) {
+                    $db = Database::getConnection();
+                    $stmt = $db->prepare("SELECT produto_id FROM produto_variacoes WHERE id = ? LIMIT 1");
+                    $stmt->execute([$m[1]]);
+                    $row = $stmt->fetch();
+                    $produtoId = $row ? (int)$row['produto_id'] : 0;
+                }
+            }
+            if ($produtoId <= 0) continue;
+            if (isset($itensParaFrete[$produtoId])) {
+                $itensParaFrete[$produtoId]['quantidade'] += ($item['quantidade'] ?? 1);
+            } else {
+                $itensParaFrete[$produtoId] = [
+                    'produto_id' => $produtoId,
+                    'quantidade' => (int)($item['quantidade'] ?? 1),
+                    'preco_unitario' => (float)($item['preco_unitario'] ?? 0),
+                ];
+            }
+        }
+        return $itensParaFrete;
+    }
+
     public function index(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -30,13 +64,18 @@ class CheckoutController extends Controller
         $cart = CartService::get();
         $subtotal = CartService::getSubtotal();
 
-        // Buscar opções de frete (usar CEP padrão para cálculo inicial)
-        $cep = $_GET['cep'] ?? '';
+        // Buscar opções de frete (usar CEP do GET ou da sessão)
+        $cep = $_GET['cep'] ?? ($_SESSION['checkout_cep'] ?? '');
+        $cep = preg_replace('/\D/', '', $cep);
+        if (!empty($cep)) {
+            $_SESSION['checkout_cep'] = $cep;
+        }
         $freteErro = null;
         $freteErroTecnico = null;
+        $itensParaFrete = $this->converterItensParaFrete($cart['items']);
         
         try {
-            $opcoesFrete = ShippingService::calcularFrete($tenantId, $cep, $subtotal, $cart['items']);
+            $opcoesFrete = !empty($cep) ? ShippingService::calcularFrete($tenantId, $cep, $subtotal, $itensParaFrete) : [];
             
             // Se não houver opções e CEP foi informado, preparar mensagem amigável
             if (empty($opcoesFrete) && !empty($cep)) {
@@ -161,7 +200,7 @@ class CheckoutController extends Controller
             // Redirecionar de volta com erros
             $cart = CartService::get();
             $subtotal = CartService::getSubtotal();
-            $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $cart['items']);
+            $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
             $metodosPagamento = PaymentService::listarMetodosDisponiveis($tenantId);
 
             $this->view('storefront/checkout/index', [
@@ -178,7 +217,7 @@ class CheckoutController extends Controller
         // Recalcular valores
         $cart = CartService::get();
         $subtotal = CartService::getSubtotal();
-        $valorFrete = ShippingService::getValorFrete($metodoFrete, $tenantId, $entregaCep, $subtotal, $cart['items']);
+        $valorFrete = ShippingService::getValorFrete($metodoFrete, $tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
         $totalDescontos = 0.0; // Por enquanto sem descontos
         $totalGeral = $subtotal + $valorFrete - $totalDescontos;
 
@@ -211,7 +250,7 @@ class CheckoutController extends Controller
         if (!empty($errors)) {
             $cart = CartService::get();
             $subtotal = CartService::getSubtotal();
-            $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $cart['items']);
+            $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
             $metodosPagamento = PaymentService::listarMetodosDisponiveis($tenantId);
 
             // Buscar dados do cliente se estiver logado
