@@ -8,7 +8,6 @@ use App\Tenant\TenantContext;
 use App\Services\Shipping\CorreiosLabelService;
 use App\Services\Shipping\ContentDeclarationPdfService;
 use App\Services\Shipping\ShippingService;
-use App\Services\Shipping\ShippingService;
 
 class OrderController extends Controller
 {
