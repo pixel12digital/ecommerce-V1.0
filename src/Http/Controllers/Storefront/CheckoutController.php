@@ -524,64 +524,62 @@ class CheckoutController extends Controller
                     'total_linha' => $totalLinha,
                 ]);
 
-                // Decrementar estoque
+                // Decrementar estoque (apenas se gerencia_estoque = 1)
                 if ($variacaoId) {
-                    // Decrementar estoque da variação
-                    $stmtEstoque = $db->prepare("
-                        UPDATE produto_variacoes 
-                        SET quantidade_estoque = quantidade_estoque - :qtd1,
-                            status_estoque = CASE 
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd2) <= 0 THEN 'outofstock'
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd3) > 0 THEN 'instock'
-                                ELSE status_estoque
-                            END,
-                            updated_at = NOW()
-                        WHERE id = :variacao_id
-                        AND tenant_id = :tenant_id
-                        AND gerencia_estoque = 1
-                        AND quantidade_estoque >= :qtd4
-                    ");
-                    $stmtEstoque->execute([
-                        'variacao_id' => $variacaoId,
-                        'tenant_id' => $tenantId,
-                        'qtd1' => $quantidade,
-                        'qtd2' => $quantidade,
-                        'qtd3' => $quantidade,
-                        'qtd4' => $quantidade,
-                    ]);
-                    
-                    if ($stmtEstoque->rowCount() === 0) {
-                        // Estoque insuficiente na variação
-                        throw new \Exception("Estoque insuficiente para a variação selecionada. Por favor, verifique o carrinho e tente novamente.");
+                    // Verificar se a variação gerencia estoque
+                    $stmtGerencia = $db->prepare("SELECT gerencia_estoque, quantidade_estoque FROM produto_variacoes WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
+                    $stmtGerencia->execute(['id' => $variacaoId, 'tenant_id' => $tenantId]);
+                    $varInfo = $stmtGerencia->fetch(\PDO::FETCH_ASSOC);
+
+                    if ($varInfo && (int)($varInfo['gerencia_estoque'] ?? 0) === 1) {
+                        if ((int)$varInfo['quantidade_estoque'] < $quantidade) {
+                            throw new \Exception("Estoque insuficiente para a variação selecionada. Por favor, verifique o carrinho e tente novamente.");
+                        }
+                        $stmtEstoque = $db->prepare("
+                            UPDATE produto_variacoes 
+                            SET quantidade_estoque = quantidade_estoque - :qtd1,
+                                status_estoque = CASE 
+                                    WHEN (quantidade_estoque - :qtd2) <= 0 THEN 'outofstock'
+                                    ELSE 'instock'
+                                END,
+                                updated_at = NOW()
+                            WHERE id = :variacao_id
+                            AND tenant_id = :tenant_id
+                        ");
+                        $stmtEstoque->execute([
+                            'variacao_id' => $variacaoId,
+                            'tenant_id' => $tenantId,
+                            'qtd1' => $quantidade,
+                            'qtd2' => $quantidade,
+                        ]);
                     }
                 } else {
-                    // Decrementar estoque do produto
-                    $stmtEstoque = $db->prepare("
-                        UPDATE produtos 
-                        SET quantidade_estoque = quantidade_estoque - :qtd1,
-                            status_estoque = CASE 
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd2) <= 0 THEN 'outofstock'
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd3) > 0 THEN 'instock'
-                                ELSE status_estoque
-                            END,
-                            updated_at = NOW()
-                        WHERE id = :produto_id
-                        AND tenant_id = :tenant_id
-                        AND gerencia_estoque = 1
-                        AND quantidade_estoque >= :qtd4
-                    ");
-                    $stmtEstoque->execute([
-                        'produto_id' => $produtoId,
-                        'tenant_id' => $tenantId,
-                        'qtd1' => $quantidade,
-                        'qtd2' => $quantidade,
-                        'qtd3' => $quantidade,
-                        'qtd4' => $quantidade,
-                    ]);
-                    
-                    if ($stmtEstoque->rowCount() === 0) {
-                        // Estoque insuficiente no produto
-                        throw new \Exception("Estoque insuficiente para o produto selecionado. Por favor, verifique o carrinho e tente novamente.");
+                    // Verificar se o produto gerencia estoque
+                    $stmtGerencia = $db->prepare("SELECT gerencia_estoque, quantidade_estoque FROM produtos WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
+                    $stmtGerencia->execute(['id' => $produtoId, 'tenant_id' => $tenantId]);
+                    $prodInfo = $stmtGerencia->fetch(\PDO::FETCH_ASSOC);
+
+                    if ($prodInfo && (int)($prodInfo['gerencia_estoque'] ?? 0) === 1) {
+                        if ((int)$prodInfo['quantidade_estoque'] < $quantidade) {
+                            throw new \Exception("Estoque insuficiente para o produto selecionado. Por favor, verifique o carrinho e tente novamente.");
+                        }
+                        $stmtEstoque = $db->prepare("
+                            UPDATE produtos 
+                            SET quantidade_estoque = quantidade_estoque - :qtd1,
+                                status_estoque = CASE 
+                                    WHEN (quantidade_estoque - :qtd2) <= 0 THEN 'outofstock'
+                                    ELSE 'instock'
+                                END,
+                                updated_at = NOW()
+                            WHERE id = :produto_id
+                            AND tenant_id = :tenant_id
+                        ");
+                        $stmtEstoque->execute([
+                            'produto_id' => $produtoId,
+                            'tenant_id' => $tenantId,
+                            'qtd1' => $quantidade,
+                            'qtd2' => $quantidade,
+                        ]);
                     }
                 }
             }
