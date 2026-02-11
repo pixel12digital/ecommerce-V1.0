@@ -106,6 +106,16 @@ ob_start();
                                required>
                     </div>
                     <div class="form-group">
+                        <label>CPF *</label>
+                        <input type="text" name="cliente_cpf" 
+                               value="<?= htmlspecialchars($formData['cliente_cpf'] ?? ($customer['cpf'] ?? '')) ?>" 
+                               placeholder="000.000.000-00"
+                               required
+                               maxlength="14">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
                         <label>Telefone</label>
                         <input type="text" name="cliente_telefone" 
                                value="<?= htmlspecialchars($formData['cliente_telefone'] ?? ($customer['phone'] ?? '')) ?>" 
@@ -125,7 +135,7 @@ ob_start();
                         <div id="passwordField" style="margin-top: 0.75rem; display: none;">
                             <label for="senha_conta" style="display: block; margin-bottom: 0.35rem; font-weight: 500; color: #555; font-size: 0.9rem;">Senha *</label>
                             <input type="password" name="senha_conta" id="senha_conta" 
-                                   placeholder="Mínimo de 6 caracteres" minlength="6"
+                                   placeholder="Mínimo de 6 caracteres" minlength="6" autocomplete="new-password"
                                    value="<?= htmlspecialchars($formData['senha_conta'] ?? '') ?>">
                         </div>
                     </div>
@@ -578,6 +588,18 @@ $additionalStyles = '
 $additionalScripts = '
     <script>
         (function() {
+            // Máscara de CPF
+            var cpfInput = document.querySelector("input[name=cliente_cpf]");
+            if (cpfInput) {
+                cpfInput.addEventListener("input", function(e) {
+                    var v = e.target.value.replace(/\D/g, "").substring(0, 11);
+                    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+                    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+                    else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+                    e.target.value = v;
+                });
+            }
+
             var subtotalValue = ' . $subtotal . ';
             var currentShippingOptions = ' . json_encode($opcoesFrete) . ';
             var lastCalculatedCep = "' . htmlspecialchars($cep ?? '') . '";

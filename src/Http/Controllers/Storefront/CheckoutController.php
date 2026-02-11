@@ -172,6 +172,7 @@ class CheckoutController extends Controller
         // Validar campos obrigatórios
         $clienteNome = trim($_POST['cliente_nome'] ?? '');
         $clienteEmail = trim($_POST['cliente_email'] ?? '');
+        $clienteCpf = preg_replace('/\D/', '', trim($_POST['cliente_cpf'] ?? ''));
         $clienteTelefone = trim($_POST['cliente_telefone'] ?? '');
         $entregaCep = trim($_POST['entrega_cep'] ?? '');
         $entregaLogradouro = trim($_POST['entrega_logradouro'] ?? '');
@@ -187,6 +188,9 @@ class CheckoutController extends Controller
         if (empty($clienteNome)) $errors[] = 'Nome é obrigatório';
         if (empty($clienteEmail) || !filter_var($clienteEmail, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'E-mail válido é obrigatório';
+        }
+        if (empty($clienteCpf) || strlen($clienteCpf) !== 11) {
+            $errors[] = 'CPF válido é obrigatório';
         }
         if (empty($entregaCep)) $errors[] = 'CEP é obrigatório';
         if (empty($entregaLogradouro)) $errors[] = 'Logradouro é obrigatório';
@@ -588,6 +592,7 @@ class CheckoutController extends Controller
             $cliente = [
                 'nome' => $clienteNome,
                 'email' => $clienteEmail,
+                'cpf' => $clienteCpf,
                 'telefone' => $clienteTelefone,
                 'cep' => $entregaCep,
                 'logradouro' => $entregaLogradouro,

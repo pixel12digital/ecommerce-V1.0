@@ -308,17 +308,18 @@ class CieloPaymentProvider implements PaymentProviderInterface
     ): PaymentResult {
         $merchantOrderId = (string)($pedido['numero_pedido'] ?? 'pedido-' . ($pedido['id'] ?? time()));
 
+        $cpf = preg_replace('/\D/', '', $cliente['cpf'] ?? $cliente['documento'] ?? '');
+
         $payload = [
             'MerchantOrderId' => $merchantOrderId,
             'Customer' => [
                 'Name' => $cliente['nome'] ?? 'Cliente',
-                'Email' => $cliente['email'] ?? '',
+                'Identity' => $cpf,
+                'IdentityType' => 'CPF',
             ],
             'Payment' => [
                 'Type' => 'Pix',
-                'Provider' => 'Cielo30',
                 'Amount' => $amount,
-                'QrCodeExpiration' => 86400,
             ],
         ];
 
@@ -351,11 +352,21 @@ class CieloPaymentProvider implements PaymentProviderInterface
         }
 
         if ($httpCode >= 400) {
-            $msg = $data['message'] ?? $data['Message'] ?? 'Erro HTTP ' . $httpCode;
-            if (isset($data['ModelState']) && is_array($data['ModelState'])) {
-                $msg = implode(' ', array_merge(...array_values($data['ModelState'])));
+            error_log("Cielo PIX Error: HTTP {$httpCode} - Response: " . $response);
+            error_log("Cielo PIX Payload: " . json_encode($payload));
+            $msg = 'Erro HTTP ' . $httpCode;
+            if (is_array($data)) {
+                if (isset($data['ModelState']) && is_array($data['ModelState'])) {
+                    $msg = implode(' ', array_merge(...array_values($data['ModelState'])));
+                } elseif (!empty($data['Message'])) {
+                    $msg = $data['Message'];
+                } elseif (!empty($data['message'])) {
+                    $msg = $data['message'];
+                } elseif (!empty($data[0]['Message'])) {
+                    $msg = $data[0]['Message'];
+                }
             }
-            throw new \RuntimeException('Cielo: ' . $msg);
+            throw new \RuntimeException('Erro no pagamento PIX: ' . $msg . '. Verifique as credenciais Cielo.');
         }
 
         $payment = $data['Payment'] ?? [];
