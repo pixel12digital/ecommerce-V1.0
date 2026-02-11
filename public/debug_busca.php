@@ -7,9 +7,14 @@ error_reporting(E_ALL);
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_GET['q'] = 'teste';
 
-require __DIR__ . '/../vendor/autoload.php';
+// Detectar ambiente: produção (tudo em public_html) vs local (public/)
+$vendorPath = file_exists(__DIR__ . '/../vendor/autoload.php') 
+    ? __DIR__ . '/../vendor/autoload.php' 
+    : __DIR__ . '/vendor/autoload.php';
+require $vendorPath;
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$envPath = file_exists(__DIR__ . '/../.env') ? __DIR__ . '/..' : __DIR__;
+$dotenv = Dotenv\Dotenv::createImmutable($envPath);
 $dotenv->load();
 
 \App\Core\Database::init();
