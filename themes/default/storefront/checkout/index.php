@@ -639,14 +639,14 @@ $additionalScripts = '
 
             // Restaurar seleções após erro (formData preservado)
             (function initPreselected() {
-                var checkedShipping = document.querySelector('input[name="metodo_frete"]:checked');
+                var checkedShipping = document.querySelector(\'input[name="metodo_frete"]:checked\');
                 if (checkedShipping) {
-                    var label = checkedShipping.closest('.option-card');
-                    if (label) { label.classList.add('selected'); }
+                    var label = checkedShipping.closest(\'.option-card\');
+                    if (label) { label.classList.add(\'selected\'); }
                 }
-                var checkedPayment = document.querySelector('input[name="metodo_pagamento"]:checked');
+                var checkedPayment = document.querySelector(\'input[name="metodo_pagamento"]:checked\');
                 if (checkedPayment) {
-                    var label = checkedPayment.closest('.option-card');
+                    var label = checkedPayment.closest(\'.option-card\');
                     if (label) { selectPayment(label); }
                 }
                 if (checkedShipping) { updateSummaryFromSelection(); }
