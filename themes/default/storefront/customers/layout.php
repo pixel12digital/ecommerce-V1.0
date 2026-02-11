@@ -30,9 +30,32 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
             align-items: center;
         }
         .header a { color: white; text-decoration: none; }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
         .header-logo {
             font-size: 1.5rem;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .header-back {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            opacity: 0.85;
+            padding: 0.4rem 0.75rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        .header-back:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.1);
         }
         .header-user {
             display: flex;
@@ -127,42 +150,67 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
             font-size: 1.25rem;
             flex-shrink: 0;
         }
-        /* Responsivo - Fase 10 */
-        /* Responsivo - Fase 10 */
+        /* Responsivo Mobile */
         @media (max-width: 768px) {
             .header {
-                padding: 1rem 1.5rem;
+                padding: 0.75rem 1rem;
                 flex-wrap: wrap;
-                gap: 1rem;
+                gap: 0.75rem;
+            }
+            .header-left {
+                gap: 0.75rem;
+                flex-wrap: wrap;
+            }
+            .header-logo {
+                font-size: 1.2rem;
+            }
+            .header-back {
+                font-size: 0.8rem;
+                padding: 0.3rem 0.6rem;
+            }
+            .header-user span {
+                display: none;
             }
             .container {
                 grid-template-columns: 1fr;
-                margin: 1.5rem auto;
-                padding: 0 1rem;
+                margin: 1rem auto;
+                padding: 0 0.75rem;
+                gap: 1rem;
             }
             .sidebar {
-                order: 2;
-                margin-top: 1.5rem;
+                order: -1;
+                padding: 0.75rem;
             }
             .sidebar-menu {
                 display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
+                flex-wrap: nowrap;
+                gap: 0;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
             .sidebar-menu li {
                 margin-bottom: 0;
-                flex: 1;
-                min-width: calc(50% - 0.25rem);
+                flex: 0 0 auto;
             }
             .sidebar-menu a {
-                padding: 0.75rem;
-                font-size: 0.875rem;
+                padding: 0.6rem 0.75rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+                border-left: none !important;
+                border-radius: 6px;
+            }
+            .sidebar-menu a.active {
+                border-left: none;
+                border-bottom: 2px solid #023A8D;
+            }
+            .sidebar-menu a i {
+                font-size: 1rem;
             }
             .content {
-                padding: 1.5rem;
+                padding: 1rem;
             }
             .content-header h1 {
-                font-size: 1.5rem;
+                font-size: 1.25rem;
             }
         }
         /* Estilos para formulários da área do cliente */
@@ -230,10 +278,19 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
 </head>
 <body>
     <header class="header">
-        <a href="<?= $basePath ?>" class="header-logo">Loja</a>
+        <div class="header-left">
+            <a href="<?= $basePath ?>/" class="header-logo">
+                <i class="bi bi-shop"></i>
+                Minha Conta
+            </a>
+            <a href="<?= $basePath ?>/" class="header-back">
+                <i class="bi bi-arrow-left"></i>
+                Voltar à Loja
+            </a>
+        </div>
         <div class="header-user">
             <span>Olá, <?= htmlspecialchars($customerName) ?></span>
-            <a href="<?= $basePath ?>/minha-conta/logout">Sair</a>
+            <a href="<?= $basePath ?>/minha-conta/logout" style="display:flex;align-items:center;gap:0.4rem;"><i class="bi bi-box-arrow-right"></i> Sair</a>
         </div>
     </header>
 
