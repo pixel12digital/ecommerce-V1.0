@@ -228,7 +228,14 @@ ob_start();
                                 <div>
                                     <div class="option-title"><?= htmlspecialchars($opcao['titulo']) ?></div>
                                     <div class="option-desc">
-                                        R$ <?= number_format($opcao['valor'], 2, ',', '.') ?> - <?= htmlspecialchars($opcao['prazo']) ?>
+                                        R$ <?= number_format($opcao['valor'], 2, ',', '.') ?> - <?php
+                                            $prazo = $opcao['prazo'];
+                                            if (is_numeric($prazo)) {
+                                                echo (int)$prazo === 1 ? '1 dia útil' : (int)$prazo . ' dias úteis';
+                                            } else {
+                                                echo htmlspecialchars($prazo);
+                                            }
+                                        ?>
                                         <?php if (!empty($opcao['descricao'])): ?>
                                             <br><?= htmlspecialchars($opcao['descricao']) ?>
                                         <?php endif; ?>
@@ -588,6 +595,43 @@ $additionalScripts = '
                 return div.innerHTML;
             }
             
+            function formatPrazo(prazo) {
+                if (!prazo && prazo !== 0) return "A consultar";
+                var num = parseInt(prazo, 10);
+                if (!isNaN(num)) {
+                    return num === 1 ? "1 dia útil" : num + " dias úteis";
+                }
+                return String(prazo);
+            }
+            
+            // Auto-preencher endereço via ViaCEP
+            function buscarEnderecoPorCep(cep) {
+                cep = cep.replace(/\D/g, "");
+                if (cep.length !== 8) return;
+                fetch("https://viacep.com.br/ws/" + cep + "/json/")
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.erro) return;
+                    if (data.logradouro) {
+                        var logradouro = document.querySelector("input[name=entrega_logradouro]");
+                        if (logradouro && !logradouro.value) logradouro.value = data.logradouro;
+                    }
+                    if (data.bairro) {
+                        var bairro = document.querySelector("input[name=entrega_bairro]");
+                        if (bairro && !bairro.value) bairro.value = data.bairro;
+                    }
+                    if (data.localidade) {
+                        var cidade = document.querySelector("input[name=entrega_cidade]");
+                        if (cidade) cidade.value = data.localidade;
+                    }
+                    if (data.uf) {
+                        var estado = document.getElementById("entrega_estado");
+                        if (estado) estado.value = data.uf;
+                    }
+                })
+                .catch(function() {});
+            }
+            
             // Calcular frete via AJAX
             function calcularFreteCheckout(cep) {
                 cep = cep.replace(/\D/g, "");
@@ -627,7 +671,7 @@ $additionalScripts = '
                                 valor: opcao.preco,
                                 prazo: opcao.prazo
                             });
-                            var prazoText = opcao.prazo || "A consultar";
+                            var prazoText = formatPrazo(opcao.prazo);
                             html += \'<label class="option-card" onclick="selectShipping(this)">\'
                                 + \'<input type="radio" name="metodo_frete" value="\' + escapeHtml(opcao.codigo || opcao.codigo_servico) + \'" required>\'
                                 + \'<div>\'
@@ -710,6 +754,7 @@ $additionalScripts = '
                             clearTimeout(cepTimer);
                             cepTimer = setTimeout(function() {
                                 calcularFreteCheckout(cleanCep);
+                                buscarEnderecoPorCep(cleanCep);
                             }, 500);
                         }
                     });
@@ -720,8 +765,9 @@ $additionalScripts = '
                         }
                     });
                     
-                    // Se já tem CEP preenchido (veio do carrinho), calcular
+                    // Se já tem CEP preenchido (veio do carrinho), calcular e buscar endereço
                     if (cepInput.value && cepInput.value.replace(/\D/g, "").length === 8) {
+                        buscarEnderecoPorCep(cepInput.value);
                         if (!currentShippingOptions || currentShippingOptions.length === 0) {
                             calcularFreteCheckout(cepInput.value);
                         }
