@@ -520,22 +520,25 @@ class CheckoutController extends Controller
                     // Decrementar estoque da variação
                     $stmtEstoque = $db->prepare("
                         UPDATE produto_variacoes 
-                        SET quantidade_estoque = quantidade_estoque - :quantidade,
+                        SET quantidade_estoque = quantidade_estoque - :qtd1,
                             status_estoque = CASE 
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) <= 0 THEN 'outofstock'
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) > 0 THEN 'instock'
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd2) <= 0 THEN 'outofstock'
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd3) > 0 THEN 'instock'
                                 ELSE status_estoque
                             END,
                             updated_at = NOW()
                         WHERE id = :variacao_id
                         AND tenant_id = :tenant_id
                         AND gerencia_estoque = 1
-                        AND quantidade_estoque >= :quantidade
+                        AND quantidade_estoque >= :qtd4
                     ");
                     $stmtEstoque->execute([
                         'variacao_id' => $variacaoId,
                         'tenant_id' => $tenantId,
-                        'quantidade' => $quantidade
+                        'qtd1' => $quantidade,
+                        'qtd2' => $quantidade,
+                        'qtd3' => $quantidade,
+                        'qtd4' => $quantidade,
                     ]);
                     
                     if ($stmtEstoque->rowCount() === 0) {
@@ -546,22 +549,25 @@ class CheckoutController extends Controller
                     // Decrementar estoque do produto
                     $stmtEstoque = $db->prepare("
                         UPDATE produtos 
-                        SET quantidade_estoque = quantidade_estoque - :quantidade,
+                        SET quantidade_estoque = quantidade_estoque - :qtd1,
                             status_estoque = CASE 
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) <= 0 THEN 'outofstock'
-                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :quantidade) > 0 THEN 'instock'
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd2) <= 0 THEN 'outofstock'
+                                WHEN gerencia_estoque = 1 AND (quantidade_estoque - :qtd3) > 0 THEN 'instock'
                                 ELSE status_estoque
                             END,
                             updated_at = NOW()
                         WHERE id = :produto_id
                         AND tenant_id = :tenant_id
                         AND gerencia_estoque = 1
-                        AND quantidade_estoque >= :quantidade
+                        AND quantidade_estoque >= :qtd4
                     ");
                     $stmtEstoque->execute([
                         'produto_id' => $produtoId,
                         'tenant_id' => $tenantId,
-                        'quantidade' => $quantidade
+                        'qtd1' => $quantidade,
+                        'qtd2' => $quantidade,
+                        'qtd3' => $quantidade,
+                        'qtd4' => $quantidade,
                     ]);
                     
                     if ($stmtEstoque->rowCount() === 0) {
