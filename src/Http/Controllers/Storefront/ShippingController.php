@@ -10,6 +10,46 @@ use App\Services\Shipping\ShippingService;
 class ShippingController extends Controller
 {
     /**
+     * Converte itens do carrinho (chaves v:123 ou p:456) para formato
+     * esperado pelo ShippingService (indexado por produto_id inteiro).
+     * Para produtos variáveis, o peso/dimensões vêm do produto pai.
+     */
+    private function converterItensParaFrete(array $cartItems): array
+    {
+        $itensParaFrete = [];
+        foreach ($cartItems as $itemKey => $item) {
+            $produtoId = (int)($item['produto_id'] ?? 0);
+            if ($produtoId <= 0) {
+                // Extrair produto_id da chave (p:123 ou v:123)
+                if (preg_match('/^p:(\d+)$/', $itemKey, $m)) {
+                    $produtoId = (int)$m[1];
+                } elseif (preg_match('/^v:(\d+)$/', $itemKey, $m)) {
+                    // Para variação, buscar produto_id da variação no banco
+                    $db = \App\Core\Database::getConnection();
+                    $stmt = $db->prepare("SELECT produto_id FROM produto_variacoes WHERE id = ? LIMIT 1");
+                    $stmt->execute([$m[1]]);
+                    $row = $stmt->fetch();
+                    $produtoId = $row ? (int)$row['produto_id'] : 0;
+                }
+            }
+
+            if ($produtoId <= 0) continue;
+
+            // Agrupar por produto_id (somar quantidades se mesmo produto)
+            if (isset($itensParaFrete[$produtoId])) {
+                $itensParaFrete[$produtoId]['quantidade'] += ($item['quantidade'] ?? 1);
+            } else {
+                $itensParaFrete[$produtoId] = [
+                    'produto_id' => $produtoId,
+                    'quantidade' => (int)($item['quantidade'] ?? 1),
+                    'preco_unitario' => (float)($item['preco_unitario'] ?? 0),
+                ];
+            }
+        }
+        return $itensParaFrete;
+    }
+
+    /**
      * Valida se os itens do carrinho possuem peso/dimensões antes de calcular frete
      * 
      * POST /api/shipping/validate
@@ -38,7 +78,8 @@ class ShippingController extends Controller
             return;
         }
 
-        $validacao = ShippingService::validarDadosItens($tenantId, $cart['items']);
+        $itensParaFrete = $this->converterItensParaFrete($cart['items']);
+        $validacao = ShippingService::validarDadosItens($tenantId, $itensParaFrete);
         
         $this->json([
             'success' => true,
@@ -141,7 +182,7 @@ class ShippingController extends Controller
             
             // Obter dados do carrinho
             $subtotal = CartService::getSubtotal();
-            $itens = $cart['items'];
+            $itens = $this->converterItensParaFrete($cart['items']);
             
             error_log("ShippingController::calculate() - Subtotal: " . $subtotal);
             error_log("ShippingController::calculate() - Itens do carrinho: " . json_encode($itens));
