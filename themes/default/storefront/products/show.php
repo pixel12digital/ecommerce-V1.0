@@ -260,6 +260,12 @@ ob_start();
                     <?php endforeach; ?>
                 </div>
 
+                <!-- Feedback inline para seleção de variação -->
+                <div id="variation-feedback" style="display: none; margin-bottom: 0.75rem; padding: 0.5rem 0; color: #856404; font-size: 0.9rem; font-weight: 500;">
+                    <i class="bi bi-exclamation-circle" style="margin-right: 0.35rem;"></i>
+                    <span id="variation-feedback-text"></span>
+                </div>
+
                 <!-- Status de Estoque da Variação -->
                 <div class="product-stock variation-stock" id="variation-stock" style="display: none; margin-bottom: 1rem;">
                     <span id="variation-stock-text"></span>
@@ -1516,9 +1522,13 @@ ob_start();
         const variationPrice = document.getElementById('variation-price');
         const variationPriceText = document.getElementById('variation-price-text');
         const mainImage = document.getElementById('mainImage');
+        const variationFeedback = document.getElementById('variation-feedback');
+        const variationFeedbackText = document.getElementById('variation-feedback-text');
+        const addToCartForm = document.getElementById('add-to-cart-form');
         const basePath = '<?= $basePath ?>';
 
         // Armazenar seleções atuais
+        let userInteracted = false;
         const selectedTerms = {};
 
         function buildCurrentSignature() {
@@ -1659,6 +1669,9 @@ ob_start();
             if (variation) {
                 variacaoIdInput.value = variation.variacao_id;
 
+                // Esconder feedback de seleção
+                if (variationFeedback) variationFeedback.style.display = 'none';
+
                 // Atualizar imagem (variação completa)
                 updateImage(variation, selectedColorTermId);
 
@@ -1725,13 +1738,39 @@ ob_start();
                 }
                 
                 if (variationPrice) variationPrice.style.display = 'none';
-                if (variationStock) {
-                    variationStock.style.display = 'block';
-                    variationStockText.innerHTML = '<i class="bi bi-x-circle-fill icon" style="color: #dc3545;"></i> Selecione todas as opções';
-                    variationStock.className = 'product-stock variation-stock stock-out';
-                }
+                if (variationStock) variationStock.style.display = 'none';
                 if (btnAddCart) btnAddCart.disabled = true;
+
+                // Mostrar feedback inline apenas se o usuário já interagiu
+                if (userInteracted && variationFeedback && variationFeedbackText) {
+                    const missingAttrs = getMissingAttributeNames();
+                    if (missingAttrs.length > 0) {
+                        variationFeedbackText.textContent = 'Selecione ' + missingAttrs.join(' e ') + ' para continuar.';
+                    } else {
+                        variationFeedbackText.textContent = 'Selecione todas as opções para continuar.';
+                    }
+                    variationFeedback.style.display = 'block';
+                }
             }
+        }
+
+        function getMissingAttributeNames() {
+            const missing = [];
+            const attrGroups = document.querySelectorAll('.variation-attribute');
+            attrGroups.forEach(function(group) {
+                const firstSwatch = group.querySelector('.variation-swatch, .variation-pill');
+                if (firstSwatch) {
+                    const atributoId = firstSwatch.getAttribute('data-atributo-id');
+                    if (!selectedTerms[atributoId]) {
+                        const label = group.querySelector('.variation-attribute-label, label, h4, strong');
+                        if (label) {
+                            const text = label.textContent.trim().replace(/[:\-–].*$/, '').trim().toLowerCase();
+                            missing.push('um ' + text);
+                        }
+                    }
+                }
+            });
+            return missing;
         }
 
         // Salvar imagem original
@@ -1743,6 +1782,7 @@ ob_start();
         swatches.forEach(function(swatch) {
             swatch.addEventListener('click', function() {
                 if (this.disabled) return;
+                userInteracted = true;
                 
                 const atributoId = this.getAttribute('data-atributo-id');
                 const termoId = this.getAttribute('data-termo-id');
@@ -1780,6 +1820,21 @@ ob_start();
                 updateUI();
             });
         });
+
+        // Interceptar submit do formulário para mostrar feedback inline
+        if (addToCartForm) {
+            addToCartForm.addEventListener('submit', function(e) {
+                if (!variacaoIdInput.value) {
+                    e.preventDefault();
+                    userInteracted = true;
+                    updateUI();
+                    // Scroll suave até o feedback
+                    if (variationFeedback) {
+                        variationFeedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        }
 
         updateUI();
     })();

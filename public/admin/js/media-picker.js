@@ -594,7 +594,12 @@
                     if (!imageUrl.startsWith('/')) {
                         imageUrl = '/' + imageUrl;
                     }
-                    preview.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;" onerror="this.parentElement.innerHTML=\'<div style=\\\'color: #999; padding: 1rem; text-align: center;\\\'>Erro ao carregar imagem</div>\'">';
+                    // Detectar se é preview de variação (célula pequena 36x36)
+                    if (preview.classList.contains('variacao-imagem-preview-wrap')) {
+                        preview.innerHTML = '<img src="' + imageUrl + '" alt="Variação" class="variacao-image-preview" onerror="this.parentElement.innerHTML=\'<div class=\\\'variacao-image-preview variacao-image-placeholder\\\'><i class=\\\'bi bi-image\\\'></i></div>\'">';
+                    } else {
+                        preview.innerHTML = '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 4px; margin-top: 0.5rem; border: 1px solid #ddd; padding: 4px;" onerror="this.parentElement.innerHTML=\'<div style=\\\'color: #999; padding: 1rem; text-align: center;\\\'>Erro ao carregar imagem</div>\'">';
+                    }
                 }
             }
             
