@@ -3,6 +3,12 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+// Simular request
+$_SERVER['REQUEST_METHOD'] = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'pontodogolfeoutlet.com.br';
+$_SERVER['REQUEST_URI'] = '/produtos?q=teste';
+$_GET['q'] = 'teste';
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 // Carregar .env manualmente (mesmo approach do index.php)
@@ -18,40 +24,39 @@ if (file_exists($envFile)) {
     }
 }
 
+echo "=== PASSO 1: Resolver Tenant ===\n";
 try {
-    $db = \App\Core\Database::getConnection();
-    echo "DB conectado OK<br>";
+    $tenantResolver = new \App\Http\Middleware\TenantResolverMiddleware();
+    $tenantResolver->handle();
+    $tenantId = \App\Tenant\TenantContext::id();
+    echo "Tenant ID: $tenantId OK\n";
 } catch (\Throwable $e) {
-    die("ERRO DB: " . $e->getMessage());
+    die("ERRO Tenant: " . $e->getMessage() . " em " . $e->getFile() . ":" . $e->getLine() . "\n");
 }
 
-echo "<h3>Colunas da tabela produtos:</h3>";
-$cols = ['exibir_no_catalogo', 'data_criacao', 'created_at', 'status', 'tipo', 'sku'];
-foreach ($cols as $col) {
-    $stmt = $db->query("SHOW COLUMNS FROM produtos LIKE '$col'");
-    echo "$col: " . ($stmt->rowCount() > 0 ? 'EXISTE' : 'NAO EXISTE') . "<br>";
+echo "\n=== PASSO 2: ThemeConfig ===\n";
+try {
+    $theme = \App\Services\ThemeConfig::getFullThemeConfig();
+    echo "ThemeConfig OK\n";
+} catch (\Throwable $e) {
+    die("ERRO ThemeConfig: " . $e->getMessage() . " em " . $e->getFile() . ":" . $e->getLine() . "\n");
 }
 
-echo "<hr><h3>Testando query de busca:</h3>";
+echo "\n=== PASSO 3: CartService ===\n";
 try {
-    $stmt = $db->prepare("
-        SELECT COUNT(*) as total 
-        FROM produtos p 
-        WHERE p.tenant_id = 1
-        AND p.status = 'publish'
-    ");
-    $stmt->execute();
-    echo "Query basica OK: " . $stmt->fetch()['total'] . " produtos<br>";
-
-    $stmt2 = $db->prepare("
-        SELECT COUNT(*) as total 
-        FROM produtos p 
-        WHERE p.tenant_id = 1
-        AND p.status = 'publish'
-        AND p.exibir_no_catalogo = 1
-    ");
-    $stmt2->execute();
-    echo "Query com exibir_no_catalogo OK: " . $stmt2->fetch()['total'] . " produtos<br>";
+    $cartItems = \App\Services\CartService::getTotalItems();
+    echo "CartService OK: $cartItems itens\n";
 } catch (\Throwable $e) {
-    echo "<pre style='color:red'>ERRO: " . $e->getMessage() . "\n" . $e->getFile() . ":" . $e->getLine() . "</pre>";
+    die("ERRO CartService: " . $e->getMessage() . " em " . $e->getFile() . ":" . $e->getLine() . "\n");
+}
+
+echo "\n=== PASSO 4: ProductController::index ===\n";
+try {
+    $controller = new \App\Http\Controllers\Storefront\ProductController();
+    $controller->index();
+    echo "\nProductController OK\n";
+} catch (\Throwable $e) {
+    echo "\nERRO ProductController: " . $e->getMessage() . "\n";
+    echo "Arquivo: " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo "Trace:\n" . $e->getTraceAsString() . "\n";
 }
