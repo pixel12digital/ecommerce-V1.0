@@ -15,10 +15,18 @@ class CustomerAuthController extends Controller
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+
+        // Capturar redirect da URL (?redirect=/checkout)
+        $redirectUrl = trim($_GET['redirect'] ?? '');
+        if (!empty($redirectUrl)) {
+            $_SESSION['customer_auth_redirect'] = $redirectUrl;
+        }
+        $finalRedirect = $_SESSION['customer_auth_redirect'] ?? '/minha-conta';
         
-        // Se já estiver logado, redirecionar para dashboard
+        // Se já estiver logado, redirecionar para o destino (checkout ou dashboard)
         if (isset($_SESSION['customer_id']) && !empty($_SESSION['customer_id'])) {
-            $this->redirect('/minha-conta');
+            unset($_SESSION['customer_auth_redirect']);
+            $this->redirect($finalRedirect);
             return;
         }
 
@@ -41,7 +49,7 @@ class CustomerAuthController extends Controller
             'theme' => $theme,
             'message' => $message,
             'messageType' => $messageType,
-            'redirectUrl' => $_SESSION['customer_auth_redirect'] ?? '/minha-conta',
+            'redirectUrl' => $finalRedirect,
             'cartTotalItems' => $cartTotalItems,
             'cartSubtotal' => $cartSubtotal,
         ]);
@@ -153,8 +161,11 @@ class CustomerAuthController extends Controller
         $_SESSION['customer_name'] = $customer['name'];
         $_SESSION['customer_email'] = $customer['email'];
 
-        // Redirecionar
-        $redirectUrl = $_SESSION['customer_auth_redirect'] ?? '/minha-conta';
+        // Redirecionar: prioridade para POST redirect, depois sessão, depois dashboard
+        $redirectUrl = trim($_POST['redirect'] ?? '');
+        if (empty($redirectUrl)) {
+            $redirectUrl = $_SESSION['customer_auth_redirect'] ?? '/minha-conta';
+        }
         unset($_SESSION['customer_auth_redirect']);
 
         $this->redirect($redirectUrl);
