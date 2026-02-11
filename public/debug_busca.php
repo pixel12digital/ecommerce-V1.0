@@ -19,7 +19,6 @@ if (file_exists($envFile)) {
 }
 
 try {
-    \App\Core\Database::init();
     $db = \App\Core\Database::getConnection();
     echo "DB conectado OK<br>";
 } catch (\Throwable $e) {
