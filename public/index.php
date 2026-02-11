@@ -628,6 +628,7 @@ try {
         echo "<strong>Stack Trace:</strong>\n" . htmlspecialchars($e->getTraceAsString());
         echo "</pre>";
     } else {
+        error_log('[ERRO 500] ' . $e->getMessage() . ' em ' . $e->getFile() . ':' . $e->getLine());
         echo "<p>Ocorreu um erro. Entre em contato com o administrador.</p>";
     }
 }
