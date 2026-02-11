@@ -33,12 +33,6 @@ $editingAddress = $editingAddress ?? null;
     </div>
 <?php endif; ?>
 
-/* Fase 10 - Responsividade */
-@media (max-width: 768px) {
-    .addresses-grid {
-        grid-template-columns: 1fr !important;
-    }
-}
 <div class="addresses-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
     <div>
         <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700; color: #333;">

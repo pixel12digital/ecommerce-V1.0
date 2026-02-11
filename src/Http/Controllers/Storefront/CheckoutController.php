@@ -368,9 +368,9 @@ class CheckoutController extends Controller
 
                         $stmt = $db->prepare("
                             INSERT INTO customers (
-                                tenant_id, name, email, password_hash, phone, created_at, updated_at
+                                tenant_id, name, email, password_hash, phone, cpf, created_at, updated_at
                             ) VALUES (
-                                :tenant_id, :name, :email, :password_hash, :phone, NOW(), NOW()
+                                :tenant_id, :name, :email, :password_hash, :phone, :cpf, NOW(), NOW()
                             )
                         ");
                         $stmt->execute([
@@ -379,6 +379,7 @@ class CheckoutController extends Controller
                             'email' => $clienteEmail,
                             'password_hash' => $passwordHash,
                             'phone' => $clienteTelefone ?: null,
+                            'cpf' => $clienteCpf ?: null,
                         ]);
 
                         $customerId = (int)$db->lastInsertId();
@@ -628,6 +629,51 @@ class CheckoutController extends Controller
                 'pedido_id' => $pedidoId,
                 'tenant_id' => $tenantId,
             ]);
+
+            // Atualizar CPF do cliente (caso já existisse sem CPF)
+            if ($customerId && !empty($clienteCpf)) {
+                $stmtCpf = $db->prepare("UPDATE customers SET cpf = :cpf WHERE id = :id AND tenant_id = :tenant_id AND (cpf IS NULL OR cpf = '')");
+                $stmtCpf->execute(['cpf' => $clienteCpf, 'id' => $customerId, 'tenant_id' => $tenantId]);
+            }
+
+            // Salvar endereço do checkout automaticamente (se não existir igual)
+            if ($customerId) {
+                $stmtAddr = $db->prepare("
+                    SELECT id FROM customer_addresses 
+                    WHERE customer_id = :customer_id AND tenant_id = :tenant_id 
+                    AND zipcode = :zipcode AND street = :street AND number = :number
+                    LIMIT 1
+                ");
+                $stmtAddr->execute([
+                    'customer_id' => $customerId,
+                    'tenant_id' => $tenantId,
+                    'zipcode' => $entregaCep,
+                    'street' => $entregaLogradouro,
+                    'number' => $entregaNumero,
+                ]);
+                if (!$stmtAddr->fetch()) {
+                    $stmtNewAddr = $db->prepare("
+                        INSERT INTO customer_addresses (
+                            tenant_id, customer_id, type, zipcode, street, number, complement,
+                            neighborhood, city, state, is_default, created_at, updated_at
+                        ) VALUES (
+                            :tenant_id, :customer_id, 'shipping', :zipcode, :street, :number, :complement,
+                            :neighborhood, :city, :state, 1, NOW(), NOW()
+                        )
+                    ");
+                    $stmtNewAddr->execute([
+                        'tenant_id' => $tenantId,
+                        'customer_id' => $customerId,
+                        'zipcode' => $entregaCep,
+                        'street' => $entregaLogradouro,
+                        'number' => $entregaNumero,
+                        'complement' => trim($_POST['entrega_complemento'] ?? '') ?: null,
+                        'neighborhood' => $entregaBairro,
+                        'city' => $entregaCidade,
+                        'state' => $entregaEstado,
+                    ]);
+                }
+            }
 
             $db->commit();
 
