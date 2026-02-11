@@ -109,6 +109,7 @@ ob_start();
                     $errors = [
                         'carrinho_vazio' => 'Seu carrinho está vazio.',
                         'produto_invalido' => 'Produto inválido.',
+                        'item_invalido' => 'Item não encontrado no carrinho.',
                     ];
                     echo $errors[$_GET['error']] ?? 'Erro desconhecido.';
                     ?>
@@ -132,7 +133,7 @@ ob_start();
                 <div class="cart-items-section">
                     <h2 class="cart-section-title">Seu Carrinho</h2>
                     <div class="cart-items">
-                        <?php foreach ($cart['items'] as $item): ?>
+                        <?php foreach ($cart['items'] as $itemKey => $item): ?>
                             <div class="cart-item">
                                 <div class="item-thumb">
                                     <?php if ($item['imagem']): ?>
@@ -157,7 +158,7 @@ ob_start();
                                     <div class="item-actions-row">
                                         <div class="qty-stepper">
                                             <form method="POST" action="<?= $basePath ?>/carrinho/atualizar" class="qty-form">
-                                                <input type="hidden" name="produto_id" value="<?= $item['produto_id'] ?>">
+                                                <input type="hidden" name="item_key" value="<?= htmlspecialchars($itemKey) ?>">
                                                 <button type="button" class="qty-btn qty-decrease" data-produto-id="<?= $item['produto_id'] ?>" aria-label="Diminuir quantidade">−</button>
                                                 <input type="number" 
                                                        name="quantidade" 
@@ -170,7 +171,7 @@ ob_start();
                                             </form>
                                         </div>
                                         <form method="POST" action="<?= $basePath ?>/carrinho/remover" class="remove-form">
-                                            <input type="hidden" name="produto_id" value="<?= $item['produto_id'] ?>">
+                                            <input type="hidden" name="item_key" value="<?= htmlspecialchars($itemKey) ?>">
                                             <button type="submit" class="remove-btn" aria-label="Remover produto">
                                                 <i class="bi bi-trash icon"></i> Remover
                                             </button>
