@@ -30,11 +30,6 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
             align-items: center;
         }
         .header a { color: white; text-decoration: none; }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
         .header-logo {
             font-size: 1.5rem;
             font-weight: 700;
@@ -42,7 +37,16 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
             align-items: center;
             gap: 0.5rem;
         }
-        .header-back {
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .header-greeting {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .header-back, .header-logout {
             display: flex;
             align-items: center;
             gap: 0.4rem;
@@ -53,14 +57,9 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
             border-radius: 6px;
             transition: opacity 0.2s, background 0.2s;
         }
-        .header-back:hover {
+        .header-back:hover, .header-logout:hover {
             opacity: 1;
             background: rgba(255,255,255,0.1);
-        }
-        .header-user {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
         }
         .container {
             max-width: 1200px;
@@ -153,25 +152,27 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
         /* Responsivo Mobile */
         @media (max-width: 768px) {
             .header {
-                padding: 0.75rem 1rem;
-            }
-            .header-left {
-                gap: 0.75rem;
+                padding: 0.6rem 0.75rem;
             }
             .header-logo {
                 font-size: 1.1rem;
                 gap: 0.3rem;
             }
             .header-logo i { font-size: 1rem; }
-            .header-back {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
+            .header-actions {
+                gap: 0.5rem;
             }
-            .header-user span {
+            .header-greeting {
                 display: none;
             }
-            .header-user a {
-                font-size: 0.85rem;
+            .header-back-text {
+                display: none;
+            }
+            .header-back, .header-logout {
+                padding: 0.4rem;
+                border: none;
+                font-size: 1.1rem;
+                opacity: 0.9;
             }
             .container {
                 grid-template-columns: 1fr;
@@ -212,6 +213,9 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
             }
             .sidebar-menu a i {
                 font-size: 0.85rem;
+            }
+            .sidebar-logout {
+                display: none;
             }
             .content {
                 padding: 1rem;
@@ -297,19 +301,20 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
 </head>
 <body>
     <header class="header">
-        <div class="header-left">
-            <a href="<?= $basePath ?>/" class="header-logo">
-                <i class="bi bi-shop"></i>
-                Minha Conta
-            </a>
-            <a href="<?= $basePath ?>/" class="header-back">
+        <a href="<?= $basePath ?>/" class="header-logo">
+            <i class="bi bi-shop"></i>
+            <span>Minha Conta</span>
+        </a>
+        <div class="header-actions">
+            <span class="header-greeting">Olá, <?= htmlspecialchars($customerName) ?></span>
+            <a href="<?= $basePath ?>/" class="header-back" title="Voltar à Loja">
                 <i class="bi bi-arrow-left"></i>
-                Voltar à Loja
+                <span class="header-back-text">Voltar à Loja</span>
             </a>
-        </div>
-        <div class="header-user">
-            <span>Olá, <?= htmlspecialchars($customerName) ?></span>
-            <a href="<?= $basePath ?>/minha-conta/logout" style="display:flex;align-items:center;gap:0.4rem;"><i class="bi bi-box-arrow-right"></i> Sair</a>
+            <a href="<?= $basePath ?>/minha-conta/logout" class="header-logout" title="Sair">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="header-back-text">Sair</span>
+            </a>
         </div>
     </header>
 
@@ -341,7 +346,7 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
                             <span>Dados da Conta</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="sidebar-logout">
                         <a href="<?= $basePath ?>/minha-conta/logout">
                             <i class="bi bi-box-arrow-right"></i>
                             <span>Sair</span>
