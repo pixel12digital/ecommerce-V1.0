@@ -201,14 +201,30 @@ class CheckoutController extends Controller
             // Redirecionar de volta com erros
             $cart = CartService::get();
             $subtotal = CartService::getSubtotal();
-            $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+            $opcoesFrete = [];
+            $freteErro = '';
+            try {
+                $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+            } catch (\Exception $ex) {
+                $freteErro = 'Não foi possível calcular o frete.';
+            }
             $metodosPagamento = PaymentService::listarMetodosDisponiveis($tenantId);
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
 
             $this->view('storefront/checkout/index', [
+                'loja' => ['nome' => $tenant->name, 'slug' => $tenant->slug],
+                'theme' => $theme,
                 'cart' => $cart,
                 'subtotal' => $subtotal,
                 'opcoesFrete' => $opcoesFrete,
+                'freteErro' => $freteErro,
+                'cep' => $entregaCep,
                 'metodosPagamento' => $metodosPagamento,
+                'customer' => null,
+                'customerAddresses' => [],
+                'cartTotalItems' => CartService::getTotalItems(),
+                'cartSubtotal' => CartService::getSubtotal(),
                 'errors' => $errors,
                 'formData' => $_POST,
             ]);
@@ -271,13 +287,22 @@ class CheckoutController extends Controller
                 $customer = $stmt->fetch(\PDO::FETCH_ASSOC);
             }
 
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
+
             $this->view('storefront/checkout/index', [
+                'loja' => ['nome' => $tenant->name, 'slug' => $tenant->slug],
+                'theme' => $theme,
                 'cart' => $cart,
                 'subtotal' => $subtotal,
                 'opcoesFrete' => $opcoesFrete,
+                'freteErro' => '',
+                'cep' => $entregaCep,
                 'metodosPagamento' => $metodosPagamento,
                 'customer' => $customer,
                 'customerAddresses' => $customerAddresses,
+                'cartTotalItems' => CartService::getTotalItems(),
+                'cartSubtotal' => CartService::getSubtotal(),
                 'errors' => $errors,
                 'formData' => $_POST,
             ]);
@@ -596,20 +621,35 @@ class CheckoutController extends Controller
 
         } catch (\Exception $e) {
             $db->rollBack();
-            // Log do erro (pode melhorar depois)
             error_log("Erro ao processar pedido: " . $e->getMessage());
             
             $cart = CartService::get();
             $subtotal = CartService::getSubtotal();
-            $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $cart['items']);
+            $opcoesFrete = [];
+            $freteErro = '';
+            try {
+                $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+            } catch (\Exception $ex) {
+                $freteErro = 'Não foi possível calcular o frete.';
+            }
             $metodosPagamento = PaymentService::listarMetodosDisponiveis($tenantId);
+            $theme = ThemeConfig::getFullThemeConfig();
+            $tenant = TenantContext::tenant();
 
             $this->view('storefront/checkout/index', [
+                'loja' => ['nome' => $tenant->name, 'slug' => $tenant->slug],
+                'theme' => $theme,
                 'cart' => $cart,
                 'subtotal' => $subtotal,
                 'opcoesFrete' => $opcoesFrete,
+                'freteErro' => $freteErro,
+                'cep' => $entregaCep,
                 'metodosPagamento' => $metodosPagamento,
-                'errors' => ['Erro ao processar pedido. Tente novamente.'],
+                'customer' => null,
+                'customerAddresses' => [],
+                'cartTotalItems' => CartService::getTotalItems(),
+                'cartSubtotal' => CartService::getSubtotal(),
+                'errors' => [$e->getMessage() ?: 'Erro ao processar pedido. Tente novamente.'],
                 'formData' => $_POST,
             ]);
         }
