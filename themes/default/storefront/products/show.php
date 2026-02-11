@@ -1499,8 +1499,11 @@ $additionalScripts = '
             });
         })();
     </script>
+';
 
-    <?php if (($produto['tipo'] ?? 'simple') === 'variable' && !empty($variacoes)): ?>
+if (($produto['tipo'] ?? 'simple') === 'variable' && !empty($variacoes)):
+ob_start();
+?>
     <script>
     (function() {
         const variations = window.productVariations || [];
@@ -1781,8 +1784,9 @@ $additionalScripts = '
         updateUI();
     })();
     </script>
-    <?php endif; ?>
-';
+<?php
+$additionalScripts .= ob_get_clean();
+endif;
 
 // Configurar variáveis para o layout base
 $pageTitle = htmlspecialchars($produto['nome']) . ' – ' . htmlspecialchars($loja['nome']);
