@@ -24,6 +24,12 @@ class PaymentService
 
         if ($codigo === 'cielo') {
             $metodos[] = [
+                'codigo' => 'cielo_credit_card',
+                'titulo' => 'Cartão de Crédito',
+                'descricao' => 'Pague com cartão de crédito via Cielo. Visa, Master, Elo e mais.',
+                'icone' => 'credit_card'
+            ];
+            $metodos[] = [
                 'codigo' => 'cielo_pix',
                 'titulo' => 'PIX (Cielo)',
                 'descricao' => 'Pague com PIX via Cielo. QR Code será exibido após finalizar.',
@@ -155,6 +161,9 @@ class PaymentService
         }
         if ($metodo === 'cielo_pix') {
             return 'O QR Code PIX será exibido na próxima tela. Escaneie ou copie o código para pagar.';
+        }
+        if ($metodo === 'cielo_credit_card') {
+            return 'Pagamento processado com cartão de crédito via Cielo.';
         }
         return 'Instruções de pagamento não disponíveis.';
     }

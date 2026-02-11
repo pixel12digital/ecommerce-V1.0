@@ -264,6 +264,40 @@ ob_start();
                         </label>
                     <?php endforeach; ?>
                 </div>
+                
+                <!-- Campos do Cartão de Crédito (visíveis apenas quando cartão é selecionado) -->
+                <div id="credit-card-fields" style="display: none; margin-top: 1.25rem; padding: 1.25rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    <h4 style="margin: 0 0 1rem 0; font-size: 1rem; color: #333;">Dados do Cartão</h4>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="card_number">Número do Cartão *</label>
+                        <input type="text" id="card_number" name="card_number" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" style="font-family: monospace; letter-spacing: 1px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="card_holder">Nome no Cartão *</label>
+                        <input type="text" id="card_holder" name="card_holder" placeholder="NOME COMO ESTÁ NO CARTÃO" autocomplete="cc-name" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-row" style="margin-bottom: 1rem;">
+                        <div class="form-group">
+                            <label for="card_expiry">Validade *</label>
+                            <input type="text" id="card_expiry" name="card_expiry" placeholder="MM/AAAA" maxlength="7" autocomplete="cc-exp">
+                        </div>
+                        <div class="form-group">
+                            <label for="card_cvv">CVV *</label>
+                            <input type="text" id="card_cvv" name="card_cvv" placeholder="000" maxlength="4" autocomplete="cc-csc" style="font-family: monospace;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="card_installments">Parcelas</label>
+                        <select id="card_installments" name="card_installments">
+                            <option value="1">1x sem juros</option>
+                            <option value="2">2x sem juros</option>
+                            <option value="3">3x sem juros</option>
+                        </select>
+                    </div>
+                    <p style="margin: 0.75rem 0 0 0; font-size: 0.8rem; color: #888;">
+                        <i class="bi bi-lock" style="margin-right: 0.25rem;"></i> Pagamento seguro processado pela Cielo.
+                    </p>
+                </div>
             </div>
             
             <!-- Observações - Fase 10 -->
@@ -563,6 +597,19 @@ $additionalScripts = '
                     card.classList.remove("selected");
                 });
                 element.classList.add("selected");
+                
+                // Mostrar/ocultar campos de cartão
+                var radio = element.querySelector("input[type=radio]");
+                var ccFields = document.getElementById("credit-card-fields");
+                if (ccFields) {
+                    var isCreditCard = radio && radio.value === "cielo_credit_card";
+                    ccFields.style.display = isCreditCard ? "block" : "none";
+                    // Tornar campos obrigatórios apenas quando visíveis
+                    var ccInputs = ccFields.querySelectorAll("input[type=text]");
+                    ccInputs.forEach(function(inp) {
+                        inp.required = isCreditCard;
+                    });
+                }
             }
             window.selectPayment = selectPayment;
             
@@ -772,6 +819,37 @@ $additionalScripts = '
                             calcularFreteCheckout(cepInput.value);
                         }
                     }
+                }
+                
+                // Máscara do número do cartão (0000 0000 0000 0000)
+                var cardNumberInput = document.getElementById("card_number");
+                if (cardNumberInput) {
+                    cardNumberInput.addEventListener("input", function() {
+                        var v = this.value.replace(/\D/g, "").substring(0, 16);
+                        var formatted = v.replace(/(.{4})/g, "$1 ").trim();
+                        this.value = formatted;
+                    });
+                }
+                
+                // Máscara da validade (MM/AAAA)
+                var cardExpiryInput = document.getElementById("card_expiry");
+                if (cardExpiryInput) {
+                    cardExpiryInput.addEventListener("input", function() {
+                        var v = this.value.replace(/\D/g, "").substring(0, 6);
+                        if (v.length >= 3) {
+                            this.value = v.substring(0, 2) + "/" + v.substring(2);
+                        } else {
+                            this.value = v;
+                        }
+                    });
+                }
+                
+                // Máscara do CVV (apenas números)
+                var cardCvvInput = document.getElementById("card_cvv");
+                if (cardCvvInput) {
+                    cardCvvInput.addEventListener("input", function() {
+                        this.value = this.value.replace(/\D/g, "").substring(0, 4);
+                    });
                 }
                 
                 // Interceptar submit: exigir seleção de frete
