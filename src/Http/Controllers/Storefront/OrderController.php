@@ -11,6 +11,9 @@ class OrderController extends Controller
 {
     public function thankYou(string $numeroPedido): void
     {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         $tenantId = TenantContext::id();
         $db = Database::getConnection();
 
