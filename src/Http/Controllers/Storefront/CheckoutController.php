@@ -146,6 +146,7 @@ class CheckoutController extends Controller
             'subtotal' => $subtotal,
             'opcoesFrete' => $opcoesFrete,
             'freteErro' => $freteErro,
+            'cep' => $cep,
             'metodosPagamento' => $metodosPagamento,
             'customer' => $customer,
             'customerAddresses' => $customerAddresses,

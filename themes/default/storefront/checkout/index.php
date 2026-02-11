@@ -202,16 +202,17 @@ ob_start();
             <!-- Frete - Fase 10 -->
             <div class="form-section">
                 <h3 class="section-title">Opções de Frete</h3>
-                <?php if (!empty($freteErro)): ?>
-                    <div class="shipping-error" style="padding: 1rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 1rem; color: #856404;">
-                        <i class="bi bi-exclamation-triangle" style="margin-right: 0.5rem;"></i>
-                        <?= htmlspecialchars($freteErro) ?>
-                    </div>
-                <?php endif; ?>
-                <div class="shipping-options">
+                <div id="checkout-shipping-error" style="padding: 1rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 1rem; color: #856404; display: <?= !empty($freteErro) ? 'block' : 'none' ?>;">
+                    <i class="bi bi-exclamation-triangle" style="margin-right: 0.5rem;"></i>
+                    <span id="checkout-shipping-error-text"><?= !empty($freteErro) ? htmlspecialchars($freteErro) : '' ?></span>
+                </div>
+                <div id="checkout-shipping-loading" style="display: none; padding: 1rem; text-align: center; color: #666;">
+                    <i class="bi bi-hourglass-split"></i> Calculando frete...
+                </div>
+                <div id="checkout-shipping-options" class="shipping-options">
                     <?php if (empty($opcoesFrete)): ?>
                         <?php if (empty($freteErro)): ?>
-                            <p style="color: #666; font-size: 0.9rem; padding: 1rem; text-align: center;">
+                            <p id="checkout-shipping-placeholder" style="color: #666; font-size: 0.9rem; padding: 1rem; text-align: center;">
                                 Informe o CEP de entrega para calcular o frete.
                             </p>
                         <?php endif; ?>
@@ -530,79 +531,229 @@ $additionalStyles = '
 // Scripts adicionais
 $additionalScripts = '
     <script>
-        function selectShipping(element) {
-            document.querySelectorAll(\'.shipping-options .option-card\').forEach(card => {
-                card.classList.remove(\'selected\');
-            });
-            element.classList.add(\'selected\');
-            updateSummary();
-        }
-        
-        function selectPayment(element) {
-            document.querySelectorAll(\'.payment-options .option-card\').forEach(card => {
-                card.classList.remove(\'selected\');
-            });
-            element.classList.add(\'selected\');
-        }
-        
-        function updateSummary() {
-            const freteSelected = document.querySelector(\'input[name="metodo_frete"]:checked\');
-            if (freteSelected) {
-                const opcoes = ' . json_encode($opcoesFrete) . ';
-                const opcao = opcoes.find(o => o.codigo === freteSelected.value);
-                if (opcao) {
-                    const subtotal = ' . $subtotal . ';
-                    const frete = parseFloat(opcao.valor);
-                    const total = subtotal + frete;
+        (function() {
+            var subtotalValue = ' . $subtotal . ';
+            var currentShippingOptions = ' . json_encode($opcoesFrete) . ';
+            var lastCalculatedCep = "' . htmlspecialchars($cep ?? '') . '";
+            var calculatingFrete = false;
+            
+            function selectShipping(element) {
+                document.querySelectorAll(".shipping-options .option-card").forEach(function(card) {
+                    card.classList.remove("selected");
+                });
+                element.classList.add("selected");
+                updateSummaryFromSelection();
+            }
+            window.selectShipping = selectShipping;
+            
+            function selectPayment(element) {
+                document.querySelectorAll(".payment-options .option-card").forEach(function(card) {
+                    card.classList.remove("selected");
+                });
+                element.classList.add("selected");
+            }
+            window.selectPayment = selectPayment;
+            
+            function updateSummaryFromSelection() {
+                var freteSelected = document.querySelector(\'input[name="metodo_frete"]:checked\');
+                if (freteSelected && currentShippingOptions && currentShippingOptions.length > 0) {
+                    var opcao = null;
+                    for (var i = 0; i < currentShippingOptions.length; i++) {
+                        if (currentShippingOptions[i].codigo === freteSelected.value) {
+                            opcao = currentShippingOptions[i];
+                            break;
+                        }
+                    }
+                    if (opcao) {
+                        var frete = parseFloat(opcao.valor);
+                        var total = subtotalValue + frete;
+                        document.getElementById("freteSummary").innerHTML = "<span>Frete:</span><span>R$ " + formatMoney(frete) + "</span>";
+                        document.getElementById("totalSummary").innerHTML = "<span>Total:</span><span>R$ " + formatMoney(total) + "</span>";
+                    }
+                }
+            }
+            
+            function formatMoney(value) {
+                return parseFloat(value).toFixed(2).replace(".", ",");
+            }
+            
+            function escapeHtml(text) {
+                var div = document.createElement("div");
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // Calcular frete via AJAX
+            function calcularFreteCheckout(cep) {
+                cep = cep.replace(/\D/g, "");
+                if (cep.length !== 8 || calculatingFrete) return;
+                if (cep === lastCalculatedCep && currentShippingOptions && currentShippingOptions.length > 0) return;
+                
+                calculatingFrete = true;
+                lastCalculatedCep = cep;
+                
+                var loadingDiv = document.getElementById("checkout-shipping-loading");
+                var optionsDiv = document.getElementById("checkout-shipping-options");
+                var errorDiv = document.getElementById("checkout-shipping-error");
+                var placeholder = document.getElementById("checkout-shipping-placeholder");
+                
+                if (loadingDiv) loadingDiv.style.display = "block";
+                if (optionsDiv) optionsDiv.style.display = "none";
+                if (errorDiv) errorDiv.style.display = "none";
+                
+                fetch("/api/shipping/calculate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cepDestino: cep })
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    calculatingFrete = false;
+                    if (loadingDiv) loadingDiv.style.display = "none";
                     
-                    document.getElementById(\'freteSummary\').innerHTML = `
-                        <span>Frete:</span>
-                        <span>R$ ${opcao.valor.toFixed(2).replace(\'.\', \',\')}</span>
-                    `;
-                    document.getElementById(\'totalSummary\').innerHTML = `
-                        <span>Total:</span>
-                        <span>R$ ${total.toFixed(2).replace(\'.\', \',\')}</span>
-                    `;
-                }
+                    if (data.success && data.opcoes && data.opcoes.length > 0) {
+                        // Converter formato da API para formato do template
+                        currentShippingOptions = [];
+                        var html = "";
+                        data.opcoes.forEach(function(opcao) {
+                            currentShippingOptions.push({
+                                codigo: opcao.codigo || opcao.codigo_servico,
+                                titulo: opcao.servico,
+                                valor: opcao.preco,
+                                prazo: opcao.prazo
+                            });
+                            var prazoText = opcao.prazo || "A consultar";
+                            html += \'<label class="option-card" onclick="selectShipping(this)">\'
+                                + \'<input type="radio" name="metodo_frete" value="\' + escapeHtml(opcao.codigo || opcao.codigo_servico) + \'" required>\'
+                                + \'<div>\'
+                                + \'<div class="option-title">\' + escapeHtml(opcao.servico) + \'</div>\'
+                                + \'<div class="option-desc">R$ \' + formatMoney(opcao.preco) + \' - \' + escapeHtml(prazoText) + \'</div>\'
+                                + \'</div>\'
+                                + \'</label>\';
+                        });
+                        if (optionsDiv) {
+                            optionsDiv.innerHTML = html;
+                            optionsDiv.style.display = "flex";
+                        }
+                        // Reset resumo
+                        document.getElementById("freteSummary").innerHTML = "<span>Frete:</span><span>Selecione um frete</span>";
+                        document.getElementById("totalSummary").innerHTML = "<span>Total:</span><span>R$ " + formatMoney(subtotalValue) + "</span>";
+                    } else {
+                        var errorText = data.message || "Não foi possível calcular o frete. Verifique o CEP.";
+                        if (errorDiv) {
+                            document.getElementById("checkout-shipping-error-text").textContent = errorText;
+                            errorDiv.style.display = "block";
+                        }
+                        if (optionsDiv) {
+                            optionsDiv.innerHTML = "";
+                            optionsDiv.style.display = "none";
+                        }
+                        currentShippingOptions = [];
+                    }
+                })
+                .catch(function(err) {
+                    calculatingFrete = false;
+                    if (loadingDiv) loadingDiv.style.display = "none";
+                    if (errorDiv) {
+                        document.getElementById("checkout-shipping-error-text").textContent = "Erro ao calcular frete. Tente novamente.";
+                        errorDiv.style.display = "block";
+                    }
+                    console.error("Erro frete:", err);
+                });
             }
-        }
-        
-        // Atualizar resumo quando frete for selecionado
-        document.querySelectorAll(\'input[name="metodo_frete"]\').forEach(radio => {
-            radio.addEventListener(\'change\', updateSummary);
-        });
-        
-        // Mostrar/ocultar campo de senha baseado no checkbox
-        function togglePasswordField() {
-            const checkbox = document.getElementById(\'criar_conta\');
-            const passwordField = document.getElementById(\'passwordField\');
-            const passwordInput = document.getElementById(\'senha_conta\');
             
-            if (checkbox && passwordField && passwordInput) {
-                if (checkbox.checked) {
-                    passwordField.style.display = \'block\';
-                    passwordInput.required = true;
-                } else {
-                    passwordField.style.display = \'none\';
-                    passwordInput.required = false;
-                    passwordInput.value = \'\';
+            // Mostrar/ocultar campo de senha
+            function togglePasswordField() {
+                var checkbox = document.getElementById("criar_conta");
+                var passwordField = document.getElementById("passwordField");
+                var passwordInput = document.getElementById("senha_conta");
+                if (checkbox && passwordField && passwordInput) {
+                    if (checkbox.checked) {
+                        passwordField.style.display = "block";
+                        passwordInput.required = true;
+                    } else {
+                        passwordField.style.display = "none";
+                        passwordInput.required = false;
+                        passwordInput.value = "";
+                    }
                 }
             }
-        }
-        
-        // Inicializar estado do campo de senha ao carregar
-        document.addEventListener(\'DOMContentLoaded\', function() {
-            togglePasswordField();
+            window.togglePasswordField = togglePasswordField;
             
-            // Carregar CEP do localStorage se não estiver preenchido
-            const cepInput = document.getElementById(\'entrega_cep\');
-            if (cepInput && !cepInput.value) {
-                const savedCEP = localStorage.getItem(\'cart_shipping_cep\');
-                if (savedCEP) {
-                    cepInput.value = savedCEP;
+            // Interceptar submit do form
+            document.addEventListener("DOMContentLoaded", function() {
+                togglePasswordField();
+                
+                var cepInput = document.getElementById("entrega_cep");
+                
+                // Carregar CEP do localStorage se vazio
+                if (cepInput && !cepInput.value) {
+                    var savedCEP = localStorage.getItem("cart_shipping_cep");
+                    if (savedCEP) {
+                        cepInput.value = savedCEP;
+                        // Calcular frete automaticamente com o CEP salvo
+                        calcularFreteCheckout(savedCEP);
+                    }
                 }
-            }
-        });
+                
+                // Calcular frete quando CEP mudar (ao sair do campo ou ao completar 9 chars com máscara)
+                if (cepInput) {
+                    var cepTimer = null;
+                    cepInput.addEventListener("input", function() {
+                        var cleanCep = this.value.replace(/\D/g, "");
+                        if (cleanCep.length === 8) {
+                            clearTimeout(cepTimer);
+                            cepTimer = setTimeout(function() {
+                                calcularFreteCheckout(cleanCep);
+                            }, 500);
+                        }
+                    });
+                    cepInput.addEventListener("blur", function() {
+                        var cleanCep = this.value.replace(/\D/g, "");
+                        if (cleanCep.length === 8) {
+                            calcularFreteCheckout(cleanCep);
+                        }
+                    });
+                    
+                    // Se já tem CEP preenchido (veio do carrinho), calcular
+                    if (cepInput.value && cepInput.value.replace(/\D/g, "").length === 8) {
+                        if (!currentShippingOptions || currentShippingOptions.length === 0) {
+                            calcularFreteCheckout(cepInput.value);
+                        }
+                    }
+                }
+                
+                // Interceptar submit: exigir seleção de frete
+                var checkoutForm = document.querySelector("form");
+                if (checkoutForm) {
+                    checkoutForm.addEventListener("submit", function(e) {
+                        var freteSelected = document.querySelector(\'input[name="metodo_frete"]:checked\');
+                        if (!freteSelected) {
+                            e.preventDefault();
+                            // Scroll até a seção de frete
+                            var freteSection = document.getElementById("checkout-shipping-options");
+                            if (freteSection) {
+                                freteSection.scrollIntoView({ behavior: "smooth", block: "center" });
+                            }
+                            // Mostrar alerta
+                            var errorDiv = document.getElementById("checkout-shipping-error");
+                            var errorText = document.getElementById("checkout-shipping-error-text");
+                            if (errorDiv && errorText) {
+                                // Verificar se tem opções mas não selecionou
+                                var hasOptions = document.querySelectorAll(\'input[name="metodo_frete"]\').length > 0;
+                                if (hasOptions) {
+                                    errorText.textContent = "Selecione uma opção de frete antes de finalizar.";
+                                } else {
+                                    errorText.textContent = "Informe o CEP de entrega e aguarde o cálculo do frete.";
+                                }
+                                errorDiv.style.display = "block";
+                            }
+                            return false;
+                        }
+                    });
+                }
+            });
+        })();
     </script>
 ';
 
