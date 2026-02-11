@@ -25,7 +25,7 @@ class PaymentService
         if ($codigo === 'cielo') {
             $metodos[] = [
                 'codigo' => 'cielo_credit_card',
-                'titulo' => 'Cartão de Crédito',
+                'titulo' => 'Cartão de Crédito (Cielo)',
                 'descricao' => 'Pague com cartão de crédito via Cielo. Visa, Master, Elo e mais.',
                 'icone' => 'credit_card'
             ];
@@ -35,6 +35,20 @@ class PaymentService
                 'descricao' => 'Pague com PIX via Cielo. QR Code será exibido após finalizar.',
                 'icone' => 'pix'
             ];
+
+            // Boleto: só exibir se o provider de boleto estiver configurado
+            $config = self::getProviderConfig($tenantId, 'payment');
+            $cieloConfig = $config['cielo'] ?? $config;
+            $boletoProvider = $cieloConfig['boleto_provider'] ?? '';
+            if (!empty($boletoProvider)) {
+                $metodos[] = [
+                    'codigo' => 'cielo_boleto',
+                    'titulo' => 'Boleto Bancário (Cielo)',
+                    'descricao' => 'Gere um boleto bancário. O boleto será exibido após finalizar.',
+                    'icone' => 'boleto'
+                ];
+            }
+
             return $metodos;
         }
 
@@ -164,6 +178,9 @@ class PaymentService
         }
         if ($metodo === 'cielo_credit_card') {
             return 'Pagamento processado com cartão de crédito via Cielo.';
+        }
+        if ($metodo === 'cielo_boleto') {
+            return 'O boleto bancário será exibido na próxima tela. Pague até a data de vencimento.';
         }
         return 'Instruções de pagamento não disponíveis.';
     }

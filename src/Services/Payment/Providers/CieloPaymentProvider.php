@@ -35,6 +35,10 @@ class CieloPaymentProvider implements PaymentProviderInterface
             return $this->criarPagamentoCartao($baseUrl, $merchantId, $merchantKey, $pedido, $cliente, $amount, $config);
         }
 
+        if ($metodoEscolhido === 'boleto') {
+            return $this->criarPagamentoBoleto($baseUrl, $merchantId, $merchantKey, $pedido, $cliente, $amount, $config);
+        }
+
         throw new \RuntimeException("Método de pagamento não suportado: {$metodoEscolhido}");
     }
 
@@ -186,6 +190,112 @@ class CieloPaymentProvider implements PaymentProviderInterface
         if (preg_match('/^(6062|3841)/', $number)) return 'Hipercard';
 
         return 'Visa'; // fallback
+    }
+
+    private function criarPagamentoBoleto(
+        string $baseUrl,
+        string $merchantId,
+        string $merchantKey,
+        array $pedido,
+        array $cliente,
+        int $amount,
+        array $config = []
+    ): PaymentResult {
+        $merchantOrderId = (string)($pedido['numero_pedido'] ?? 'pedido-' . ($pedido['id'] ?? time()));
+
+        $cieloConfig = $config['cielo'] ?? $config;
+        $boletoProvider = $cieloConfig['boleto_provider'] ?? 'Bradesco2';
+        $boletoAssignor = $cieloConfig['boleto_assignor'] ?? 'Ponto do Golfe';
+        $boletoDaysToExpire = (int)($cieloConfig['boleto_days_to_expire'] ?? 3);
+
+        $expirationDate = date('Y-m-d', strtotime("+{$boletoDaysToExpire} days"));
+
+        $payload = [
+            'MerchantOrderId' => $merchantOrderId,
+            'Customer' => [
+                'Name' => $cliente['nome'] ?? 'Cliente',
+                'Email' => $cliente['email'] ?? '',
+                'Identity' => preg_replace('/\D/', '', $cliente['cpf'] ?? $cliente['documento'] ?? ''),
+                'Address' => [
+                    'Street' => $cliente['logradouro'] ?? '',
+                    'Number' => $cliente['numero'] ?? 'S/N',
+                    'District' => $cliente['bairro'] ?? '',
+                    'City' => $cliente['cidade'] ?? '',
+                    'State' => $cliente['estado'] ?? '',
+                    'ZipCode' => preg_replace('/\D/', '', $cliente['cep'] ?? ''),
+                    'Country' => 'BRA',
+                ],
+            ],
+            'Payment' => [
+                'Type' => 'Boleto',
+                'Amount' => $amount,
+                'Provider' => $boletoProvider,
+                'Assignor' => $boletoAssignor,
+                'ExpirationDate' => $expirationDate,
+                'Identification' => preg_replace('/\D/', '', $cliente['cpf'] ?? $cliente['documento'] ?? ''),
+                'Instructions' => 'Não receber após o vencimento.',
+            ],
+        ];
+
+        $url = $baseUrl . '/1/sales/';
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'MerchantId: ' . $merchantId,
+                'MerchantKey: ' . $merchantKey,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_TIMEOUT => 30,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            throw new \RuntimeException('Erro ao conectar com Cielo: ' . $curlError);
+        }
+
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException('Resposta inválida da Cielo. Tente novamente.');
+        }
+
+        if ($httpCode >= 400) {
+            $msg = $data['message'] ?? $data['Message'] ?? 'Erro HTTP ' . $httpCode;
+            if (isset($data['ModelState']) && is_array($data['ModelState'])) {
+                $msg = implode(' ', array_merge(...array_values($data['ModelState'])));
+            }
+            error_log("Cielo Boleto Error: HTTP {$httpCode} - " . json_encode($data));
+            throw new \RuntimeException('Cielo: ' . $msg);
+        }
+
+        $payment = $data['Payment'] ?? [];
+        $status = (int)($payment['Status'] ?? 0);
+        $paymentId = $payment['PaymentId'] ?? null;
+        $boletoUrl = $payment['Url'] ?? null;
+        $barCodeNumber = $payment['BarCodeNumber'] ?? null;
+        $digitableLine = $payment['DigitableLine'] ?? null;
+
+        $codigoTransacao = $paymentId ? (string)$paymentId : 'cielo-boleto-' . $merchantOrderId;
+        $statusInicial = ($status === 1) ? 'pending' : 'pending';
+
+        $dadosExibicao = [
+            'tipo' => 'cielo_boleto',
+            'mensagem' => 'Boleto gerado com sucesso! Pague até ' . date('d/m/Y', strtotime($expirationDate)) . '.',
+            'metodo' => 'boleto',
+            'boleto_url' => $boletoUrl,
+            'bar_code_number' => $barCodeNumber,
+            'digitable_line' => $digitableLine,
+            'expiration_date' => $expirationDate,
+            'payment_id' => $paymentId,
+        ];
+
+        return new PaymentResult($codigoTransacao, $statusInicial, $dadosExibicao);
     }
 
     private function criarPagamentoPix(

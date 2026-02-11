@@ -551,6 +551,12 @@ class CheckoutController extends Controller
                 'nome' => $clienteNome,
                 'email' => $clienteEmail,
                 'telefone' => $clienteTelefone,
+                'cep' => $entregaCep,
+                'logradouro' => $entregaLogradouro,
+                'numero' => $entregaNumero,
+                'bairro' => $entregaBairro,
+                'cidade' => $entregaCidade,
+                'estado' => $entregaEstado,
             ];
             
             $pedidoData = [
