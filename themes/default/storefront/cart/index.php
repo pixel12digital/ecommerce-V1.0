@@ -152,6 +152,11 @@ ob_start();
                                         <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($item['slug']) ?>" class="item-title">
                                             <?= htmlspecialchars($item['nome']) ?>
                                         </a>
+                                        <?php if (!empty($item['atributos'])): ?>
+                                            <div class="item-variation" style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">
+                                                <?= htmlspecialchars($item['atributos']) ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="item-unit-price">R$ <?= number_format($item['preco_unitario'], 2, ',', '.') ?></div>
                                     

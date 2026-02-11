@@ -212,10 +212,18 @@ class CartController extends Controller
             ]);
             $atributos = $stmtAtributos->fetchAll();
             
-            // Montar string de atributos (ex: "Tamanho: P, Cor: Vermelho")
+            // Montar string de atributos (ex: "Tamanho: M, Cor: Vermelho")
+            // Usar apenas o nome curto do atributo (antes de ' - ' ou ' — ')
             $atributosParts = [];
             foreach ($atributos as $attr) {
-                $atributosParts[] = "{$attr['atributo_nome']}: {$attr['termo_nome']}";
+                $nomeAtributo = $attr['atributo_nome'];
+                // Extrair nome amigável: pegar apenas a parte antes do primeiro separador
+                if (($pos = strpos($nomeAtributo, ' - ')) !== false) {
+                    $nomeAtributo = trim(substr($nomeAtributo, 0, $pos));
+                } elseif (($pos = strpos($nomeAtributo, ' — ')) !== false) {
+                    $nomeAtributo = trim(substr($nomeAtributo, 0, $pos));
+                }
+                $atributosParts[] = "{$nomeAtributo}: {$attr['termo_nome']}";
             }
             $atributosString = implode(', ', $atributosParts);
 
@@ -255,17 +263,11 @@ class CartController extends Controller
             $imagemPath = $imagem ? $imagem['caminho_arquivo'] : null;
         }
 
-        // Montar nome do produto (com atributos se for variação)
-        $nomeProduto = $produto['nome'];
-        if ($atributosString) {
-            $nomeProduto .= " ({$atributosString})";
-        }
-
-        // Adicionar ao carrinho
+        // Adicionar ao carrinho (nome limpo, atributos separados)
         CartService::addItem($produtoId, [
             'produto_id' => $produtoId,
             'variacao_id' => $variacaoId,
-            'nome' => $nomeProduto,
+            'nome' => $produto['nome'],
             'slug' => $produto['slug'],
             'preco_unitario' => $precoUnitario,
             'quantidade' => $quantidade,
