@@ -475,6 +475,11 @@ $additionalStyles = '
             height: 36px;
             background: #fff;
         }
+        .qty-form {
+            display: flex;
+            align-items: center;
+            margin: 0;
+        }
         .qty-btn {
             width: 36px;
             height: 36px;
