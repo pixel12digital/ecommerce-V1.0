@@ -154,64 +154,83 @@ $customerName = $_SESSION['customer_name'] ?? 'Cliente';
         @media (max-width: 768px) {
             .header {
                 padding: 0.75rem 1rem;
-                flex-wrap: wrap;
-                gap: 0.75rem;
             }
             .header-left {
                 gap: 0.75rem;
-                flex-wrap: wrap;
             }
             .header-logo {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
+                gap: 0.3rem;
             }
+            .header-logo i { font-size: 1rem; }
             .header-back {
-                font-size: 0.8rem;
-                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
             }
             .header-user span {
                 display: none;
             }
+            .header-user a {
+                font-size: 0.85rem;
+            }
             .container {
                 grid-template-columns: 1fr;
-                margin: 1rem auto;
-                padding: 0 0.75rem;
-                gap: 1rem;
+                margin: 0.75rem auto;
+                padding: 0 0.5rem;
+                gap: 0.75rem;
             }
             .sidebar {
                 order: -1;
-                padding: 0.75rem;
+                padding: 0.5rem;
+                border-radius: 6px;
             }
             .sidebar-menu {
                 display: flex;
                 flex-wrap: nowrap;
-                gap: 0;
+                gap: 0.25rem;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
             }
+            .sidebar-menu::-webkit-scrollbar { display: none; }
             .sidebar-menu li {
                 margin-bottom: 0;
                 flex: 0 0 auto;
             }
             .sidebar-menu a {
-                padding: 0.6rem 0.75rem;
-                font-size: 0.8rem;
+                padding: 0.5rem 0.6rem;
+                font-size: 0.75rem;
                 white-space: nowrap;
                 border-left: none !important;
-                border-radius: 6px;
+                border-radius: 20px;
+                gap: 0.3rem;
             }
             .sidebar-menu a.active {
                 border-left: none;
-                border-bottom: 2px solid #023A8D;
+                background: #023A8D;
+                color: white;
             }
             .sidebar-menu a i {
-                font-size: 1rem;
+                font-size: 0.85rem;
             }
             .content {
                 padding: 1rem;
+                border-radius: 6px;
+            }
+            .content-header {
+                margin-bottom: 1rem;
+                padding-bottom: 0.75rem;
             }
             .content-header h1 {
                 font-size: 1.25rem;
             }
+            /* Tabelas responsivas */
+            .mobile-cards { display: block !important; }
+            .desktop-table { display: none !important; }
+        }
+        @media (min-width: 769px) {
+            .mobile-cards { display: none !important; }
+            .desktop-table { display: block !important; }
         }
         /* Estilos para formulários da área do cliente */
         .form-group {

@@ -12,8 +12,9 @@ $pedidos = $pedidos ?? [];
 </div>
 
 <?php if (!empty($pedidos)): ?>
-    <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+    <!-- Desktop: Tabela -->
+    <div class="desktop-table" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
                     <th style="padding: 0.875rem; text-align: left; font-weight: 600; color: #555;">Número</th>
@@ -25,7 +26,7 @@ $pedidos = $pedidos ?? [];
             </thead>
             <tbody>
                 <?php foreach ($pedidos as $pedido): ?>
-                    <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;">
+                    <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 0.875rem; font-weight: 600; color: #333;"><?= htmlspecialchars($pedido['numero_pedido']) ?></td>
                         <td style="padding: 0.875rem; color: #666;"><?= date('d/m/Y H:i', strtotime($pedido['created_at'])) ?></td>
                         <td style="padding: 0.875rem;">
@@ -33,20 +34,32 @@ $pedidos = $pedidos ?? [];
                                 <?= \App\Support\LangHelper::orderStatusLabelShort($pedido['status']) ?>
                             </span>
                         </td>
-                        <td style="padding: 0.875rem; text-align: right; font-weight: 600; color: #333;">
-                            R$ <?= number_format($pedido['total_geral'], 2, ',', '.') ?>
-                        </td>
+                        <td style="padding: 0.875rem; text-align: right; font-weight: 600;">R$ <?= number_format($pedido['total_geral'], 2, ',', '.') ?></td>
                         <td style="padding: 0.875rem; text-align: center;">
-                            <a href="<?= $basePath ?>/minha-conta/pedidos/<?= htmlspecialchars($pedido['numero_pedido']) ?>" 
-                               style="color: #023A8D; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem;">
-                                <i class="bi bi-eye icon"></i>
-                                Ver detalhes
-                            </a>
+                            <a href="<?= $basePath ?>/minha-conta/pedidos/<?= htmlspecialchars($pedido['numero_pedido']) ?>" style="color: #023A8D; text-decoration: none; font-weight: 500;"><i class="bi bi-eye icon"></i> Ver detalhes</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile: Cards -->
+    <div class="mobile-cards" style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <?php foreach ($pedidos as $pedido): ?>
+            <a href="<?= $basePath ?>/minha-conta/pedidos/<?= htmlspecialchars($pedido['numero_pedido']) ?>" style="text-decoration: none; color: inherit; display: block; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <strong style="color: #023A8D; font-size: 0.9rem;"><?= htmlspecialchars($pedido['numero_pedido']) ?></strong>
+                    <span style="padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #e3f2fd; color: #023A8D;">
+                        <?= \App\Support\LangHelper::orderStatusLabelShort($pedido['status']) ?>
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #666;">
+                    <span><?= date('d/m/Y H:i', strtotime($pedido['created_at'])) ?></span>
+                    <strong style="color: #333;">R$ <?= number_format($pedido['total_geral'], 2, ',', '.') ?></strong>
+                </div>
+            </a>
+        <?php endforeach; ?>
     </div>
 <?php else: ?>
     <div style="text-align: center; padding: 3rem; color: #666;">
