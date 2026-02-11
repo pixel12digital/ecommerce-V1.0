@@ -11,7 +11,7 @@ class CustomerController extends Controller
 {
     private function getCustomerId(): int
     {
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
         if (!isset($_SESSION['customer_id']) || empty($_SESSION['customer_id'])) {
             $this->redirect('/minha-conta/login');
             exit;
@@ -334,7 +334,7 @@ class CustomerController extends Controller
 
     public function profile(): void
     {
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
         $customerId = $this->getCustomerId();
         $tenantId = TenantContext::id();
         $db = Database::getConnection();
