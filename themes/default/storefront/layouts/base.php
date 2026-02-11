@@ -951,8 +951,11 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
             .header-icons {
                 gap: 8px;
             }
-            .header-cart span {
+            .header-cart > span {
                 display: none; /* Esconde texto nos ícones no mobile */
+            }
+            .cart-badge {
+                display: flex !important; /* Garante que o badge do carrinho aparece no mobile */
             }
             .cart-info {
                 display: none; /* Esconde info do carrinho no mobile */
