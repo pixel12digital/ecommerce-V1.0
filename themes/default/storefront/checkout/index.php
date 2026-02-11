@@ -113,19 +113,20 @@ ob_start();
                     </div>
                 </div>
                 <?php if (!$customer): ?>
-                    <div class="form-group" style="margin-top: 1rem; padding: 1rem; background: #f0f7ff; border-radius: 6px; border: 1px solid var(--pg-color-primary);">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: var(--pg-color-primary);">
+                    <div style="margin-top: 0.75rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: #555;">
                             <input type="checkbox" name="criar_conta" id="criar_conta" value="1" 
                                    <?= !empty($formData['criar_conta']) ? 'checked' : '' ?> 
-                                   onchange="togglePasswordField()">
-                            <span>Criar uma conta para acompanhar seus pedidos</span>
+                                   onchange="togglePasswordField()"
+                                   style="width: 16px; height: 16px; accent-color: var(--pg-color-primary);">
+                            <span>Criar conta <span style="color: #999; font-weight: 400;">(opcional)</span></span>
                         </label>
-                        <div id="passwordField" style="margin-top: 1rem; display: none;">
-                            <label for="senha_conta" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555; font-size: 0.95rem;">Senha *</label>
+                        <small style="color: #999; font-size: 0.8rem; margin-left: 1.6rem; display: block; margin-top: 2px;">Acompanhe pedidos e compre mais rápido.</small>
+                        <div id="passwordField" style="margin-top: 0.75rem; display: none;">
+                            <label for="senha_conta" style="display: block; margin-bottom: 0.35rem; font-weight: 500; color: #555; font-size: 0.9rem;">Senha *</label>
                             <input type="password" name="senha_conta" id="senha_conta" 
                                    placeholder="Mínimo de 6 caracteres" minlength="6"
                                    value="<?= htmlspecialchars($formData['senha_conta'] ?? '') ?>">
-                            <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">Mínimo de 6 caracteres</small>
                         </div>
                     </div>
                 <?php endif; ?>
