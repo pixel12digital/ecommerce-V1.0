@@ -3,48 +3,56 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Simular request de busca
-$_SERVER['REQUEST_METHOD'] = 'GET';
-$_GET['q'] = 'teste';
+require_once __DIR__ . '/../vendor/autoload.php';
 
-// Detectar ambiente: produção (tudo em public_html) vs local (public/)
-$vendorPath = file_exists(__DIR__ . '/../vendor/autoload.php') 
-    ? __DIR__ . '/../vendor/autoload.php' 
-    : __DIR__ . '/vendor/autoload.php';
-require $vendorPath;
+// Carregar .env manualmente (mesmo approach do index.php)
+$envFile = __DIR__ . '/../.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') === false) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+    }
+}
 
-$envPath = file_exists(__DIR__ . '/../.env') ? __DIR__ . '/..' : __DIR__;
-$dotenv = Dotenv\Dotenv::createImmutable($envPath);
-$dotenv->load();
+try {
+    \App\Core\Database::init();
+    $db = \App\Core\Database::getConnection();
+    echo "DB conectado OK<br>";
+} catch (\Throwable $e) {
+    die("ERRO DB: " . $e->getMessage());
+}
 
-\App\Core\Database::init();
-$db = \App\Core\Database::getConnection();
-
-echo "<h3>Verificando colunas da tabela produtos:</h3>";
-
-$cols = ['exibir_no_catalogo', 'data_criacao', 'created_at', 'status', 'tipo'];
+echo "<h3>Colunas da tabela produtos:</h3>";
+$cols = ['exibir_no_catalogo', 'data_criacao', 'created_at', 'status', 'tipo', 'sku'];
 foreach ($cols as $col) {
     $stmt = $db->query("SHOW COLUMNS FROM produtos LIKE '$col'");
-    $exists = $stmt->rowCount() > 0 ? '✅ EXISTE' : '❌ NAO EXISTE';
-    echo "$col: $exists<br>";
+    echo "$col: " . ($stmt->rowCount() > 0 ? 'EXISTE' : 'NAO EXISTE') . "<br>";
 }
 
 echo "<hr><h3>Testando query de busca:</h3>";
 try {
-    $tenantId = \App\Tenant\TenantContext::id();
-    echo "Tenant ID: $tenantId<br>";
-    
     $stmt = $db->prepare("
         SELECT COUNT(*) as total 
         FROM produtos p 
-        WHERE p.tenant_id = :tenant_id 
+        WHERE p.tenant_id = 1
+        AND p.status = 'publish'
+    ");
+    $stmt->execute();
+    echo "Query basica OK: " . $stmt->fetch()['total'] . " produtos<br>";
+
+    $stmt2 = $db->prepare("
+        SELECT COUNT(*) as total 
+        FROM produtos p 
+        WHERE p.tenant_id = 1
         AND p.status = 'publish'
         AND p.exibir_no_catalogo = 1
-        AND (p.nome LIKE :q OR p.sku LIKE :q)
     ");
-    $stmt->execute(['tenant_id' => $tenantId, 'q' => '%teste%']);
-    $result = $stmt->fetch();
-    echo "Query OK! Total: " . $result['total'] . "<br>";
+    $stmt2->execute();
+    echo "Query com exibir_no_catalogo OK: " . $stmt2->fetch()['total'] . " produtos<br>";
 } catch (\Throwable $e) {
-    echo "<pre style='color:red'>ERRO: " . $e->getMessage() . "\n" . $e->getFile() . ":" . $e->getLine() . "\n" . $e->getTraceAsString() . "</pre>";
+    echo "<pre style='color:red'>ERRO: " . $e->getMessage() . "\n" . $e->getFile() . ":" . $e->getLine() . "</pre>";
 }
