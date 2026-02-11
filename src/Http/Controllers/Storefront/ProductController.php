@@ -123,8 +123,9 @@ class ProductController extends Controller
 
         // Filtro de busca
         if (!empty($q)) {
-            $where[] = "(p.nome LIKE :q OR p.sku LIKE :q)";
-            $params['q'] = '%' . $q . '%';
+            $where[] = "(p.nome LIKE :q_nome OR p.sku LIKE :q_sku)";
+            $params['q_nome'] = '%' . $q . '%';
+            $params['q_sku'] = '%' . $q . '%';
         }
 
         // Filtro de preço
