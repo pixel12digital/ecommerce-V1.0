@@ -234,7 +234,8 @@ ob_start();
                     <?php else: ?>
                         <?php foreach ($opcoesFrete as $opcao): ?>
                             <label class="option-card" onclick="selectShipping(this)">
-                                <input type="radio" name="metodo_frete" value="<?= htmlspecialchars($opcao['codigo']) ?>" required>
+                                <input type="radio" name="metodo_frete" value="<?= htmlspecialchars($opcao['codigo']) ?>" required
+                                       <?= (isset($formData['metodo_frete']) && $formData['metodo_frete'] === $opcao['codigo']) ? 'checked' : '' ?>>
                                 <div>
                                     <div class="option-title"><?= htmlspecialchars($opcao['titulo']) ?></div>
                                     <div class="option-desc">
@@ -266,7 +267,8 @@ ob_start();
                 <div class="payment-options">
                     <?php foreach ($metodosPagamento as $metodo): ?>
                         <label class="option-card" onclick="selectPayment(this)">
-                            <input type="radio" name="metodo_pagamento" value="<?= htmlspecialchars($metodo['codigo']) ?>" required>
+                            <input type="radio" name="metodo_pagamento" value="<?= htmlspecialchars($metodo['codigo']) ?>" required
+                                   <?= (isset($formData['metodo_pagamento']) && $formData['metodo_pagamento'] === $metodo['codigo']) ? 'checked' : '' ?>>
                             <div>
                                 <div class="option-title"><?= htmlspecialchars($metodo['titulo']) ?></div>
                                 <div class="option-desc"><?= htmlspecialchars($metodo['descricao']) ?></div>
@@ -634,6 +636,21 @@ $additionalScripts = '
                 }
             }
             window.selectPayment = selectPayment;
+
+            // Restaurar seleções após erro (formData preservado)
+            (function initPreselected() {
+                var checkedShipping = document.querySelector('input[name="metodo_frete"]:checked');
+                if (checkedShipping) {
+                    var label = checkedShipping.closest('.option-card');
+                    if (label) { label.classList.add('selected'); }
+                }
+                var checkedPayment = document.querySelector('input[name="metodo_pagamento"]:checked');
+                if (checkedPayment) {
+                    var label = checkedPayment.closest('.option-card');
+                    if (label) { selectPayment(label); }
+                }
+                if (checkedShipping) { updateSummaryFromSelection(); }
+            })();
             
             function updateSummaryFromSelection() {
                 var freteSelected = document.querySelector(\'input[name="metodo_frete"]:checked\');

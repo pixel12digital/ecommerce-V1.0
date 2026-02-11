@@ -216,6 +216,20 @@ class CheckoutController extends Controller
             $theme = ThemeConfig::getFullThemeConfig();
             $tenant = TenantContext::tenant();
 
+            // Buscar dados do cliente logado para manter estado
+            $customer = null;
+            $customerAddresses = [];
+            if (isset($_SESSION['customer_id']) && !empty($_SESSION['customer_id'])) {
+                $stmt = $db->prepare("SELECT * FROM customers WHERE id = :cid AND tenant_id = :tid LIMIT 1");
+                $stmt->execute(['cid' => (int)$_SESSION['customer_id'], 'tid' => $tenantId]);
+                $customer = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($customer) {
+                    $stmt = $db->prepare("SELECT * FROM customer_addresses WHERE customer_id = :cid AND tenant_id = :tid ORDER BY is_default DESC");
+                    $stmt->execute(['cid' => (int)$_SESSION['customer_id'], 'tid' => $tenantId]);
+                    $customerAddresses = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                }
+            }
+
             $this->view('storefront/checkout/index', [
                 'loja' => ['nome' => $tenant->name, 'slug' => $tenant->slug],
                 'theme' => $theme,
@@ -225,8 +239,8 @@ class CheckoutController extends Controller
                 'freteErro' => $freteErro,
                 'cep' => $entregaCep,
                 'metodosPagamento' => $metodosPagamento,
-                'customer' => null,
-                'customerAddresses' => [],
+                'customer' => $customer,
+                'customerAddresses' => $customerAddresses,
                 'cartTotalItems' => CartService::getTotalItems(),
                 'cartSubtotal' => CartService::getSubtotal(),
                 'errors' => $errors,
@@ -700,6 +714,24 @@ class CheckoutController extends Controller
             $theme = ThemeConfig::getFullThemeConfig();
             $tenant = TenantContext::tenant();
 
+            // Buscar dados do cliente logado para manter estado
+            $customer = null;
+            $customerAddresses = [];
+            if (isset($_SESSION['customer_id']) && !empty($_SESSION['customer_id'])) {
+                $stmtC = $db->prepare("SELECT * FROM customers WHERE id = :cid AND tenant_id = :tid LIMIT 1");
+                $stmtC->execute(['cid' => (int)$_SESSION['customer_id'], 'tid' => $tenantId]);
+                $customer = $stmtC->fetch(\PDO::FETCH_ASSOC);
+                if ($customer) {
+                    $stmtA = $db->prepare("SELECT * FROM customer_addresses WHERE customer_id = :cid AND tenant_id = :tid ORDER BY is_default DESC");
+                    $stmtA->execute(['cid' => (int)$_SESSION['customer_id'], 'tid' => $tenantId]);
+                    $customerAddresses = $stmtA->fetchAll(\PDO::FETCH_ASSOC);
+                }
+            }
+
+            // Mensagem amigável para erros de pagamento
+            $errorMsg = $e->getMessage();
+            $friendlyMsg = $this->friendlyPaymentError($errorMsg);
+
             $this->view('storefront/checkout/index', [
                 'loja' => ['nome' => $tenant->name, 'slug' => $tenant->slug],
                 'theme' => $theme,
@@ -709,14 +741,46 @@ class CheckoutController extends Controller
                 'freteErro' => $freteErro,
                 'cep' => $entregaCep,
                 'metodosPagamento' => $metodosPagamento,
-                'customer' => null,
-                'customerAddresses' => [],
+                'customer' => $customer,
+                'customerAddresses' => $customerAddresses,
                 'cartTotalItems' => CartService::getTotalItems(),
                 'cartSubtotal' => CartService::getSubtotal(),
-                'errors' => [$e->getMessage() ?: 'Erro ao processar pedido. Tente novamente.'],
+                'errors' => [$friendlyMsg],
                 'formData' => $_POST,
             ]);
         }
+    }
+
+    private function friendlyPaymentError(string $errorMsg): string
+    {
+        $lower = mb_strtolower($errorMsg);
+
+        if (strpos($lower, 'recusado') !== false || strpos($lower, 'denied') !== false || strpos($lower, 'negad') !== false) {
+            return 'Pagamento não autorizado pelo seu banco. Verifique os dados do cartão ou tente outro método de pagamento.';
+        }
+        if (strpos($lower, 'cartão inválido') !== false || strpos($lower, 'card number') !== false) {
+            return 'Número do cartão inválido. Verifique e tente novamente.';
+        }
+        if (strpos($lower, 'cvv') !== false || strpos($lower, 'security code') !== false) {
+            return 'Código de segurança (CVV) inválido. Verifique e tente novamente.';
+        }
+        if (strpos($lower, 'validade') !== false || strpos($lower, 'expir') !== false) {
+            return 'Data de validade do cartão inválida. Verifique e tente novamente.';
+        }
+        if (strpos($lower, 'saldo') !== false || strpos($lower, 'insufficient') !== false) {
+            return 'Saldo insuficiente. Tente outro cartão ou método de pagamento.';
+        }
+        if (strpos($lower, 'timeout') !== false || strpos($lower, 'conectar') !== false) {
+            return 'Não foi possível conectar ao serviço de pagamento. Tente novamente em alguns instantes.';
+        }
+        if (strpos($lower, 'estoque') !== false) {
+            return $errorMsg;
+        }
+        if (strpos($lower, 'sessão') !== false || strpos($lower, 'login') !== false) {
+            return $errorMsg;
+        }
+
+        return 'Não foi possível processar o pagamento. Verifique os dados e tente novamente.';
     }
 }
 
