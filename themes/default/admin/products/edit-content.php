@@ -520,15 +520,26 @@ if (!function_exists('media_url')) {
         <?php endif; ?>
 
         <!-- Seção: Preços -->
-        <div class="info-section">
+        <div class="info-section" id="precos-section">
             <h2 class="section-title">Preços</h2>
             
-            <div class="form-grid">
+            <?php $isVariable = (($produto['tipo'] ?? 'simple') === 'variable'); ?>
+            <div id="variable-price-warning" style="display: <?= $isVariable ? 'block' : 'none' ?>; margin-bottom: 1rem; padding: 1rem; background: #e7f3ff; border-left: 4px solid #023A8D; border-radius: 4px;">
+                <p style="margin: 0; color: #023A8D; font-size: 1rem; line-height: 1.6;">
+                    <i class="bi bi-info-circle" style="font-size: 1.25rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+                    <strong>Produto Variável:</strong> Os preços são definidos individualmente em cada variação. 
+                    <a href="#variacoes" style="color: #023A8D; text-decoration: underline; font-weight: 600;">
+                        Configure os preços na seção "Variações"
+                    </a>.
+                </p>
+            </div>
+            
+            <div class="form-grid" id="precos-fields" style="<?= $isVariable ? 'display: none;' : '' ?>">
                 <div class="form-group">
                     <label>Preço Regular *</label>
                     <input type="text" name="preco_regular" id="preco_regular" 
                            value="<?= number_format($produto['preco_regular'], 2, ',', '') ?>" 
-                           placeholder="0,00" required
+                           placeholder="0,00" <?= $isVariable ? '' : 'required' ?>
                            class="price-input">
                     <small style="color: #666; display: block; margin-top: 0.25rem;">
                         Digite o preço usando vírgula (ex: 380,00)
@@ -2378,11 +2389,31 @@ window.removeFeaturedImage = function() {
     const secaoVariacoes = document.getElementById('secao-variacoes');
     const btnGerarVariacoes = document.getElementById('btn-gerar-variacoes');
 
+    const precosFields = document.getElementById('precos-fields');
+    const variablePriceWarning = document.getElementById('variable-price-warning');
+    const precoRegularInput = document.getElementById('preco_regular');
+    const precoPromocionalInput = document.getElementById('preco_promocional');
+
     // Mostrar/ocultar seções baseado no tipo
     function toggleSecoes() {
         const isVariable = produtoTipoSelect.value === 'variable';
         if (secaoAtributos) secaoAtributos.style.display = isVariable ? 'block' : 'none';
         if (secaoVariacoes) secaoVariacoes.style.display = isVariable ? 'block' : 'none';
+        
+        // Ocultar/mostrar campos de preço para produto variável
+        if (precosFields) {
+            precosFields.style.display = isVariable ? 'none' : '';
+        }
+        if (variablePriceWarning) {
+            variablePriceWarning.style.display = isVariable ? 'block' : 'none';
+        }
+        if (precoRegularInput) {
+            if (isVariable) {
+                precoRegularInput.removeAttribute('required');
+            } else {
+                precoRegularInput.setAttribute('required', 'required');
+            }
+        }
     }
 
     if (produtoTipoSelect) {

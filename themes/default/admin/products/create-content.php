@@ -108,10 +108,17 @@ if (!function_exists('media_url')) {
         </div>
 
         <!-- Seção: Preços -->
-        <div class="info-section">
+        <div class="info-section" id="precos-section">
             <h2 class="section-title">Preços</h2>
             
-            <div class="form-grid">
+            <div id="variable-price-warning" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px;">
+                <p style="margin: 0; color: #0066cc; font-weight: 500;">
+                    <i class="bi bi-info-circle" style="font-size: 1.25rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+                    <strong>Produto Variável:</strong> Os preços serão definidos individualmente em cada variação após salvar o produto.
+                </p>
+            </div>
+            
+            <div class="form-grid" id="precos-fields">
                 <div class="form-group">
                     <label>Preço Regular *</label>
                     <input type="text" name="preco_regular" id="preco_regular" 
@@ -681,6 +688,10 @@ function addNewVideoField() {
     const gerenciaEstoque = document.getElementById('gerencia_estoque');
     const quantidadeEstoque = document.getElementById('quantidade_estoque');
     const statusEstoque = document.getElementById('status_estoque');
+    const precosFields = document.getElementById('precos-fields');
+    const variablePriceWarning = document.getElementById('variable-price-warning');
+    const precoRegularInput = document.getElementById('preco_regular');
+    const precoPromocionalInput = document.getElementById('preco_promocional');
     
     function toggleVariableUI() {
         const isVariable = produtoTipo && produtoTipo.value === 'variable';
@@ -689,6 +700,25 @@ function addNewVideoField() {
         }
         if (btnSaveVariations) {
             btnSaveVariations.style.display = isVariable ? 'inline-flex' : 'none';
+        }
+        
+        // Ocultar/mostrar campos de preço para produto variável
+        if (precosFields) {
+            precosFields.style.display = isVariable ? 'none' : '';
+        }
+        if (variablePriceWarning) {
+            variablePriceWarning.style.display = isVariable ? 'block' : 'none';
+        }
+        if (precoRegularInput) {
+            if (isVariable) {
+                precoRegularInput.removeAttribute('required');
+                precoRegularInput.value = '0,00';
+            } else {
+                precoRegularInput.setAttribute('required', 'required');
+            }
+        }
+        if (precoPromocionalInput && isVariable) {
+            precoPromocionalInput.value = '';
         }
         
         // Desabilitar/ocultar campos de estoque para produto variável
