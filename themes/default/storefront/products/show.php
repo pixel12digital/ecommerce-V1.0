@@ -295,7 +295,7 @@ ob_start();
                        max="<?= $produto['quantidade_estoque'] ?? 999 ?>"
                        <?php endif; ?>
                        class="quantity-input">
-                <button type="submit" class="btn-add-cart" id="btn-add-cart" disabled>
+                <button type="submit" class="btn-add-cart" id="btn-add-cart" <?= (($produto['tipo'] ?? 'simple') === 'variable' || ($produto['status_estoque'] ?? '') !== 'instock') ? 'disabled' : '' ?>>
                     <i class="bi bi-cart-plus icon" style="margin-right: 0.5rem;"></i>
                     Adicionar ao Carrinho
                 </button>
