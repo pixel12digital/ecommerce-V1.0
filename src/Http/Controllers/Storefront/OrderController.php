@@ -6,6 +6,8 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Tenant\TenantContext;
 use App\Services\Payment\PaymentService;
+use App\Services\CartService;
+use App\Services\ThemeConfig;
 
 class OrderController extends Controller
 {
@@ -59,11 +61,21 @@ class OrderController extends Controller
             $paymentDetails = is_array($decoded) ? $decoded : [];
         }
 
+        $tenant = TenantContext::tenant();
+        $theme = ThemeConfig::getFullThemeConfig();
+
         $this->view('storefront/orders/thank_you', [
             'pedido' => $pedido,
             'itens' => $itens,
             'instrucoesPagamento' => $instrucoesPagamento,
             'paymentDetails' => $paymentDetails,
+            'loja' => [
+                'nome' => $tenant->name,
+                'slug' => $tenant->slug,
+            ],
+            'theme' => $theme,
+            'cartTotalItems' => CartService::getTotalItems(),
+            'cartSubtotal' => CartService::getSubtotal(),
         ]);
     }
 }
