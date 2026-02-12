@@ -134,15 +134,80 @@ class PaymentWebhookController extends Controller
             return;
         }
 
+        $debug = [
+            'numero_pedido' => $pedido['numero_pedido'],
+            'status_antes' => $pedido['status'],
+            'codigo_transacao' => $pedido['codigo_transacao'] ?? null,
+            'metodo_pagamento' => $pedido['metodo_pagamento'] ?? null,
+        ];
+
         // Se ainda pendente, consultar Cielo
         if ($pedido['status'] === 'pending' && !empty($pedido['codigo_transacao'])) {
             $novoStatus = PaymentService::consultarEAtualizarStatus($tenantId, $pedido);
+            $debug['novo_status'] = $novoStatus;
             $pedido['status'] = $novoStatus ?? $pedido['status'];
         }
 
         echo json_encode([
             'status' => $pedido['status'],
             'status_label' => \App\Support\LangHelper::orderStatusLabel($pedido['status']),
+            'debug' => $debug,
         ]);
+    }
+
+    /**
+     * Debug: Consulta direta à Cielo para um pedido (temporário)
+     * GET /api/payment/debug/{numero_pedido}
+     */
+    public function debugStatus(string $numeroPedido): void
+    {
+        header('Content-Type: application/json');
+
+        $tenantId = \App\Tenant\TenantContext::id();
+        $db = Database::getConnection();
+
+        $stmt = $db->prepare("
+            SELECT id, numero_pedido, status, codigo_transacao, metodo_pagamento, payment_details, created_at, updated_at
+            FROM pedidos 
+            WHERE numero_pedido = :num AND tenant_id = :tid
+            LIMIT 1
+        ");
+        $stmt->execute(['num' => $numeroPedido, 'tid' => $tenantId]);
+        $pedido = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$pedido) {
+            echo json_encode(['error' => 'Pedido não encontrado']);
+            return;
+        }
+
+        $result = [
+            'pedido' => $pedido,
+            'cielo_query' => null,
+            'gateway' => null,
+        ];
+
+        // Verificar gateway
+        $stmtGw = $db->prepare("
+            SELECT codigo, config_json FROM tenant_gateways 
+            WHERE tenant_id = :tid AND tipo = 'payment' AND ativo = 1
+            LIMIT 1
+        ");
+        $stmtGw->execute(['tid' => $tenantId]);
+        $gw = $stmtGw->fetch(\PDO::FETCH_ASSOC);
+        $result['gateway'] = $gw ? ['codigo' => $gw['codigo'], 'has_config' => !empty($gw['config_json'])] : null;
+
+        // Se tem código de transação, consultar Cielo diretamente
+        if (!empty($pedido['codigo_transacao']) && $gw && $gw['codigo'] === 'cielo') {
+            $config = json_decode($gw['config_json'], true) ?: [];
+            $provider = new \App\Services\Payment\Providers\CieloPaymentProvider();
+            try {
+                $cieloResult = $provider->consultarPagamento($pedido['codigo_transacao'], $config);
+                $result['cielo_query'] = $cieloResult;
+            } catch (\Exception $e) {
+                $result['cielo_query'] = ['error' => $e->getMessage()];
+            }
+        }
+
+        echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 }

@@ -564,6 +564,7 @@ $router->post('/api/checkout/buscar-cliente', CheckoutController::class . '@busc
 // Rotas públicas - Webhook de Pagamento (Cielo)
 $router->post('/api/payment/webhook/cielo', PaymentWebhookController::class . '@cieloWebhook');
 $router->get('/api/payment/status/{numero_pedido}', PaymentWebhookController::class . '@checkStatus');
+$router->get('/api/payment/debug/{numero_pedido}', PaymentWebhookController::class . '@debugStatus');
 
 // Rotas públicas - Pedidos
 $router->get('/pedido/{numero_pedido}/confirmacao', OrderController::class . '@thankYou');
