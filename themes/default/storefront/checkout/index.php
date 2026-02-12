@@ -67,7 +67,7 @@ ob_start();
     <form method="POST" action="<?= $basePath ?>/checkout" id="checkoutForm">
         <div>
             <?php if (!empty($errors)): ?>
-                <div class="error-message">
+                <div class="error-message" id="checkout-errors">
                     <strong>Erro ao processar:</strong>
                     <ul class="error-list">
                         <?php foreach ($errors as $error): ?>
@@ -75,6 +75,12 @@ ob_start();
                         <?php endforeach; ?>
                     </ul>
                 </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var el = document.getElementById('checkout-errors');
+                        if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    });
+                </script>
             <?php endif; ?>
             
             <!-- Dados do Cliente -->
@@ -222,7 +228,7 @@ ob_start();
                         <?php foreach ($opcoesFrete as $opcao): ?>
                             <label class="option-card" onclick="selectShipping(this)">
                                 <input type="radio" name="metodo_frete" value="<?= htmlspecialchars($opcao['codigo']) ?>" required
-                                       <?= (isset($formData['metodo_frete']) && $formData['metodo_frete'] === $opcao['codigo']) ? 'checked' : '' ?>>
+                                       <?= (isset($formData['metodo_frete']) && $formData['metodo_frete'] === $opcao['codigo']) || (count($opcoesFrete) === 1) ? 'checked' : '' ?>>
                                 <div>
                                     <div class="option-title"><?= htmlspecialchars($opcao['titulo']) ?></div>
                                     <div class="option-desc">

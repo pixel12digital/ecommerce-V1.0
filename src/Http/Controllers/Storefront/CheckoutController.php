@@ -262,8 +262,13 @@ class CheckoutController extends Controller
             $subtotal = CartService::getSubtotal();
             $opcoesFrete = [];
             $freteErro = '';
+            $todosFreteGratis = $this->verificarFreteGratisCarrinho($db, $tenantId, $cart['items']);
             try {
-                $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+                if ($todosFreteGratis) {
+                    $opcoesFrete = [['codigo' => 'frete_gratis', 'servico' => 'Frete Grátis', 'titulo' => 'Frete Grátis', 'valor' => 0, 'preco' => 0, 'prazo' => null]];
+                } else {
+                    $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+                }
             } catch (\Exception $ex) {
                 $freteErro = 'Não foi possível calcular o frete.';
             }
@@ -300,6 +305,7 @@ class CheckoutController extends Controller
                 'cartSubtotal' => CartService::getSubtotal(),
                 'errors' => $errors,
                 'formData' => $_POST,
+                'todosFreteGratis' => $todosFreteGratis,
             ]);
             return;
         }
@@ -756,8 +762,13 @@ class CheckoutController extends Controller
             $subtotal = CartService::getSubtotal();
             $opcoesFrete = [];
             $freteErro = '';
+            $todosFreteGratis = $this->verificarFreteGratisCarrinho($db, $tenantId, $cart['items']);
             try {
-                $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+                if ($todosFreteGratis) {
+                    $opcoesFrete = [['codigo' => 'frete_gratis', 'servico' => 'Frete Grátis', 'titulo' => 'Frete Grátis', 'valor' => 0, 'preco' => 0, 'prazo' => null]];
+                } else {
+                    $opcoesFrete = ShippingService::calcularFrete($tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+                }
             } catch (\Exception $ex) {
                 $freteErro = 'Não foi possível calcular o frete.';
             }
@@ -798,6 +809,7 @@ class CheckoutController extends Controller
                 'cartSubtotal' => CartService::getSubtotal(),
                 'errors' => [$friendlyMsg],
                 'formData' => $_POST,
+                'todosFreteGratis' => $todosFreteGratis,
             ]);
         }
     }
