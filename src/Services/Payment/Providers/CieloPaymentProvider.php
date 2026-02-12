@@ -66,7 +66,8 @@ class CieloPaymentProvider implements PaymentProviderInterface
         if (empty($cardHolder)) {
             throw new \RuntimeException('Nome do titular do cartão é obrigatório.');
         }
-        if (empty($cardExpiry) || !preg_match('/^\d{2}\/\d{4}$/', $cardExpiry)) {
+        // Aceitar MM/AA ou MM/AAAA
+        if (empty($cardExpiry) || !preg_match('/^\d{2}\/\d{2,4}$/', $cardExpiry)) {
             throw new \RuntimeException('Validade do cartão inválida. Use o formato MM/AAAA.');
         }
         if (empty($cardCvv) || strlen($cardCvv) < 3) {
@@ -77,6 +78,10 @@ class CieloPaymentProvider implements PaymentProviderInterface
         $expiryParts = explode('/', $cardExpiry);
         $expiryMonth = $expiryParts[0];
         $expiryYear = $expiryParts[1];
+        // Converter ano de 2 dígitos para 4 dígitos (ex: 26 -> 2026)
+        if (strlen($expiryYear) === 2) {
+            $expiryYear = '20' . $expiryYear;
+        }
 
         // Validar mês (01-12)
         $monthInt = (int)$expiryMonth;

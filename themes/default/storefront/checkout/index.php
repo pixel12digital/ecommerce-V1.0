@@ -900,12 +900,33 @@ $additionalScripts = '
                 // Máscara da validade (MM/AAAA)
                 var cardExpiryInput = document.getElementById("card_expiry");
                 if (cardExpiryInput) {
-                    cardExpiryInput.addEventListener("input", function() {
-                        var v = this.value.replace(/\D/g, "").substring(0, 6);
+                    function formatExpiry(el) {
+                        var v = el.value.replace(/\D/g, "").substring(0, 6);
+                        // Se digitou MM + AA (4 dígitos), converter para MMAAAA
+                        if (v.length === 4 && parseInt(v.substring(2), 10) < 100) {
+                            // Aguardar: pode ser MMAA ou MMAA(AA) em progresso
+                        }
                         if (v.length >= 3) {
-                            this.value = v.substring(0, 2) + "/" + v.substring(2);
+                            el.value = v.substring(0, 2) + "/" + v.substring(2);
                         } else {
-                            this.value = v;
+                            el.value = v;
+                        }
+                    }
+                    cardExpiryInput.addEventListener("input", function() { formatExpiry(this); });
+                    // Ao sair do campo, converter MM/AA para MM/AAAA
+                    cardExpiryInput.addEventListener("blur", function() {
+                        var v = this.value.trim();
+                        var match = v.match(/^(\d{2})\/(\d{2})$/);
+                        if (match) {
+                            this.value = match[1] + "/20" + match[2];
+                        }
+                    });
+                    // Tratar autocomplete do navegador (pode preencher em formato diferente)
+                    cardExpiryInput.addEventListener("change", function() {
+                        var v = this.value.trim();
+                        var match = v.match(/^(\d{2})\/(\d{2})$/);
+                        if (match) {
+                            this.value = match[1] + "/20" + match[2];
                         }
                     });
                 }
