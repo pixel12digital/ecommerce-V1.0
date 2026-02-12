@@ -8,30 +8,107 @@ $pedido = $pedido ?? [];
 $itens = $itens ?? [];
 ?>
 <?php ob_start(); ?>
+
+<?php
+// Timeline do pedido
+$statusOrder = ['pending', 'paid', 'shipped', 'completed'];
+$statusLabels = [
+    'pending'   => 'Pedido Realizado',
+    'paid'      => 'Pagamento Confirmado',
+    'shipped'   => 'Enviado',
+    'completed' => 'Entregue',
+];
+$statusIcons = [
+    'pending'   => 'bi-bag-check',
+    'paid'      => 'bi-credit-card-2-front',
+    'shipped'   => 'bi-truck',
+    'completed' => 'bi-house-check',
+];
+$currentStatus = $pedido['status'];
+$isCanceled = ($currentStatus === 'canceled');
+$currentIdx = array_search($currentStatus, $statusOrder);
+if ($currentIdx === false) $currentIdx = -1;
+?>
+
 <div class="content-header">
     <h1>Pedido #<?= htmlspecialchars($pedido['numero_pedido']) ?></h1>
     <p style="color: #666; margin-top: 0.5rem;">
-        Data: <?= date('d/m/Y H:i', strtotime($pedido['created_at'])) ?>
+        Realizado em <?= date('d/m/Y \à\s H:i', strtotime($pedido['created_at'])) ?>
     </p>
 </div>
 
-<div class="order-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-    <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <i class="bi bi-info-circle icon" style="font-size: 1.5rem; color: #023A8D;"></i>
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #666;">Status do Pedido</h3>
+<?php if ($isCanceled): ?>
+    <div style="background: #fce4ec; border-left: 4px solid #c62828; border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i class="bi bi-x-circle-fill" style="font-size: 1.5rem; color: #c62828;"></i>
+            <div>
+                <strong style="color: #c62828; font-size: 1.1rem;">Pedido Cancelado</strong>
+                <p style="margin: 0.25rem 0 0; color: #666; font-size: 0.9rem;">Este pedido foi cancelado.</p>
+            </div>
         </div>
-        <div style="font-size: 1.375rem; font-weight: 700; color: #023A8D;">
+    </div>
+<?php else: ?>
+    <!-- Timeline Visual -->
+    <div class="order-timeline" style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <div style="display: flex; justify-content: space-between; position: relative; padding: 0 0.5rem;">
+            <!-- Linha de fundo -->
+            <div style="position: absolute; top: 20px; left: 40px; right: 40px; height: 3px; background: #e0e0e0; z-index: 0;"></div>
+            <!-- Linha de progresso -->
+            <?php
+            $progressPercent = 0;
+            if ($currentIdx >= 0) {
+                $progressPercent = ($currentIdx / (count($statusOrder) - 1)) * 100;
+            }
+            ?>
+            <div style="position: absolute; top: 20px; left: 40px; width: calc((100% - 80px) * <?= $progressPercent ?> / 100); height: 3px; background: #2E7D32; z-index: 1; transition: width 0.5s;"></div>
+
+            <?php foreach ($statusOrder as $idx => $step): ?>
+                <?php
+                $isActive = ($idx <= $currentIdx);
+                $isCurrent = ($idx === $currentIdx);
+                $circleColor = $isActive ? '#2E7D32' : '#ccc';
+                $textColor = $isActive ? '#2E7D32' : '#999';
+                $fontWeight = $isCurrent ? '700' : '500';
+                ?>
+                <div style="display: flex; flex-direction: column; align-items: center; z-index: 2; flex: 1;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: <?= $circleColor ?>; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; <?= $isCurrent ? 'box-shadow: 0 0 0 4px rgba(46,125,50,0.2);' : '' ?>">
+                        <?php if ($isActive): ?>
+                            <i class="bi <?= $statusIcons[$step] ?>" style="color: white; font-size: 1rem;"></i>
+                        <?php else: ?>
+                            <i class="bi <?= $statusIcons[$step] ?>" style="color: white; font-size: 1rem; opacity: 0.6;"></i>
+                        <?php endif; ?>
+                    </div>
+                    <span style="font-size: 0.75rem; color: <?= $textColor ?>; font-weight: <?= $fontWeight ?>; text-align: center; line-height: 1.3;">
+                        <?= $statusLabels[$step] ?>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
+
+<!-- Resumo -->
+<div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 140px; background: #f0f7ff; padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 0.25rem;">Status</div>
+        <div style="font-size: 1.1rem; font-weight: 700; color: #023A8D;">
             <?= \App\Support\LangHelper::orderStatusLabel($pedido['status']) ?>
         </div>
     </div>
-    <div style="background: #fff3e0; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <i class="bi bi-currency-dollar icon" style="font-size: 1.5rem; color: #e65100;"></i>
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #666;">Total</h3>
-        </div>
-        <div style="font-size: 1.75rem; font-weight: 700; color: #2E7D32;">
+    <div style="flex: 1; min-width: 140px; background: #f0fff4; padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 0.25rem;">Total</div>
+        <div style="font-size: 1.1rem; font-weight: 700; color: #2E7D32;">
             R$ <?= number_format($pedido['total_geral'], 2, ',', '.') ?>
+        </div>
+    </div>
+    <div style="flex: 1; min-width: 140px; background: #fff8f0; padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 0.8rem; color: #666; margin-bottom: 0.25rem;">Frete</div>
+        <div style="font-size: 1.1rem; font-weight: 700; color: #e65100;">
+            <?php if (($pedido['total_frete'] ?? 0) == 0): ?>
+                Grátis
+            <?php else: ?>
+                R$ <?= number_format($pedido['total_frete'], 2, ',', '.') ?>
+            <?php endif; ?>
         </div>
     </div>
 </div>
