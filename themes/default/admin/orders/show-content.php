@@ -21,6 +21,13 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                 'rastreio_invalido' => 'Código de rastreamento inválido.',
                 'erro_salvar_rastreio' => 'Erro ao salvar código de rastreamento.',
                 'erro_marcar_enviado' => 'Erro ao marcar pedido como enviado.',
+                'metodo_frete_invalido' => 'Método de frete não suportado para geração de etiqueta.',
+                'selecione_servico_envio' => 'Selecione o serviço de envio (PAC ou SEDEX) para gerar a etiqueta.',
+                'pedido_cancelado' => 'Não é possível gerar etiqueta para pedido cancelado.',
+                'cep_invalido' => 'CEP de entrega inválido.',
+                'endereco_incompleto' => 'Endereço de entrega incompleto.',
+                'pedido_sem_itens' => 'Pedido sem itens.',
+                'gateway_nao_configurado' => 'Gateway de frete não configurado. Configure em Admin → Integrações.',
             ];
             echo $errors[$_GET['error']] ?? 'Erro desconhecido.';
             ?>
@@ -226,6 +233,26 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         
         <!-- Formulário para Gerar Etiqueta -->
         <form method="POST" action="<?= $basePath ?>/admin/pedidos/<?= $pedido['id'] ?>/frete/gerar-etiqueta" class="label-form" style="margin-top: 1rem;">
+            <?php if (($pedido['metodo_frete'] ?? '') === 'frete_gratis'): ?>
+                <div style="padding: 1rem; background: #e8f5e9; border-radius: 4px; border-left: 4px solid #2e7d32; margin-bottom: 1rem;">
+                    <p style="margin: 0 0 0.75rem 0; color: #2e7d32; font-weight: 600;">
+                        <i class="bi bi-truck"></i> Este pedido tem <strong>Frete Grátis</strong> para o cliente.
+                    </p>
+                    <p style="margin: 0 0 0.75rem 0; color: #555; font-size: 0.9rem;">
+                        Selecione o serviço dos Correios para gerar a etiqueta de envio:
+                    </p>
+                    <div style="display: flex; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: white; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; flex: 1; justify-content: center;">
+                            <input type="radio" name="servico_envio" value="pac" required>
+                            <span style="font-weight: 600;">PAC</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: white; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; flex: 1; justify-content: center;">
+                            <input type="radio" name="servico_envio" value="sedex" required>
+                            <span style="font-weight: 600;">SEDEX</span>
+                        </label>
+                    </div>
+                </div>
+            <?php endif; ?>
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="label_format" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
                     Formato da Etiqueta

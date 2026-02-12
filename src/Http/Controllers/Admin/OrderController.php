@@ -238,7 +238,16 @@ class OrderController extends Controller
         }
 
         // Validar método de frete (deve ser PAC ou SEDEX)
+        // Para frete grátis, o admin escolhe o serviço via POST
         $metodoFrete = $pedido['metodo_frete'] ?? '';
+        if ($metodoFrete === 'frete_gratis') {
+            $servicoEscolhido = trim($_POST['servico_envio'] ?? '');
+            if (empty($servicoEscolhido) || !in_array($servicoEscolhido, ['pac', 'sedex'])) {
+                $this->redirect("/admin/pedidos/{$id}?error=selecione_servico_envio");
+                return;
+            }
+            $metodoFrete = 'correios_' . $servicoEscolhido;
+        }
         if (stripos($metodoFrete, 'pac') === false && stripos($metodoFrete, 'sedex') === false) {
             $this->redirect("/admin/pedidos/{$id}?error=metodo_frete_invalido");
             return;
