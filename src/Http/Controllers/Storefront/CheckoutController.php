@@ -790,9 +790,8 @@ class CheckoutController extends Controller
                 }
             }
 
-            // Mensagem amigável para erros de pagamento
-            $errorMsg = $e->getMessage();
-            $friendlyMsg = $this->friendlyPaymentError($errorMsg);
+            // Usar mensagem diretamente - o CieloPaymentProvider já traduz os erros
+            $friendlyMsg = $e->getMessage();
 
             $this->view('storefront/checkout/index', [
                 'loja' => ['nome' => $tenant->name, 'slug' => $tenant->slug],

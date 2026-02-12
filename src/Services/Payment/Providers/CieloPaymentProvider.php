@@ -117,7 +117,8 @@ class CieloPaymentProvider implements PaymentProviderInterface
             ],
         ];
 
-        error_log("Cielo CC Request: OrderId={$merchantOrderId}, Brand={$brand}, Last4=" . substr($cardNumber, -4) . ", Expiry={$expiryMonth}/{$expiryYear}, Installments={$installments}, Amount={$amount}");
+        $logFile = dirname(__DIR__, 4) . '/cielo_debug.log';
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " REQUEST: OrderId={$merchantOrderId}, Brand={$brand}, Last4=" . substr($cardNumber, -4) . ", Expiry={$expiryMonth}/{$expiryYear}, Installments={$installments}, Amount={$amount}\n", FILE_APPEND);
 
         $url = $baseUrl . '/1/sales/';
         $ch = curl_init($url);
@@ -138,7 +139,7 @@ class CieloPaymentProvider implements PaymentProviderInterface
         $curlError = curl_error($ch);
         curl_close($ch);
 
-        error_log("Cielo CC Response: HTTP={$httpCode}, Body=" . substr($response, 0, 500));
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " RESPONSE: HTTP={$httpCode}, Body=" . substr($response, 0, 500) . "\n", FILE_APPEND);
 
         if ($curlError) {
             throw new \RuntimeException('Erro ao conectar com Cielo: ' . $curlError);
