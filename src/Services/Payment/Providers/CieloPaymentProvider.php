@@ -78,6 +78,20 @@ class CieloPaymentProvider implements PaymentProviderInterface
         $expiryMonth = $expiryParts[0];
         $expiryYear = $expiryParts[1];
 
+        // Validar mês (01-12)
+        $monthInt = (int)$expiryMonth;
+        if ($monthInt < 1 || $monthInt > 12) {
+            throw new \RuntimeException('Mês de validade inválido. Informe um mês entre 01 e 12.');
+        }
+
+        // Validar se cartão não está vencido
+        $currentMonth = (int)date('m');
+        $currentYear = (int)date('Y');
+        $yearInt = (int)$expiryYear;
+        if ($yearInt < $currentYear || ($yearInt === $currentYear && $monthInt < $currentMonth)) {
+            throw new \RuntimeException('Cartão vencido. A data de validade informada (' . $cardExpiry . ') já passou.');
+        }
+
         // Detectar bandeira pelo número do cartão
         $brand = $this->detectCardBrand($cardNumber);
 
@@ -103,6 +117,8 @@ class CieloPaymentProvider implements PaymentProviderInterface
             ],
         ];
 
+        error_log("Cielo CC Request: OrderId={$merchantOrderId}, Brand={$brand}, Last4=" . substr($cardNumber, -4) . ", Expiry={$expiryMonth}/{$expiryYear}, Installments={$installments}, Amount={$amount}");
+
         $url = $baseUrl . '/1/sales/';
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -121,6 +137,8 @@ class CieloPaymentProvider implements PaymentProviderInterface
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
+
+        error_log("Cielo CC Response: HTTP={$httpCode}, Body=" . substr($response, 0, 500));
 
         if ($curlError) {
             throw new \RuntimeException('Erro ao conectar com Cielo: ' . $curlError);
@@ -149,9 +167,9 @@ class CieloPaymentProvider implements PaymentProviderInterface
 
         // Status 2 = PaymentConfirmed (capturado), 1 = Authorized
         if ($status !== 1 && $status !== 2) {
-            $errorMsg = !empty($returnMessage) ? $returnMessage : 'Pagamento não autorizado.';
-            error_log("Cielo CC Denied: Status={$status}, ReturnCode={$returnCode}, ReturnMessage={$returnMessage}");
-            throw new \RuntimeException('Pagamento recusado: ' . $errorMsg);
+            error_log("Cielo CC Denied: Status={$status}, ReturnCode={$returnCode}, ReturnMessage={$returnMessage}, PaymentId={$paymentId}");
+            $errorMsg = $this->traduzirErroCielo($returnCode, $returnMessage);
+            throw new \RuntimeException($errorMsg);
         }
 
         $codigoTransacao = $paymentId ? (string)$paymentId : 'cielo-cc-' . $merchantOrderId;
@@ -388,5 +406,44 @@ class CieloPaymentProvider implements PaymentProviderInterface
         ];
 
         return new PaymentResult($codigoTransacao, $statusInicial, $dadosExibicao);
+    }
+
+    private function traduzirErroCielo(string $returnCode, string $returnMessage): string
+    {
+        $mapa = [
+            '05' => 'Pagamento não autorizado pelo banco emissor. Entre em contato com seu banco ou tente outro cartão.',
+            '57' => 'Cartão não permite esse tipo de transação. Tente outro cartão.',
+            '78' => 'Cartão bloqueado. Entre em contato com seu banco.',
+            '99' => 'Tempo esgotado na comunicação com o banco. Tente novamente.',
+            '77' => 'Cartão cancelado. Tente outro cartão.',
+            '70' => 'Cartão cancelado. Tente outro cartão.',
+            '51' => 'Saldo insuficiente. Tente outro cartão ou método de pagamento.',
+            '54' => 'Cartão vencido. Verifique a data de validade ou use outro cartão.',
+            '56' => 'Cartão não encontrado no banco emissor. Verifique os dados ou tente outro cartão.',
+            '61' => 'Valor acima do limite permitido. Tente um valor menor ou outro cartão.',
+            '62' => 'Transação não permitida para este cartão. Tente outro cartão.',
+            '63' => 'Transação não permitida. Violação de segurança.',
+            '65' => 'Limite de tentativas excedido. Aguarde alguns minutos e tente novamente.',
+            '14' => 'Número do cartão inválido. Verifique e tente novamente.',
+            '41' => 'Cartão bloqueado por perda. Entre em contato com seu banco.',
+            '43' => 'Cartão bloqueado por roubo. Entre em contato com seu banco.',
+            'BP' => 'Cartão não identificado ou não é permitido para esta transação.',
+            'N7' => 'Código de segurança (CVV) inválido. Verifique e tente novamente.',
+            'BV' => 'Cartão vencido. Verifique a data de validade ou use outro cartão.',
+        ];
+
+        if (isset($mapa[$returnCode])) {
+            return $mapa[$returnCode];
+        }
+
+        $lower = mb_strtolower($returnMessage);
+        if (strpos($lower, 'expir') !== false || strpos($lower, 'validade') !== false) {
+            return 'Cartão vencido ou data de validade incorreta. Verifique e tente novamente.';
+        }
+        if (strpos($lower, 'not authorized') !== false || strpos($lower, 'denied') !== false) {
+            return 'Pagamento não autorizado pelo banco. Tente outro cartão ou método de pagamento.';
+        }
+
+        return 'Pagamento não autorizado (código ' . $returnCode . '). Verifique os dados do cartão ou tente outro método de pagamento.';
     }
 }
