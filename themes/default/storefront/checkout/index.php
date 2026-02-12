@@ -226,12 +226,17 @@ ob_start();
                                 <div>
                                     <div class="option-title"><?= htmlspecialchars($opcao['titulo']) ?></div>
                                     <div class="option-desc">
-                                        R$ <?= number_format($opcao['valor'], 2, ',', '.') ?> - <?php
-                                            $prazo = $opcao['prazo'];
+                                        <?php if (($opcao['valor'] ?? 0) == 0): ?>
+                                            <span style="color: #2e7d32; font-weight: 600;">Grátis</span>
+                                        <?php else: ?>
+                                            R$ <?= number_format($opcao['valor'], 2, ',', '.') ?>
+                                        <?php endif; ?>
+                                        <?php
+                                            $prazo = $opcao['prazo'] ?? null;
                                             if (is_numeric($prazo)) {
-                                                echo (int)$prazo === 1 ? '1 dia útil' : (int)$prazo . ' dias úteis';
-                                            } else {
-                                                echo htmlspecialchars($prazo);
+                                                echo ' - ' . ((int)$prazo === 1 ? '1 dia útil' : (int)$prazo . ' dias úteis');
+                                            } elseif (!empty($prazo)) {
+                                                echo ' - ' . htmlspecialchars($prazo);
                                             }
                                         ?>
                                         <?php if (!empty($opcao['descricao'])): ?>
