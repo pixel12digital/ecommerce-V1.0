@@ -198,17 +198,23 @@ class PaymentService
 
         // Atualizar status do pedido no banco
         $db = Database::getConnection();
+        $pedidoId = (int)$pedido['id'];
+        $tenantIdInt = (int)$tenantId;
+
+        error_log("PIX Update tentativa: pedido_id={$pedidoId}, tenant_id={$tenantIdInt}, novo_status={$novoStatus}");
+
         $stmt = $db->prepare("
             UPDATE pedidos SET status = :status, updated_at = NOW()
             WHERE id = :id AND tenant_id = :tenant_id AND status = 'pending'
         ");
         $stmt->execute([
             'status' => $novoStatus,
-            'id' => $pedido['id'],
-            'tenant_id' => $tenantId,
+            'id' => $pedidoId,
+            'tenant_id' => $tenantIdInt,
         ]);
 
-        error_log("PIX Status atualizado: Pedido #{$pedido['numero_pedido']} -> {$novoStatus} (Cielo status: {$result['cielo_status']})");
+        $rowsAffected = $stmt->rowCount();
+        error_log("PIX Status atualizado: Pedido #{$pedido['numero_pedido']} -> {$novoStatus} (Cielo status: {$result['cielo_status']}, rows={$rowsAffected})");
 
         return $novoStatus;
     }

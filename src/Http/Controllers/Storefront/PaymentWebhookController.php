@@ -203,6 +203,26 @@ class PaymentWebhookController extends Controller
             try {
                 $cieloResult = $provider->consultarPagamento($pedido['codigo_transacao'], $config);
                 $result['cielo_query'] = $cieloResult;
+
+                // Se Cielo diz pago e pedido está pending, atualizar agora
+                $novoStatus = $cieloResult['status'] ?? null;
+                if ($novoStatus && $novoStatus !== 'pending' && $pedido['status'] === 'pending') {
+                    $stmtUp = $db->prepare("
+                        UPDATE pedidos SET status = :status, updated_at = NOW()
+                        WHERE id = :id AND tenant_id = :tid AND status = 'pending'
+                    ");
+                    $stmtUp->execute([
+                        'status' => $novoStatus,
+                        'id' => $pedido['id'],
+                        'tid' => $tenantId,
+                    ]);
+                    $rowsAffected = $stmtUp->rowCount();
+                    $result['update'] = [
+                        'executed' => true,
+                        'new_status' => $novoStatus,
+                        'rows_affected' => $rowsAffected,
+                    ];
+                }
             } catch (\Exception $e) {
                 $result['cielo_query'] = ['error' => $e->getMessage()];
             }
