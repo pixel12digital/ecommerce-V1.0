@@ -189,7 +189,76 @@ ob_start();
         </div>
     <?php endif; ?>
     
-    <div style="text-align: center;">
+    <?php
+    $customerNeedPassword = $customerNeedPassword ?? false;
+    $passwordCreated = $_SESSION['password_created'] ?? false;
+    $passwordErrors = $_SESSION['password_errors'] ?? [];
+    unset($_SESSION['password_created'], $_SESSION['password_errors']);
+    ?>
+
+    <?php if ($passwordCreated): ?>
+        <div class="order-info" style="border-left: 4px solid #28a745;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <i class="bi bi-check-circle-fill" style="color: #28a745; font-size: 1.5rem;"></i>
+                <h3 class="info-title" style="border: none; margin: 0; padding: 0;">Senha criada com sucesso!</h3>
+            </div>
+            <p style="color: #555; margin-bottom: 1rem;">Agora você pode acompanhar seus pedidos a qualquer momento.</p>
+            <a href="<?= $basePath ?>/minha-conta" style="display: inline-block; padding: 0.75rem 1.5rem; background: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                <i class="bi bi-person-circle" style="margin-right: 0.5rem;"></i>
+                Acessar Minha Conta
+            </a>
+        </div>
+    <?php elseif ($customerNeedPassword): ?>
+        <div class="order-info" style="border-left: 4px solid #F7931E;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <i class="bi bi-shield-lock" style="color: #F7931E; font-size: 1.5rem;"></i>
+                <h3 class="info-title" style="border: none; margin: 0; padding: 0;">Crie sua senha para acompanhar o pedido</h3>
+            </div>
+            <p style="color: #555; margin-bottom: 1rem; font-size: 0.95rem;">
+                Defina uma senha para acessar sua conta e acompanhar o status do pedido, rastreamento e histórico de compras.
+            </p>
+            <?php if (!empty($passwordErrors)): ?>
+                <div style="background: #fff3f3; border: 1px solid #f5c6cb; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem;">
+                    <?php foreach ($passwordErrors as $err): ?>
+                        <p style="margin: 0; color: #721c24; font-size: 0.9rem;"><?= htmlspecialchars($err) ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            <form method="POST" action="<?= $basePath ?>/pedido/criar-senha" style="max-width: 400px;">
+                <input type="hidden" name="numero_pedido" value="<?= htmlspecialchars($pedido['numero_pedido']) ?>">
+                <div style="margin-bottom: 1rem;">
+                    <label for="password" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Senha *</label>
+                    <input type="password" id="password" name="password" required minlength="6" placeholder="Mínimo 6 caracteres"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="password_confirm" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Confirmar Senha *</label>
+                    <input type="password" id="password_confirm" name="password_confirm" required minlength="6" placeholder="Repita a senha"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; box-sizing: border-box;">
+                </div>
+                <button type="submit" style="width: 100%; padding: 0.75rem; background: #F7931E; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 1rem; cursor: pointer;">
+                    <i class="bi bi-check-lg" style="margin-right: 0.5rem;"></i>
+                    Criar Senha e Acessar Minha Conta
+                </button>
+            </form>
+        </div>
+    <?php else: ?>
+        <div class="order-info" style="border-left: 4px solid #023A8D;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <i class="bi bi-person-circle" style="color: #023A8D; font-size: 1.5rem;"></i>
+                <h3 class="info-title" style="border: none; margin: 0; padding: 0;">Acompanhe seu pedido</h3>
+            </div>
+            <p style="color: #555; margin-bottom: 1rem; font-size: 0.95rem;">
+                Acesse sua conta para acompanhar o status, rastreamento e histórico de compras.
+            </p>
+            <a href="<?= $basePath ?>/minha-conta/pedidos" style="display: inline-block; padding: 0.75rem 1.5rem; background: #023A8D; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                <i class="bi bi-box-seam" style="margin-right: 0.5rem;"></i>
+                Acompanhar Pedido
+            </a>
+        </div>
+    <?php endif; ?>
+
+    <div style="text-align: center; margin-top: 1rem;">
         <a href="<?= $basePath ?>/produtos" class="btn">Continuar Comprando</a>
     </div>
 </div>

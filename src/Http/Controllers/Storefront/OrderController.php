@@ -64,11 +64,25 @@ class OrderController extends Controller
         $tenant = TenantContext::tenant();
         $theme = ThemeConfig::getFullThemeConfig();
 
+        // Verificar se o cliente logado já tem senha definida
+        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerNeedPassword = false;
+        if ($customerId) {
+            $stmtC = $db->prepare("SELECT id, password_hash FROM customers WHERE id = :id AND tenant_id = :tid LIMIT 1");
+            $stmtC->execute(['id' => (int)$customerId, 'tid' => $tenantId]);
+            $customerData = $stmtC->fetch(\PDO::FETCH_ASSOC);
+            if ($customerData && empty($customerData['password_hash'])) {
+                $customerNeedPassword = true;
+            }
+        }
+
         $this->view('storefront/orders/thank_you', [
             'pedido' => $pedido,
             'itens' => $itens,
             'instrucoesPagamento' => $instrucoesPagamento,
             'paymentDetails' => $paymentDetails,
+            'customerNeedPassword' => $customerNeedPassword,
+            'customerId' => $customerId,
             'loja' => [
                 'nome' => $tenant->name,
                 'slug' => $tenant->slug,
@@ -77,6 +91,61 @@ class OrderController extends Controller
             'cartTotalItems' => CartService::getTotalItems(),
             'cartSubtotal' => CartService::getSubtotal(),
         ]);
+    }
+
+    /**
+     * POST: Criar senha direto na página de confirmação (primeiro acesso sem email)
+     */
+    public function setPasswordDirect(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        $customerId = $_SESSION['customer_id'] ?? null;
+        $password = $_POST['password'] ?? '';
+        $passwordConfirm = $_POST['password_confirm'] ?? '';
+        $numeroPedido = trim($_POST['numero_pedido'] ?? '');
+
+        if (!$customerId) {
+            $this->redirect('/minha-conta/login');
+            return;
+        }
+
+        $errors = [];
+        if (empty($password)) {
+            $errors[] = 'Senha é obrigatória.';
+        } elseif (strlen($password) < 6) {
+            $errors[] = 'Senha deve ter no mínimo 6 caracteres.';
+        }
+        if ($password !== $passwordConfirm) {
+            $errors[] = 'As senhas não coincidem.';
+        }
+
+        if (!empty($errors)) {
+            $_SESSION['password_errors'] = $errors;
+            $this->redirect("/pedido/{$numeroPedido}/confirmacao");
+            return;
+        }
+
+        // Salvar senha
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $db->prepare("
+            UPDATE customers SET 
+                password_hash = :password_hash,
+                updated_at = NOW()
+            WHERE id = :id AND tenant_id = :tenant_id AND (password_hash IS NULL OR password_hash = '')
+        ");
+        $stmt->execute([
+            'password_hash' => $passwordHash,
+            'id' => (int)$customerId,
+            'tenant_id' => $tenantId,
+        ]);
+
+        $_SESSION['password_created'] = true;
+        $this->redirect("/pedido/{$numeroPedido}/confirmacao");
     }
 }
 

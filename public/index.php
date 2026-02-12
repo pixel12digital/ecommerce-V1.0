@@ -562,6 +562,7 @@ $router->post('/api/checkout/buscar-cliente', CheckoutController::class . '@busc
 
 // Rotas públicas - Pedidos
 $router->get('/pedido/{numero_pedido}/confirmacao', OrderController::class . '@thankYou');
+$router->post('/pedido/criar-senha', OrderController::class . '@setPasswordDirect');
 
 // Rotas públicas - Autenticação de Cliente
 $router->get('/minha-conta/login', CustomerAuthController::class . '@showLoginForm');
