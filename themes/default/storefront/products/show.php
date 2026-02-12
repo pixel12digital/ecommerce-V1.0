@@ -205,6 +205,11 @@ ob_start();
                         R$ <?= number_format($produto['preco'] ?? $produto['preco_regular'], 2, ',', '.') ?>
                     <?php endif; ?>
                 </div>
+                <?php if (!empty($produto['frete_gratis'])): ?>
+                    <div class="pg-frete-gratis-badge" style="display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.75rem; padding: 0.4rem 0.85rem; background: #e8f5e9; color: #2e7d32; border-radius: 6px; font-size: 0.85rem; font-weight: 600; border: 1px solid #c8e6c9;">
+                        <i class="bi bi-truck"></i> Frete Grátis
+                    </div>
+                <?php endif; ?>
             </div>
             
             <?php if (($produto['tipo'] ?? 'simple') === 'variable' && !empty($atributos)): ?>

@@ -1,7 +1,6 @@
 <?php
 use App\Support\StoreBranding;
 
-// Obter branding da loja
 $branding = StoreBranding::getBranding();
 $logoUrl = $branding['logo_url'] ?? null;
 $storeName = $branding['store_name'] ?? 'Loja';
@@ -13,22 +12,14 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
 }
 $message = $message ?? null;
 $messageType = $messageType ?? 'error';
-$errors = $errors ?? [];
-$email = $email ?? '';
-$redirectUrl = $redirectUrl ?? '/minha-conta';
 
-// Carregar dados necessários para o layout base
 if (empty($loja) || empty($loja['nome'])) {
     $tenant = \App\Tenant\TenantContext::tenant();
     $loja = ['nome' => $tenant['nome'] ?? 'Loja'];
 }
-
-// Carregar menu_main se não estiver definido
 if (empty($theme['menu_main'])) {
     $theme['menu_main'] = \App\Services\ThemeConfig::getMainMenu();
 }
-
-// Carregar configurações adicionais do tema se necessário
 if (empty($theme['topbar_text'])) {
     $theme['topbar_text'] = \App\Services\ThemeConfig::get('topbar_text', 'Frete grátis acima de R$ 299 | Troca garantida em até 7 dias | Outlet de golfe');
 }
@@ -63,7 +54,6 @@ if (empty($theme['footer_social_youtube'])) {
     $theme['footer_social_youtube'] = \App\Services\ThemeConfig::get('footer_social_youtube', '');
 }
 
-// Capturar conteúdo principal em $content
 ob_start();
 ?>
 
@@ -87,45 +77,30 @@ ob_start();
                 <?= htmlspecialchars($storeName) ?>
             </h1>
         </div>
-        
-        <div class="login-header">
-            <h1><i class="bi bi-person-circle"></i> Login</h1>
-            <p>Entre na sua conta</p>
+
+        <div class="first-access-header">
+            <h2><i class="bi bi-key"></i> Primeiro Acesso</h2>
+            <p>Informe seu e-mail para receber o link de criação de senha.</p>
+            <p style="color: #888; font-size: 0.85rem; margin-top: 0.5rem;">Se você já comprou conosco, sua conta foi criada automaticamente. Basta definir uma senha para acessar.</p>
         </div>
 
         <?php if ($message): ?>
-            <div class="alert alert-<?= $messageType ?>">
+            <div class="alert alert-<?= htmlspecialchars($messageType) ?>">
                 <?= htmlspecialchars($message) ?>
             </div>
         <?php endif; ?>
 
-        <?php if (!empty($errors)): ?>
-            <div class="alert alert-error">
-                <?php foreach ($errors as $error): ?>
-                    <div><?= htmlspecialchars($error) ?></div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <form method="POST" action="<?= $basePath ?>/minha-conta/login">
-            <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectUrl) ?>">
-            
+        <form method="POST" action="<?= $basePath ?>/minha-conta/primeiro-acesso">
             <div class="form-group">
                 <label for="email">E-mail</label>
-                <input type="email" id="email" name="email" value="<?= htmlspecialchars($email) ?>" required autofocus>
+                <input type="email" id="email" name="email" required autofocus placeholder="seu@email.com">
             </div>
 
-            <div class="form-group">
-                <label for="password">Senha</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-
-            <button type="submit" class="btn-primary">Entrar</button>
+            <button type="submit" class="btn-primary">Enviar link</button>
         </form>
 
         <div class="login-footer">
-            <p>Comprou e ainda não tem senha? <a href="<?= $basePath ?>/minha-conta/primeiro-acesso">Primeiro acesso</a></p>
-            <p>Não tem conta? <a href="<?= $basePath ?>/minha-conta/registrar">Cadastre-se</a></p>
+            <p>Já tem senha? <a href="<?= $basePath ?>/minha-conta/login">Fazer login</a></p>
             <p><a href="<?= $basePath ?>">← Voltar para a loja</a></p>
         </div>
     </div>
@@ -134,7 +109,6 @@ ob_start();
 <?php
 $content = ob_get_clean();
 
-// CSS específico da página de login
 $additionalStyles = '
     .auth-page-wrapper {
         min-height: 60vh;
@@ -151,8 +125,6 @@ $additionalStyles = '
         width: 100%;
         max-width: 400px;
     }
-    
-    /* Bloco de branding no login da loja */
     .pg-store-login-brand {
         text-align: center;
         margin-bottom: 24px;
@@ -191,20 +163,19 @@ $additionalStyles = '
         margin: 0;
         color: #333333;
     }
-    
-    .login-header {
+    .first-access-header {
         text-align: center;
-        margin-bottom: 2rem;
-        display: none;
+        margin-bottom: 1.5rem;
     }
-    .login-header h1 {
-        font-size: 1.5rem;
+    .first-access-header h2 {
+        font-size: 1.3rem;
         color: #333;
         margin-bottom: 0.5rem;
     }
-    .login-header p {
+    .first-access-header p {
         color: #666;
         font-size: 0.9rem;
+        margin: 0;
     }
     .form-group {
         margin-bottom: 1rem;
@@ -239,7 +210,6 @@ $additionalStyles = '
         transition: background 0.2s;
     }
     .btn-primary:hover {
-        background: var(--pg-color-primary);
         opacity: 0.9;
     }
     .alert {
@@ -272,13 +242,9 @@ $additionalStyles = '
     }
 ';
 
-// Scripts adicionais
 $additionalScripts = '';
-
-// Configurar variáveis para o layout base
-$pageTitle = 'Login – ' . htmlspecialchars($loja['nome']);
+$pageTitle = 'Primeiro Acesso – ' . htmlspecialchars($loja['nome']);
 $showCategoryStrip = false;
 $showNewsletter = false;
 
-// Incluir o layout base
 include __DIR__ . '/../layouts/base.php';

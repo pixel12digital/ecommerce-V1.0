@@ -186,6 +186,37 @@ class ShippingController extends Controller
             
             error_log("ShippingController::calculate() - Subtotal: " . $subtotal);
             error_log("ShippingController::calculate() - Itens do carrinho: " . json_encode($itens));
+
+            // Verificar se todos os itens têm frete grátis
+            $db = \App\Core\Database::getConnection();
+            $produtoIds = array_keys($itens);
+            $todosFreteGratis = false;
+            if (!empty($produtoIds)) {
+                $placeholders = implode(',', array_fill(0, count($produtoIds), '?'));
+                $stmtFg = $db->prepare("
+                    SELECT COUNT(*) as total, SUM(CASE WHEN frete_gratis = 1 THEN 1 ELSE 0 END) as com_frete_gratis
+                    FROM produtos WHERE id IN ({$placeholders}) AND tenant_id = ?
+                ");
+                $stmtFg->execute(array_merge($produtoIds, [$tenantId]));
+                $resFg = $stmtFg->fetch(\PDO::FETCH_ASSOC);
+                $todosFreteGratis = $resFg && (int)$resFg['total'] > 0 && (int)$resFg['com_frete_gratis'] === (int)$resFg['total'];
+            }
+
+            if ($todosFreteGratis) {
+                $this->json([
+                    'success' => true,
+                    'opcoes' => [[
+                        'codigo' => 'frete_gratis',
+                        'codigo_servico' => 'frete_gratis',
+                        'servico' => 'Frete Grátis',
+                        'preco' => 0,
+                        'prazo' => null,
+                        'descricao' => 'Frete grátis para este pedido'
+                    ]],
+                    'errors' => []
+                ]);
+                return;
+            }
             
             // Calcular frete usando o serviço existente
             $opcoesFrete = ShippingService::calcularFrete($tenantId, $cepDestino, $subtotal, $itens);

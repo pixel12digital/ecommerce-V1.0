@@ -73,14 +73,28 @@ class CheckoutController extends Controller
         $freteErro = null;
         $freteErroTecnico = null;
         $itensParaFrete = $this->converterItensParaFrete($cart['items']);
+
+        // Verificar se TODOS os itens do carrinho têm frete grátis
+        $todosFreteGratis = $this->verificarFreteGratisCarrinho($db, $tenantId, $cart['items']);
         
         try {
-            $opcoesFrete = !empty($cep) ? ShippingService::calcularFrete($tenantId, $cep, $subtotal, $itensParaFrete) : [];
+            if ($todosFreteGratis) {
+                // Frete grátis: criar opção única de frete grátis
+                $opcoesFrete = [[
+                    'codigo' => 'frete_gratis',
+                    'servico' => 'Frete Grátis',
+                    'titulo' => 'Frete Grátis',
+                    'valor' => 0,
+                    'preco' => 0,
+                    'prazo' => null,
+                ]];
+            } else {
+                $opcoesFrete = !empty($cep) ? ShippingService::calcularFrete($tenantId, $cep, $subtotal, $itensParaFrete) : [];
+            }
             
             // Se não houver opções e CEP foi informado, preparar mensagem amigável
             if (empty($opcoesFrete) && !empty($cep)) {
                 $freteErro = "Não foi possível calcular o frete no momento. Verifique o CEP e tente novamente.";
-                // Logar motivo técnico (sem credenciais) para debug
                 $freteErroTecnico = "Nenhuma opção de frete retornada para CEP: " . preg_replace('/\D/', '', $cep);
                 error_log("Checkout: {$freteErroTecnico}");
             }
@@ -89,7 +103,7 @@ class CheckoutController extends Controller
             $freteErro = "Não foi possível calcular o frete no momento. Verifique o CEP e tente novamente.";
             $freteErroTecnico = "Erro ao calcular frete: " . $e->getMessage();
             error_log("Checkout: {$freteErroTecnico}");
-            $opcoesFrete = []; // Retornar array vazio (não quebra checkout)
+            $opcoesFrete = [];
         }
 
         // Buscar métodos de pagamento
@@ -152,7 +166,48 @@ class CheckoutController extends Controller
             'customerAddresses' => $customerAddresses,
             'cartTotalItems' => $cartTotalItems,
             'cartSubtotal' => $cartSubtotal,
+            'todosFreteGratis' => $todosFreteGratis,
         ]);
+    }
+
+    /**
+     * Verifica se TODOS os itens do carrinho possuem frete grátis
+     */
+    private function verificarFreteGratisCarrinho(\PDO $db, int $tenantId, array $cartItems): bool
+    {
+        if (empty($cartItems)) return false;
+
+        $produtoIds = [];
+        foreach ($cartItems as $itemKey => $item) {
+            $produtoId = (int)($item['produto_id'] ?? 0);
+            if ($produtoId <= 0) {
+                if (preg_match('/^p:(\d+)$/', $itemKey, $m)) {
+                    $produtoId = (int)$m[1];
+                } elseif (preg_match('/^v:(\d+)$/', $itemKey, $m)) {
+                    $stmt = $db->prepare("SELECT produto_id FROM produto_variacoes WHERE id = ? LIMIT 1");
+                    $stmt->execute([$m[1]]);
+                    $row = $stmt->fetch();
+                    $produtoId = $row ? (int)$row['produto_id'] : 0;
+                }
+            }
+            if ($produtoId > 0) {
+                $produtoIds[$produtoId] = true;
+            }
+        }
+
+        if (empty($produtoIds)) return false;
+
+        $ids = array_keys($produtoIds);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $db->prepare("
+            SELECT COUNT(*) as total, SUM(CASE WHEN frete_gratis = 1 THEN 1 ELSE 0 END) as com_frete_gratis
+            FROM produtos 
+            WHERE id IN ({$placeholders}) AND tenant_id = ?
+        ");
+        $stmt->execute(array_merge($ids, [$tenantId]));
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $result && (int)$result['total'] > 0 && (int)$result['com_frete_gratis'] === (int)$result['total'];
     }
 
     public function process(): void
@@ -252,7 +307,12 @@ class CheckoutController extends Controller
         // Recalcular valores
         $cart = CartService::get();
         $subtotal = CartService::getSubtotal();
-        $valorFrete = ShippingService::getValorFrete($metodoFrete, $tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+        $todosFreteGratis = $this->verificarFreteGratisCarrinho($db, $tenantId, $cart['items']);
+        if ($todosFreteGratis && $metodoFrete === 'frete_gratis') {
+            $valorFrete = 0.0;
+        } else {
+            $valorFrete = ShippingService::getValorFrete($metodoFrete, $tenantId, $entregaCep, $subtotal, $this->converterItensParaFrete($cart['items']));
+        }
         $totalDescontos = 0.0; // Por enquanto sem descontos
         $totalGeral = $subtotal + $valorFrete - $totalDescontos;
 
@@ -264,22 +324,7 @@ class CheckoutController extends Controller
             ? (int)$_SESSION['customer_id'] 
             : null;
 
-        // Se cliente não está logado, verificar se deseja criar conta
-        if (!$customerId) {
-            $criarConta = isset($_POST['criar_conta']) && $_POST['criar_conta'] == '1';
-            $senhaConta = trim($_POST['senha_conta'] ?? '');
-
-            if (!$criarConta) {
-                // Cliente não está logado e não marcou checkbox de criar conta
-                $errors[] = 'Para finalizar sua compra, faça login ou crie uma conta.';
-            } elseif (empty($senhaConta)) {
-                // Checkbox marcado mas senha não informada
-                $errors[] = 'Senha é obrigatória para criar conta.';
-            } elseif (strlen($senhaConta) < 6) {
-                // Senha muito curta
-                $errors[] = 'Senha deve ter no mínimo 6 caracteres.';
-            }
-        }
+        // Conta será criada automaticamente se não estiver logado (sem necessidade de senha)
 
         // Se houver erros, retornar para o formulário
         if (!empty($errors)) {
@@ -331,78 +376,85 @@ class CheckoutController extends Controller
         try {
             $db->beginTransaction();
 
-            // Se cliente não está logado mas marcou checkbox, criar conta
+            // Criar conta automaticamente se cliente não está logado
             if (!$customerId) {
-                $criarConta = isset($_POST['criar_conta']) && $_POST['criar_conta'] == '1';
-                $senhaConta = trim($_POST['senha_conta'] ?? '');
+                // Limpar CPF para comparação (só dígitos)
+                $cpfLimpo = preg_replace('/\D/', '', $clienteCpf);
 
-                if ($criarConta && !empty($senhaConta)) {
-                    // Verificar se email já existe para este tenant
+                // Verificar se já existe cadastro por email
+                $stmt = $db->prepare("
+                    SELECT * FROM customers 
+                    WHERE tenant_id = :tenant_id 
+                    AND email = :email 
+                    LIMIT 1
+                ");
+                $stmt->execute([
+                    'tenant_id' => $tenantId,
+                    'email' => $clienteEmail,
+                ]);
+                $existingCustomer = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                // Se não encontrou por email, tentar por CPF
+                if (!$existingCustomer && !empty($cpfLimpo)) {
                     $stmt = $db->prepare("
-                        SELECT id FROM customers 
+                        SELECT * FROM customers 
                         WHERE tenant_id = :tenant_id 
-                        AND email = :email 
+                        AND REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = :cpf 
                         LIMIT 1
                     ");
                     $stmt->execute([
                         'tenant_id' => $tenantId,
+                        'cpf' => $cpfLimpo,
+                    ]);
+                    $existingCustomer = $stmt->fetch(\PDO::FETCH_ASSOC);
+                }
+
+                if ($existingCustomer) {
+                    // Cadastro já existe — usar o existente
+                    $customerId = (int)$existingCustomer['id'];
+                    $_SESSION['customer_id'] = $customerId;
+                    $_SESSION['customer_name'] = $existingCustomer['name'];
+                    $_SESSION['customer_email'] = $existingCustomer['email'];
+
+                    // Atualizar dados se necessário (telefone, nome)
+                    $stmt = $db->prepare("
+                        UPDATE customers SET 
+                            name = :name, 
+                            phone = :phone,
+                            cpf = COALESCE(NULLIF(:cpf, ''), cpf),
+                            updated_at = NOW()
+                        WHERE id = :id AND tenant_id = :tenant_id
+                    ");
+                    $stmt->execute([
+                        'name' => $clienteNome,
+                        'phone' => $clienteTelefone ?: null,
+                        'cpf' => $clienteCpf ?: null,
+                        'id' => $customerId,
+                        'tenant_id' => $tenantId,
+                    ]);
+                } else {
+                    // Criar nova conta automaticamente (sem senha)
+                    $stmt = $db->prepare("
+                        INSERT INTO customers (
+                            tenant_id, name, email, password_hash, phone, cpf, created_at, updated_at
+                        ) VALUES (
+                            :tenant_id, :name, :email, NULL, :phone, :cpf, NOW(), NOW()
+                        )
+                    ");
+                    $stmt->execute([
+                        'tenant_id' => $tenantId,
+                        'name' => $clienteNome,
                         'email' => $clienteEmail,
+                        'phone' => $clienteTelefone ?: null,
+                        'cpf' => $clienteCpf ?: null,
                     ]);
 
-                    if ($stmt->fetch()) {
-                        // Email já existe, fazer login ao invés de criar conta
-                        $stmt = $db->prepare("
-                            SELECT * FROM customers 
-                            WHERE tenant_id = :tenant_id 
-                            AND email = :email 
-                            LIMIT 1
-                        ");
-                        $stmt->execute([
-                            'tenant_id' => $tenantId,
-                            'email' => $clienteEmail,
-                        ]);
-                        $existingCustomer = $stmt->fetch(\PDO::FETCH_ASSOC);
-                        
-                        if ($existingCustomer && !empty($existingCustomer['password_hash'])) {
-                            // Verificar senha
-                            if (password_verify($senhaConta, $existingCustomer['password_hash'])) {
-                                $customerId = (int)$existingCustomer['id'];
-                                $_SESSION['customer_id'] = $customerId;
-                                $_SESSION['customer_name'] = $existingCustomer['name'];
-                                $_SESSION['customer_email'] = $existingCustomer['email'];
-                            } else {
-                                throw new \Exception('E-mail já cadastrado. Use a senha correta ou faça login.');
-                            }
-                        } else {
-                            throw new \Exception('E-mail já cadastrado. Faça login para continuar.');
-                        }
-                    } else {
-                        // Criar nova conta
-                        $passwordHash = password_hash($senhaConta, PASSWORD_DEFAULT);
+                    $customerId = (int)$db->lastInsertId();
 
-                        $stmt = $db->prepare("
-                            INSERT INTO customers (
-                                tenant_id, name, email, password_hash, phone, cpf, created_at, updated_at
-                            ) VALUES (
-                                :tenant_id, :name, :email, :password_hash, :phone, :cpf, NOW(), NOW()
-                            )
-                        ");
-                        $stmt->execute([
-                            'tenant_id' => $tenantId,
-                            'name' => $clienteNome,
-                            'email' => $clienteEmail,
-                            'password_hash' => $passwordHash,
-                            'phone' => $clienteTelefone ?: null,
-                            'cpf' => $clienteCpf ?: null,
-                        ]);
-
-                        $customerId = (int)$db->lastInsertId();
-
-                        // Login automático do novo cliente
-                        $_SESSION['customer_id'] = $customerId;
-                        $_SESSION['customer_name'] = $clienteNome;
-                        $_SESSION['customer_email'] = $clienteEmail;
-                    }
+                    // Login automático do novo cliente
+                    $_SESSION['customer_id'] = $customerId;
+                    $_SESSION['customer_name'] = $clienteNome;
+                    $_SESSION['customer_email'] = $clienteEmail;
                 }
             }
 
@@ -415,7 +467,6 @@ class CheckoutController extends Controller
             $stmtCheck = $db->prepare("SELECT id FROM customers WHERE id = :id AND tenant_id = :tenant_id LIMIT 1");
             $stmtCheck->execute(['id' => $customerId, 'tenant_id' => $tenantId]);
             if (!$stmtCheck->fetch()) {
-                // customer_id inválido na sessão - limpar sessão
                 unset($_SESSION['customer_id'], $_SESSION['customer_name'], $_SESSION['customer_email']);
                 throw new \Exception('Sessão expirada. Por favor, faça login novamente e tente finalizar o pedido.');
             }
@@ -749,6 +800,73 @@ class CheckoutController extends Controller
                 'formData' => $_POST,
             ]);
         }
+    }
+
+    /**
+     * API: Buscar cliente por email para auto-preencher dados no checkout
+     */
+    public function buscarCliente(): void
+    {
+        header('Content-Type: application/json');
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+        $email = trim($_POST['email'] ?? '');
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['found' => false]);
+            return;
+        }
+
+        $stmt = $db->prepare("
+            SELECT name, email, phone, cpf FROM customers 
+            WHERE tenant_id = :tenant_id AND email = :email 
+            LIMIT 1
+        ");
+        $stmt->execute(['tenant_id' => $tenantId, 'email' => $email]);
+        $customer = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$customer) {
+            echo json_encode(['found' => false]);
+            return;
+        }
+
+        // Buscar endereço padrão
+        $stmt = $db->prepare("
+            SELECT * FROM customer_addresses 
+            WHERE customer_id = (SELECT id FROM customers WHERE tenant_id = :tid AND email = :email LIMIT 1)
+            AND tenant_id = :tid2
+            ORDER BY is_default DESC, id DESC 
+            LIMIT 1
+        ");
+        $stmt->execute(['tid' => $tenantId, 'email' => $email, 'tid2' => $tenantId]);
+        $address = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $result = [
+            'found' => true,
+            'name' => $customer['name'] ?? '',
+            'email' => $customer['email'] ?? '',
+            'phone' => $customer['phone'] ?? '',
+            'cpf' => $customer['cpf'] ?? '',
+        ];
+
+        if ($address) {
+            $result['address'] = [
+                'cep' => $address['zipcode'] ?? $address['cep'] ?? '',
+                'estado' => $address['state'] ?? $address['estado'] ?? '',
+                'cidade' => $address['city'] ?? $address['cidade'] ?? '',
+                'bairro' => $address['neighborhood'] ?? $address['bairro'] ?? '',
+                'logradouro' => $address['street'] ?? $address['logradouro'] ?? '',
+                'numero' => $address['number'] ?? $address['numero'] ?? '',
+                'complemento' => $address['complement'] ?? $address['complemento'] ?? '',
+            ];
+        }
+
+        echo json_encode($result);
     }
 
     private function friendlyPaymentError(string $errorMsg): string

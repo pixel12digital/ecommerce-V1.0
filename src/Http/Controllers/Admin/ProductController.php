@@ -326,6 +326,7 @@ class ProductController extends Controller
             
             $permitePedidosFalta = isset($_POST['permite_pedidos_falta']) ? 1 : 0;
             $exibirNoCatalogo = isset($_POST['exibir_no_catalogo']) ? 1 : 0;
+            $freteGratis = isset($_POST['frete_gratis']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
 
@@ -344,13 +345,13 @@ class ProductController extends Controller
 
             $stmt = $db->prepare("
                 INSERT INTO produtos (
-                    tenant_id, nome, slug, sku, tipo, status, exibir_no_catalogo,
+                    tenant_id, nome, slug, sku, tipo, status, exibir_no_catalogo, frete_gratis,
                     preco, preco_regular, preco_promocional, data_promocao_inicio, data_promocao_fim,
                     quantidade_estoque, status_estoque, gerencia_estoque, permite_pedidos_falta,
                     descricao_curta, descricao, peso, comprimento, largura, altura,
                     created_at, updated_at
                 ) VALUES (
-                    :tenant_id, :nome, :slug, :sku, :tipo, :status, :exibir_no_catalogo,
+                    :tenant_id, :nome, :slug, :sku, :tipo, :status, :exibir_no_catalogo, :frete_gratis,
                     :preco, :preco_regular, :preco_promocional, :data_promocao_inicio, :data_promocao_fim,
                     :quantidade_estoque, :status_estoque, :gerencia_estoque, :permite_pedidos_falta,
                     :descricao_curta, :descricao, :peso, :comprimento, :largura, :altura,
@@ -365,6 +366,7 @@ class ProductController extends Controller
                 'tipo' => $tipo,
                 'status' => $status,
                 'exibir_no_catalogo' => $exibirNoCatalogo,
+                'frete_gratis' => $freteGratis,
                 'preco' => $precoPrincipal,
                 'preco_regular' => $precoRegular,
                 'preco_promocional' => $precoPromocional,
@@ -812,6 +814,7 @@ class ProductController extends Controller
             }
             
             $exibirNoCatalogo = isset($_POST['exibir_no_catalogo']) ? 1 : 0;
+            $freteGratis = isset($_POST['frete_gratis']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
 
@@ -832,6 +835,7 @@ class ProductController extends Controller
                     tipo = :tipo,
                     status = :status,
                     exibir_no_catalogo = :exibir_no_catalogo,
+                    frete_gratis = :frete_gratis,
                     preco = :preco,
                     preco_regular = :preco_regular,
                     preco_promocional = :preco_promocional,
@@ -857,6 +861,7 @@ class ProductController extends Controller
                 'tipo' => $tipo,
                 'status' => $status,
                 'exibir_no_catalogo' => $exibirNoCatalogo,
+                'frete_gratis' => $freteGratis,
                 'preco' => $precoPrincipal,
                 'preco_regular' => $precoRegular,
                 'preco_promocional' => $precoPromocional,

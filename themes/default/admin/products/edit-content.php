@@ -191,6 +191,17 @@ if (!function_exists('media_url')) {
                         Quando desmarcado, o produto não aparecerá nas listagens da loja, mas ainda poderá ser acessado diretamente pela URL.
                     </small>
                 </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="frete_gratis" value="1" 
+                               <?= (!empty($produto['frete_gratis'])) ? 'checked' : '' ?>>
+                        <span style="color: #2E7D32; font-weight: 600;"><i class="bi bi-truck"></i> Frete Grátis</span>
+                    </label>
+                    <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                        Quando marcado, o frete será gratuito para este produto e um selo "Frete Grátis" será exibido na página do produto.
+                    </small>
+                </div>
             </div>
         </div>
 

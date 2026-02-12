@@ -123,22 +123,9 @@ ob_start();
                     </div>
                 </div>
                 <?php if (!$customer): ?>
-                    <div style="margin-top: 0.75rem;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: #555;">
-                            <input type="checkbox" name="criar_conta" id="criar_conta" value="1" 
-                                   <?= !empty($formData['criar_conta']) ? 'checked' : '' ?> 
-                                   onchange="togglePasswordField()"
-                                   style="width: 16px; height: 16px; accent-color: var(--pg-color-primary);">
-                            <span>Criar conta <span style="color: #999; font-weight: 400;">(opcional)</span></span>
-                        </label>
-                        <small style="color: #999; font-size: 0.8rem; margin-left: 1.6rem; display: block; margin-top: 2px;">Acompanhe pedidos e compre mais rápido.</small>
-                        <div id="passwordField" style="margin-top: 0.75rem; display: none;">
-                            <label for="senha_conta" style="display: block; margin-bottom: 0.35rem; font-weight: 500; color: #555; font-size: 0.9rem;">Senha *</label>
-                            <input type="password" name="senha_conta" id="senha_conta" 
-                                   placeholder="Mínimo de 6 caracteres" minlength="6" autocomplete="new-password"
-                                   value="<?= htmlspecialchars($formData['senha_conta'] ?? '') ?>">
-                        </div>
-                    </div>
+                    <small style="color: #888; font-size: 0.8rem; display: block; margin-top: 0.5rem;">
+                        <i class="bi bi-info-circle"></i> Sua conta será criada automaticamente para acompanhar seus pedidos.
+                    </small>
                 <?php endif; ?>
             </div>
             
@@ -797,27 +784,53 @@ $additionalScripts = '
                 });
             }
             
-            // Mostrar/ocultar campo de senha
-            function togglePasswordField() {
-                var checkbox = document.getElementById("criar_conta");
-                var passwordField = document.getElementById("passwordField");
-                var passwordInput = document.getElementById("senha_conta");
-                if (checkbox && passwordField && passwordInput) {
-                    if (checkbox.checked) {
-                        passwordField.style.display = "block";
-                        passwordInput.required = true;
-                    } else {
-                        passwordField.style.display = "none";
-                        passwordInput.required = false;
-                        passwordInput.value = "";
+            // Auto-preencher dados do cliente ao digitar email (busca no banco)
+            function buscarClientePorEmail(email) {
+                if (!email || email.indexOf("@") === -1) return;
+                fetch("/api/checkout/buscar-cliente", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "email=" + encodeURIComponent(email)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data.found) return;
+                    var nome = document.querySelector("input[name=cliente_nome]");
+                    var cpf = document.querySelector("input[name=cliente_cpf]");
+                    var tel = document.querySelector("input[name=cliente_telefone]");
+                    if (nome && !nome.value && data.name) nome.value = data.name;
+                    if (cpf && !cpf.value && data.cpf) cpf.value = data.cpf;
+                    if (tel && !tel.value && data.phone) tel.value = data.phone;
+                    if (data.address) {
+                        var a = data.address;
+                        var cepI = document.getElementById("entrega_cep");
+                        var logI = document.querySelector("input[name=entrega_logradouro]");
+                        var numI = document.querySelector("input[name=entrega_numero]");
+                        var compI = document.querySelector("input[name=entrega_complemento]");
+                        var bairI = document.querySelector("input[name=entrega_bairro]");
+                        var cidI = document.querySelector("input[name=entrega_cidade]");
+                        var estI = document.getElementById("entrega_estado");
+                        if (cepI && !cepI.value && a.cep) { cepI.value = a.cep; calcularFreteCheckout(a.cep); buscarEnderecoPorCep(a.cep); }
+                        if (logI && !logI.value && a.logradouro) logI.value = a.logradouro;
+                        if (numI && !numI.value && a.numero) numI.value = a.numero;
+                        if (compI && !compI.value && a.complemento) compI.value = a.complemento;
+                        if (bairI && !bairI.value && a.bairro) bairI.value = a.bairro;
+                        if (cidI && !cidI.value && a.cidade) cidI.value = a.cidade;
+                        if (estI && !estI.value && a.estado) estI.value = a.estado;
                     }
-                }
+                })
+                .catch(function() {});
             }
-            window.togglePasswordField = togglePasswordField;
             
             // Interceptar submit do form
             document.addEventListener("DOMContentLoaded", function() {
-                togglePasswordField();
+                // Listener para auto-preencher ao sair do campo email
+                var emailInput = document.querySelector("input[name=cliente_email]");
+                if (emailInput) {
+                    emailInput.addEventListener("blur", function() {
+                        buscarClientePorEmail(this.value.trim());
+                    });
+                }
                 
                 var cepInput = document.getElementById("entrega_cep");
                 

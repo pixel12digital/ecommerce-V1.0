@@ -557,6 +557,9 @@ $router->post('/checkout', CheckoutController::class . '@process');
 $router->post('/api/shipping/validate', ShippingController::class . '@validate');
 $router->post('/api/shipping/calculate', ShippingController::class . '@calculate');
 
+// Rotas públicas - API Checkout (busca de cliente)
+$router->post('/api/checkout/buscar-cliente', CheckoutController::class . '@buscarCliente');
+
 // Rotas públicas - Pedidos
 $router->get('/pedido/{numero_pedido}/confirmacao', OrderController::class . '@thankYou');
 
@@ -566,6 +569,10 @@ $router->post('/minha-conta/login', CustomerAuthController::class . '@login');
 $router->get('/minha-conta/registrar', CustomerAuthController::class . '@showRegisterForm');
 $router->post('/minha-conta/registrar', CustomerAuthController::class . '@register');
 $router->get('/minha-conta/logout', CustomerAuthController::class . '@logout');
+$router->get('/minha-conta/primeiro-acesso', CustomerAuthController::class . '@showFirstAccessForm');
+$router->post('/minha-conta/primeiro-acesso', CustomerAuthController::class . '@firstAccess');
+$router->get('/minha-conta/criar-senha/{token}', CustomerAuthController::class . '@showSetPasswordForm');
+$router->post('/minha-conta/criar-senha', CustomerAuthController::class . '@setPassword');
 
 // Rota pública - Verificação de Migrations (para desenvolvimento)
 $router->get('/migrations', function() {
