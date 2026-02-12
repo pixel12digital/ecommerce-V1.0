@@ -67,13 +67,16 @@ ob_start();
     <form method="POST" action="<?= $basePath ?>/checkout" id="checkoutForm">
         <div>
             <?php if (!empty($errors)): ?>
-                <div class="error-message" id="checkout-errors">
-                    <strong>Erro ao processar:</strong>
-                    <ul class="error-list">
-                        <?php foreach ($errors as $error): ?>
-                            <li><?= htmlspecialchars($error) ?></li>
-                        <?php endforeach; ?>
-                    </ul>
+                <div id="checkout-errors" style="background: #fff8f0; border: 1px solid #f0c36d; border-left: 4px solid #e8a317; border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <i class="bi bi-exclamation-circle" style="color: #e8a317; font-size: 1.4rem; margin-top: 2px; flex-shrink: 0;"></i>
+                    <div>
+                        <strong style="color: #8a6200; font-size: 0.95rem;">Quase lá! Verifique os dados abaixo:</strong>
+                        <ul style="margin: 0.5rem 0 0 1rem; padding: 0; color: #6b5200; font-size: 0.9rem; list-style: disc;">
+                            <?php foreach ($errors as $error): ?>
+                                <li style="margin-bottom: 0.25rem;"><?= htmlspecialchars($error) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                 </div>
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
