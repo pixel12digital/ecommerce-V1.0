@@ -166,6 +166,54 @@ class PaymentService
     }
 
     /**
+     * Consulta o status atual de um pagamento na Cielo e atualiza o pedido se necessário
+     */
+    public static function consultarEAtualizarStatus(int $tenantId, array $pedido): ?string
+    {
+        // Só consultar se o pedido está pendente e tem código de transação
+        if ($pedido['status'] !== 'pending' || empty($pedido['codigo_transacao'])) {
+            return $pedido['status'];
+        }
+
+        // Só consultar se o gateway é Cielo
+        $gateway = self::getGatewayConfig($tenantId, 'payment');
+        if (($gateway['codigo'] ?? 'manual') !== 'cielo') {
+            return $pedido['status'];
+        }
+
+        $config = self::getProviderConfig($tenantId, 'payment');
+        $provider = new CieloPaymentProvider();
+
+        try {
+            $result = $provider->consultarPagamento($pedido['codigo_transacao'], $config);
+        } catch (\Exception $e) {
+            error_log("Erro ao consultar pagamento Cielo: " . $e->getMessage());
+            return $pedido['status'];
+        }
+
+        $novoStatus = $result['status'] ?? null;
+        if (!$novoStatus || $novoStatus === $pedido['status']) {
+            return $pedido['status'];
+        }
+
+        // Atualizar status do pedido no banco
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            UPDATE pedidos SET status = :status, updated_at = NOW()
+            WHERE id = :id AND tenant_id = :tenant_id AND status = 'pending'
+        ");
+        $stmt->execute([
+            'status' => $novoStatus,
+            'id' => $pedido['id'],
+            'tenant_id' => $tenantId,
+        ]);
+
+        error_log("PIX Status atualizado: Pedido #{$pedido['numero_pedido']} -> {$novoStatus} (Cielo status: {$result['cielo_status']})");
+
+        return $novoStatus;
+    }
+
+    /**
      * Obtém instruções de pagamento para um método (mantido para compatibilidade)
      */
     public static function getInstrucoes(string $metodo): string

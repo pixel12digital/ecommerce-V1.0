@@ -165,28 +165,60 @@ ob_start();
 
     <?php 
     $paymentDetails = $paymentDetails ?? [];
-    if (($paymentDetails['tipo'] ?? '') === 'cielo_pix'): 
+    $isPixCielo = (($paymentDetails['tipo'] ?? '') === 'cielo_pix');
+    $pixPending = ($isPixCielo && $pedido['status'] === 'pending');
+    $pixPaid = ($isPixCielo && $pedido['status'] === 'paid');
+
+    if ($isPixCielo): 
         $qrBase64 = $paymentDetails['qr_code_base64'] ?? null;
         $qrString = $paymentDetails['qr_code_string'] ?? null;
         $mensagem = $paymentDetails['mensagem'] ?? 'Escaneie o QR Code ou copie o código PIX para pagar.';
     ?>
-        <div class="order-info">
-            <h3 class="info-title">Pagamento PIX (Cielo)</h3>
-            <div class="payment-instructions">
-                <p><?= htmlspecialchars($mensagem) ?></p>
-                <?php if ($qrBase64): ?>
-                    <div style="margin: 1.5rem 0; padding: 1rem; background: white; border-radius: 8px; display: inline-block;">
-                        <img src="data:image/png;base64,<?= htmlspecialchars($qrBase64) ?>" alt="QR Code PIX" style="max-width: 256px; height: auto;" />
+        <?php if ($pixPaid): ?>
+            <!-- PIX já confirmado -->
+            <div class="order-info" id="pix-status-box" style="border-left: 4px solid #28a745;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <i class="bi bi-check-circle-fill" style="color: #28a745; font-size: 1.75rem;"></i>
+                    <div>
+                        <h3 class="info-title" style="border: none; margin: 0; padding: 0; color: #155724;">Pagamento PIX Confirmado!</h3>
+                        <p style="margin: 0.25rem 0 0; color: #555; font-size: 0.9rem;">Seu pagamento foi recebido com sucesso.</p>
                     </div>
-                <?php endif; ?>
-                <?php if ($qrString): ?>
-                    <div style="margin-top: 1rem;">
-                        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Código PIX (copiar e colar):</label>
-                        <textarea readonly rows="4" style="width: 100%; padding: 0.75rem; font-family: monospace; font-size: 0.85rem; border: 1px solid #ddd; border-radius: 4px;"><?= htmlspecialchars($qrString) ?></textarea>
-                    </div>
-                <?php endif; ?>
+                </div>
             </div>
-        </div>
+        <?php else: ?>
+            <!-- PIX aguardando pagamento -->
+            <div class="order-info" id="pix-status-box">
+                <div id="pix-waiting" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem 1rem; background: #fff3cd; border-radius: 6px;">
+                    <div class="pix-spinner" style="width: 20px; height: 20px; border: 3px solid #ffc107; border-top-color: #856404; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <span style="color: #856404; font-weight: 600; font-size: 0.95rem;">Aguardando confirmação do pagamento PIX...</span>
+                </div>
+                <div id="pix-confirmed" style="display: none; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem 1rem; background: #d4edda; border-radius: 6px;">
+                    <i class="bi bi-check-circle-fill" style="color: #28a745; font-size: 1.25rem;"></i>
+                    <span style="color: #155724; font-weight: 600; font-size: 0.95rem;">Pagamento PIX confirmado!</span>
+                </div>
+                <h3 class="info-title">Pagamento PIX</h3>
+                <div class="payment-instructions">
+                    <p><?= htmlspecialchars($mensagem) ?></p>
+                    <?php if ($qrBase64): ?>
+                        <div style="margin: 1.5rem 0; padding: 1rem; background: white; border-radius: 8px; display: inline-block;">
+                            <img src="data:image/png;base64,<?= htmlspecialchars($qrBase64) ?>" alt="QR Code PIX" style="max-width: 256px; height: auto;" />
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($qrString): ?>
+                        <div style="margin-top: 1rem;">
+                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Código PIX (copiar e colar):</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+                                <textarea id="pix-code" readonly rows="3" style="flex: 1; padding: 0.75rem; font-family: monospace; font-size: 0.85rem; border: 1px solid #ddd; border-radius: 4px;"><?= htmlspecialchars($qrString) ?></textarea>
+                                <button onclick="copyPixCode()" style="padding: 0.75rem 1rem; background: #023A8D; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                            </div>
+                            <small id="copy-feedback" style="display: none; color: #28a745; font-weight: 600; margin-top: 0.25rem;">Código copiado!</small>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
     
     <?php
@@ -405,6 +437,58 @@ $additionalStyles = '
 
 // Scripts adicionais
 $additionalScripts = '';
+
+// Adicionar polling de status PIX se pagamento pendente
+if (!empty($pixPending)) {
+    $jsNumeroPedido = json_encode($pedido['numero_pedido']);
+    $jsBasePath = json_encode($basePath);
+    $additionalScripts = '
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<script>
+function copyPixCode() {
+    var textarea = document.getElementById("pix-code");
+    if (textarea) {
+        textarea.select();
+        document.execCommand("copy");
+        var fb = document.getElementById("copy-feedback");
+        if (fb) { fb.style.display = "block"; setTimeout(function(){ fb.style.display = "none"; }, 2000); }
+    }
+}
+
+(function() {
+    var numeroPedido = ' . $jsNumeroPedido . ';
+    var basePath = ' . $jsBasePath . ';
+    var polling = null;
+    var attempts = 0;
+    var maxAttempts = 60;
+
+    function checkPixStatus() {
+        attempts++;
+        if (attempts > maxAttempts) {
+            clearInterval(polling);
+            return;
+        }
+        fetch(basePath + "/api/payment/status/" + encodeURIComponent(numeroPedido))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.status && data.status !== "pending") {
+                    clearInterval(polling);
+                    var waiting = document.getElementById("pix-waiting");
+                    var confirmed = document.getElementById("pix-confirmed");
+                    if (waiting) waiting.style.display = "none";
+                    if (confirmed) confirmed.style.display = "flex";
+                    setTimeout(function() { location.reload(); }, 2000);
+                }
+            })
+            .catch(function() {});
+    }
+
+    polling = setInterval(checkPixStatus, 5000);
+    setTimeout(checkPixStatus, 3000);
+})();
+</script>
+';
+}
 
 // Configurar variáveis para o layout base
 $pageTitle = 'Pedido Confirmado – ' . htmlspecialchars($loja['nome']);

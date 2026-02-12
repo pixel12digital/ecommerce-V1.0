@@ -51,6 +51,14 @@ class OrderController extends Controller
         ]);
         $itens = $stmt->fetchAll();
 
+        // Se pedido está pendente e tem código de transação, consultar Cielo para atualizar
+        if ($pedido['status'] === 'pending' && !empty($pedido['codigo_transacao'])) {
+            $novoStatus = PaymentService::consultarEAtualizarStatus($tenantId, $pedido);
+            if ($novoStatus && $novoStatus !== $pedido['status']) {
+                $pedido['status'] = $novoStatus;
+            }
+        }
+
         // Buscar instruções de pagamento
         $instrucoesPagamento = PaymentService::getInstrucoes($pedido['metodo_pagamento']);
 

@@ -414,6 +414,76 @@ class CieloPaymentProvider implements PaymentProviderInterface
         return new PaymentResult($codigoTransacao, $statusInicial, $dadosExibicao);
     }
 
+    /**
+     * Consulta o status de um pagamento na Cielo pelo PaymentId
+     */
+    public function consultarPagamento(string $paymentId, array $config = []): array
+    {
+        $cieloConfig = $config['cielo'] ?? $config;
+        $merchantId = trim($cieloConfig['merchant_id'] ?? '');
+        $merchantKey = trim($cieloConfig['merchant_key'] ?? '');
+        $ambiente = $cieloConfig['ambiente'] ?? 'sandbox';
+
+        if (empty($merchantId) || empty($merchantKey)) {
+            throw new \RuntimeException('Credenciais Cielo não configuradas.');
+        }
+
+        $queryUrl = $ambiente === 'producao'
+            ? 'https://apiquery.cieloecommerce.cielo.com.br'
+            : 'https://apiquerysandbox.cieloecommerce.cielo.com.br';
+
+        $url = $queryUrl . '/1/sales/' . $paymentId;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'MerchantId: ' . $merchantId,
+                'MerchantKey: ' . $merchantKey,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_TIMEOUT => 15,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            error_log("Cielo Query Error: " . $curlError);
+            return ['status' => null, 'error' => $curlError];
+        }
+
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE || $httpCode >= 400) {
+            error_log("Cielo Query Error: HTTP {$httpCode} - " . substr($response, 0, 500));
+            return ['status' => null, 'error' => 'HTTP ' . $httpCode];
+        }
+
+        $payment = $data['Payment'] ?? [];
+        $cieloStatus = (int)($payment['Status'] ?? -1);
+
+        // Mapear status Cielo para status do sistema
+        // 0=NotFinished, 1=Authorized, 2=PaymentConfirmed, 3=Denied, 10=Voided, 11=Refunded, 12=Pending, 13=Aborted
+        $statusMap = [
+            0  => 'pending',
+            1  => 'paid',
+            2  => 'paid',
+            3  => 'canceled',
+            10 => 'canceled',
+            11 => 'canceled',
+            12 => 'pending',
+            13 => 'canceled',
+        ];
+
+        return [
+            'cielo_status' => $cieloStatus,
+            'status' => $statusMap[$cieloStatus] ?? 'pending',
+            'payment_id' => $payment['PaymentId'] ?? $paymentId,
+            'type' => $payment['Type'] ?? '',
+        ];
+    }
+
     private function traduzirErroCielo(string $returnCode, string $returnMessage): string
     {
         $mapa = [

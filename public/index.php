@@ -60,6 +60,7 @@ use App\Http\Controllers\Admin\StoreUsersController;
 use App\Http\Controllers\Admin\RolesController;
 use App\Http\Controllers\Storefront\NewsletterController as StorefrontNewsletterController;
 use App\Http\Controllers\Storefront\StaticPageController;
+use App\Http\Controllers\Storefront\PaymentWebhookController;
 
 // Obter URI e método
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -559,6 +560,10 @@ $router->post('/api/shipping/calculate', ShippingController::class . '@calculate
 
 // Rotas públicas - API Checkout (busca de cliente)
 $router->post('/api/checkout/buscar-cliente', CheckoutController::class . '@buscarCliente');
+
+// Rotas públicas - Webhook de Pagamento (Cielo)
+$router->post('/api/payment/webhook/cielo', PaymentWebhookController::class . '@cieloWebhook');
+$router->get('/api/payment/status/{numero_pedido}', PaymentWebhookController::class . '@checkStatus');
 
 // Rotas públicas - Pedidos
 $router->get('/pedido/{numero_pedido}/confirmacao', OrderController::class . '@thankYou');
