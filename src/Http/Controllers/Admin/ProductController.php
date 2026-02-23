@@ -329,6 +329,7 @@ class ProductController extends Controller
             $freteGratis = isset($_POST['frete_gratis']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
+            $informacoesAdicionais = $_POST['informacoes_adicionais'] ?? '';
 
             // Processar dimensões e peso (opcionais)
             $peso = !empty($_POST['peso']) ? (float)$_POST['peso'] : null;
@@ -348,13 +349,13 @@ class ProductController extends Controller
                     tenant_id, nome, slug, sku, tipo, status, exibir_no_catalogo, frete_gratis,
                     preco, preco_regular, preco_promocional, data_promocao_inicio, data_promocao_fim,
                     quantidade_estoque, status_estoque, gerencia_estoque, permite_pedidos_falta,
-                    descricao_curta, descricao, peso, comprimento, largura, altura,
+                    descricao_curta, descricao, informacoes_adicionais, peso, comprimento, largura, altura,
                     created_at, updated_at
                 ) VALUES (
                     :tenant_id, :nome, :slug, :sku, :tipo, :status, :exibir_no_catalogo, :frete_gratis,
                     :preco, :preco_regular, :preco_promocional, :data_promocao_inicio, :data_promocao_fim,
                     :quantidade_estoque, :status_estoque, :gerencia_estoque, :permite_pedidos_falta,
-                    :descricao_curta, :descricao, :peso, :comprimento, :largura, :altura,
+                    :descricao_curta, :descricao, :informacoes_adicionais, :peso, :comprimento, :largura, :altura,
                     NOW(), NOW()
                 )
             ");
@@ -378,6 +379,7 @@ class ProductController extends Controller
                 'permite_pedidos_falta' => $permitePedidosFalta,
                 'descricao_curta' => $descricaoCurta,
                 'descricao' => $descricao,
+                'informacoes_adicionais' => $informacoesAdicionais,
                 'peso' => $peso,
                 'comprimento' => $comprimento,
                 'largura' => $largura,
@@ -839,6 +841,7 @@ class ProductController extends Controller
             $freteGratis = isset($_POST['frete_gratis']) ? 1 : 0;
             $descricaoCurta = $_POST['descricao_curta'] ?? '';
             $descricao = $_POST['descricao'] ?? '';
+            $informacoesAdicionais = $_POST['informacoes_adicionais'] ?? '';
 
             // Processar dimensões e peso (opcionais)
             $peso = !empty($_POST['peso']) ? (float)$_POST['peso'] : null;
@@ -895,6 +898,7 @@ class ProductController extends Controller
                     permite_pedidos_falta = :permite_pedidos_falta,
                     descricao_curta = :descricao_curta,
                     descricao = :descricao,
+                    informacoes_adicionais = :informacoes_adicionais,
                     peso = :peso,
                     comprimento = :comprimento,
                     largura = :largura,
@@ -921,6 +925,7 @@ class ProductController extends Controller
                 'permite_pedidos_falta' => $permitePedidosFalta,
                 'descricao_curta' => $descricaoCurta,
                 'descricao' => $descricao,
+                'informacoes_adicionais' => $informacoesAdicionais,
                 'peso' => $peso,
                 'comprimento' => $comprimento,
                 'largura' => $largura,

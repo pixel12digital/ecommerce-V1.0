@@ -320,12 +320,11 @@ ob_start();
             <?php endif; ?>
         </div>
     </div>
-    
-    <!-- Seções com Abas -->
+        <!-- Seções com Abas -->
     <div class="product-sections">
         <div class="section-tabs">
             <button class="tab-button active" onclick="showTab('descricao')">Descrição</button>
-            <?php if ($produto['peso'] || $produto['comprimento'] || $produto['largura'] || $produto['altura'] || $produto['sku']): ?>
+            <?php if (!empty($produto['informacoes_adicionais'])): ?>
                 <button class="tab-button" onclick="showTab('informacoes')">Informações Adicionais</button>
             <?php endif; ?>
             <?php if (!empty($categorias)): ?>
@@ -350,35 +349,15 @@ ob_start();
         </div>
         
         <!-- Informações Adicionais -->
-        <?php if ($produto['peso'] || $produto['comprimento'] || $produto['largura'] || $produto['altura'] || $produto['sku']): ?>
+        <?php if (!empty($produto['informacoes_adicionais'])): ?>
             <div id="tab-informacoes" class="tab-content">
-                <div class="info-grid">
-                    <?php if ($produto['sku']): ?>
-                        <div class="info-item">
-                            <span class="info-label">SKU</span>
-                            <span class="info-value"><?= htmlspecialchars($produto['sku']) ?></span>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($produto['peso']): ?>
-                        <div class="info-item">
-                            <span class="info-label">Peso</span>
-                            <span class="info-value"><?= number_format($produto['peso'], 2, ',', '.') ?> kg</span>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($produto['comprimento'] || $produto['largura'] || $produto['altura']): ?>
-                        <div class="info-item">
-                            <span class="info-label">Dimensões</span>
-                            <span class="info-value">
-                                <?php
-                                $dims = [];
-                                if ($produto['comprimento']) $dims[] = number_format($produto['comprimento'], 2, ',', '.') . ' cm (C)';
-                                if ($produto['largura']) $dims[] = number_format($produto['largura'], 2, ',', '.') . ' cm (L)';
-                                if ($produto['altura']) $dims[] = number_format($produto['altura'], 2, ',', '.') . ' cm (A)';
-                                echo implode(' × ', $dims);
-                                ?>
-                            </span>
-                        </div>
-                    <?php endif; ?>
+                <div class="description">
+                    <?php
+                    // Permitir tags HTML básicas de formatação
+                    $allowedTags = '<p><h1><h2><h3><h4><h5><h6><strong><b><em><i><u><ul><ol><li><a><br><hr><div><span><img><table><thead><tbody><tr><th><td>';
+                    $informacoesAdicionais = strip_tags($produto['informacoes_adicionais'], $allowedTags);
+                    echo nl2br($informacoesAdicionais);
+                    ?>
                 </div>
             </div>
         <?php endif; ?>

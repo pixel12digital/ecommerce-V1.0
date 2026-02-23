@@ -725,6 +725,15 @@ if (!function_exists('media_url')) {
                 <textarea name="descricao" rows="10" 
                           placeholder="Descrição detalhada do produto"><?= htmlspecialchars($produto['descricao'] ?? '') ?></textarea>
             </div>
+            
+            <div class="form-group">
+                <label>Informações Adicionais</label>
+                <textarea name="informacoes_adicionais" rows="6" 
+                          placeholder="Especificações técnicas e informações complementares que serão exibidas na aba 'Informações Adicionais' da página do produto"><?= htmlspecialchars($produto['informacoes_adicionais'] ?? '') ?></textarea>
+                <small style="color: #666; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                    Este conteúdo será exibido na aba "Informações Adicionais" da página do produto. Use para especificações técnicas, detalhes de materiais, dimensões de uso, etc.
+                </small>
+            </div>
         </div>
 
         <!-- Seção: Categorias -->
