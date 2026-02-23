@@ -74,24 +74,24 @@ ob_start();
 <section class="benefits">
     <div class="benefits-container">
         <div class="benefit-card">
-            <div class="benefit-icon"><i class="bi bi-truck icon store-icon-primary"></i></div>
-            <div class="benefit-title">Frete Grátis</div>
-            <div class="benefit-text">Acima de R$ 299</div>
-        </div>
-        <div class="benefit-card">
             <div class="benefit-icon"><i class="bi bi-shield-check icon store-icon-primary"></i></div>
             <div class="benefit-title">Garantia</div>
-            <div class="benefit-text">Troca garantida em até 7 dias</div>
-        </div>
-        <div class="benefit-card">
-            <div class="benefit-icon"><i class="bi bi-lightning-charge icon store-icon-primary"></i></div>
-            <div class="benefit-title">Entrega Rápida</div>
-            <div class="benefit-text">Receba em até 48h</div>
+            <div class="benefit-text">Troca após o recebimento da mercadoria</div>
         </div>
         <div class="benefit-card">
             <div class="benefit-icon"><i class="bi bi-lock icon store-icon-primary"></i></div>
             <div class="benefit-title">Compra Segura</div>
             <div class="benefit-text">Seus dados protegidos</div>
+        </div>
+        <div class="benefit-card">
+            <div class="benefit-icon"><i class="bi bi-patch-check icon store-icon-primary"></i></div>
+            <div class="benefit-title">Produtos Originais</div>
+            <div class="benefit-text">Autenticidade garantida</div>
+        </div>
+        <div class="benefit-card">
+            <div class="benefit-icon"><i class="bi bi-headset icon store-icon-primary"></i></div>
+            <div class="benefit-title">Atendimento Especializado</div>
+            <div class="benefit-text">Suporte para ajudar na escolha</div>
         </div>
     </div>
 </section>
