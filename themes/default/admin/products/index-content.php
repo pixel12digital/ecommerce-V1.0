@@ -199,12 +199,20 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($produto['slug']) ?>" 
-                                       class="btn-action btn-action-view" 
-                                       target="_blank"
-                                       title="Ver produto na loja">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
+                                    <?php if ($produto['status'] === 'publish'): ?>
+                                        <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($produto['slug']) ?>" 
+                                           class="btn-action btn-action-view" 
+                                           target="_blank"
+                                           title="Ver produto na loja">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="btn-action btn-action-view" 
+                                              style="opacity: 0.3; cursor: not-allowed;"
+                                              title="Produto não publicado">
+                                            <i class="bi bi-eye-slash"></i>
+                                        </span>
+                                    <?php endif; ?>
                                     <?php
                                     // Construir URL de edição preservando contexto de navegação
                                     $editUrl = $basePath . '/admin/produtos/' . $produto['id'];

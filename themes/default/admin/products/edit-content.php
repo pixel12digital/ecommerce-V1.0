@@ -73,10 +73,17 @@ if (!function_exists('media_url')) {
             </a>
         </div>
         <div>
-            <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($produto['slug'] ?? '', ENT_QUOTES, 'UTF-8') ?>" target="_blank" class="admin-btn admin-btn-outline">
-                <i class="bi bi-eye icon"></i>
-                Ver na loja
-            </a>
+            <?php if (($produto['status'] ?? 'draft') === 'publish'): ?>
+                <a href="<?= $basePath ?>/produto/<?= htmlspecialchars($produto['slug'] ?? '', ENT_QUOTES, 'UTF-8') ?>" target="_blank" class="admin-btn admin-btn-outline">
+                    <i class="bi bi-eye icon"></i>
+                    Ver na loja
+                </a>
+            <?php else: ?>
+                <button type="button" class="admin-btn admin-btn-outline" disabled title="Publique o produto para visualizá-lo na loja" style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="bi bi-eye-slash icon"></i>
+                    Ver na loja (produto não publicado)
+                </button>
+            <?php endif; ?>
         </div>
     </div>
 

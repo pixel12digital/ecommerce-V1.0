@@ -827,6 +827,25 @@ class ProductController extends Controller
             // Preço principal: usar preco_promocional se existir, senão preco_regular
             $precoPrincipal = $precoPromocional ?? $precoRegular;
 
+            // Validar slug duplicado apenas se o slug foi alterado
+            if ($slug !== $produto['slug']) {
+                $stmtCheck = $db->prepare("
+                    SELECT id FROM produtos 
+                    WHERE tenant_id = :tenant_id 
+                    AND slug = :slug 
+                    AND id != :id
+                    LIMIT 1
+                ");
+                $stmtCheck->execute([
+                    'tenant_id' => $tenantId,
+                    'slug' => $slug,
+                    'id' => $id
+                ]);
+                if ($stmtCheck->fetch()) {
+                    throw new \Exception('Já existe um produto com este slug. Por favor, informe um slug diferente.');
+                }
+            }
+
             $stmt = $db->prepare("
                 UPDATE produtos SET
                     nome = :nome,
