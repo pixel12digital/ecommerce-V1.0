@@ -2404,6 +2404,37 @@ class ProductController extends Controller
                 throw new \Exception('Produto não encontrado');
             }
 
+            // Verificar se o produto tem pedidos associados
+            $stmt = $db->prepare("
+                SELECT COUNT(*) as total FROM pedido_itens 
+                WHERE produto_id = :produto_id
+            ");
+            $stmt->execute(['produto_id' => $id]);
+            $result = $stmt->fetch();
+            
+            if ($result && $result['total'] > 0) {
+                throw new \Exception(
+                    'Não é possível excluir este produto pois ele possui ' . $result['total'] . ' pedido(s) associado(s). ' .
+                    'Como alternativa, você pode alterar o status do produto para "Rascunho" para ocultá-lo da loja.'
+                );
+            }
+
+            // Verificar se o produto tem variações com pedidos associados
+            $stmt = $db->prepare("
+                SELECT COUNT(*) as total FROM pedido_itens pi
+                INNER JOIN produto_variacoes pv ON pi.variacao_id = pv.id
+                WHERE pv.produto_id = :produto_id
+            ");
+            $stmt->execute(['produto_id' => $id]);
+            $result = $stmt->fetch();
+            
+            if ($result && $result['total'] > 0) {
+                throw new \Exception(
+                    'Não é possível excluir este produto pois suas variações possuem ' . $result['total'] . ' pedido(s) associado(s). ' .
+                    'Como alternativa, você pode alterar o status do produto para "Rascunho" para ocultá-lo da loja.'
+                );
+            }
+
             // Remover vínculos em produto_categorias
             $stmt = $db->prepare("
                 DELETE FROM produto_categorias 
@@ -2465,7 +2496,32 @@ class ProductController extends Controller
             $_SESSION['product_edit_message_type'] = 'success';
         } catch (\Exception $e) {
             $db->rollBack();
-            $_SESSION['product_edit_message'] = 'Erro ao excluir produto: ' . $e->getMessage();
+            
+            // Formatar mensagem de erro amigável
+            $errorMessage = $e->getMessage();
+            
+            // Verificar se é erro de constraint de chave estrangeira
+            if (strpos($errorMessage, 'foreign key constraint') !== false || 
+                strpos($errorMessage, 'SQLSTATE[23000]') !== false ||
+                strpos($errorMessage, '1451') !== false) {
+                
+                // Verificar qual tabela está causando o problema
+                if (strpos($errorMessage, 'pedido_itens') !== false) {
+                    $errorMessage = 'Não é possível excluir este produto pois ele está vinculado a um ou mais pedidos. ' .
+                                  'Como alternativa, você pode alterar o status do produto para "Rascunho" para ocultá-lo da loja.';
+                } elseif (strpos($errorMessage, 'produto_avaliacoes') !== false) {
+                    $errorMessage = 'Não é possível excluir este produto pois ele possui avaliações de clientes. ' .
+                                  'Como alternativa, você pode alterar o status do produto para "Rascunho" para ocultá-lo da loja.';
+                } else {
+                    $errorMessage = 'Não é possível excluir este produto pois ele está vinculado a outros registros no sistema. ' .
+                                  'Como alternativa, você pode alterar o status do produto para "Rascunho" para ocultá-lo da loja.';
+                }
+            } elseif (empty($errorMessage) || strpos($errorMessage, 'SQLSTATE') !== false) {
+                // Erro genérico do banco de dados
+                $errorMessage = 'Não foi possível excluir o produto. Por favor, tente novamente ou entre em contato com o suporte.';
+            }
+            
+            $_SESSION['product_edit_message'] = $errorMessage;
             $_SESSION['product_edit_message_type'] = 'error';
         }
 
