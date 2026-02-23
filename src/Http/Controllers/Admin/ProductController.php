@@ -768,14 +768,13 @@ class ProductController extends Controller
             $slug = trim($_POST['slug'] ?? '');
             
             file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Nome: {$nome}\n", FILE_APPEND);
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug: {$slug}\n", FILE_APPEND);
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug recebido: '{$slug}'\n", FILE_APPEND);
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug original: '{$slugOriginal}'\n", FILE_APPEND);
             
-            // Se slug está vazio, gerar a partir do nome
-            if (empty($slug) && !empty($nome)) {
-                $slug = $this->generateSlug($nome, $id);
-            } elseif (empty($slug)) {
-                // Se slug e nome estão vazios, manter o slug original
+            // Se slug está vazio no POST, usar o slug original (não gerar novo)
+            if (empty($slug)) {
                 $slug = $slugOriginal;
+                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug vazio, usando original: '{$slug}'\n", FILE_APPEND);
             }
             
             $sku = trim($_POST['sku'] ?? '');
@@ -841,8 +840,11 @@ class ProductController extends Controller
             // Preço principal: usar preco_promocional se existir, senão preco_regular
             $precoPrincipal = $precoPromocional ?? $precoRegular;
 
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Comparando slugs - Original: '{$slugOriginal}' vs Atual: '{$slug}'\n", FILE_APPEND);
+            
             // Validar slug duplicado apenas se o slug foi alterado
             if ($slug !== $slugOriginal) {
+                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug foi alterado, validando duplicidade...\n", FILE_APPEND);
                 $stmtCheck = $db->prepare("
                     SELECT id FROM produtos 
                     WHERE tenant_id = :tenant_id 
