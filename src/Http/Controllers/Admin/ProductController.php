@@ -757,12 +757,18 @@ class ProductController extends Controller
         }
 
         try {
+            $logFile = __DIR__ . '/../../../variacoes_debug.log';
+            file_put_contents($logFile, "\n\n[" . date('Y-m-d H:i:s') . "] ===== INÍCIO UPDATE PRODUTO ID: {$id} =====\n", FILE_APPEND);
+            
             $db->beginTransaction();
 
             // 1. Atualizar dados básicos do produto
             $nome = trim($_POST['nome'] ?? '');
             $slugOriginal = $produto['slug']; // Guardar slug original antes de qualquer modificação
             $slug = trim($_POST['slug'] ?? '');
+            
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Nome: {$nome}\n", FILE_APPEND);
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug: {$slug}\n", FILE_APPEND);
             
             // Se slug está vazio, gerar a partir do nome
             if (empty($slug) && !empty($nome)) {
@@ -792,6 +798,7 @@ class ProductController extends Controller
             $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
             
             $tipo = $_POST['tipo'] ?? 'simple';
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Tipo recebido: {$tipo}\n", FILE_APPEND);
             
             // Para produto variável, estoque é sempre 0 e gerencia_estoque = 0
             // O estoque real é gerenciado por variação
