@@ -765,12 +765,12 @@ class ProductController extends Controller
 
             // 1. Atualizar dados básicos do produto
             $nome = trim($_POST['nome'] ?? '');
-            $slugOriginal = $produto['slug']; // Guardar slug original antes de qualquer modificação
+            $slugOriginal = trim($produto['slug']); // Guardar slug original antes de qualquer modificação
             $slug = trim($_POST['slug'] ?? '');
             
             @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Nome: {$nome}\n", FILE_APPEND);
-            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug recebido: '{$slug}'\n", FILE_APPEND);
-            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug original: '{$slugOriginal}'\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug recebido: '{$slug}' (length: " . strlen($slug) . ")\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug original: '{$slugOriginal}' (length: " . strlen($slugOriginal) . ")\n", FILE_APPEND);
             
             // Se slug está vazio no POST, usar o slug original (não gerar novo)
             if (empty($slug)) {
@@ -842,6 +842,8 @@ class ProductController extends Controller
             $precoPrincipal = $precoPromocional ?? $precoRegular;
 
             @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Comparando slugs - Original: '{$slugOriginal}' vs Atual: '{$slug}'\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Comparação estrita (===): " . ($slug === $slugOriginal ? 'IGUAIS' : 'DIFERENTES') . "\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Comparação normal (==): " . ($slug == $slugOriginal ? 'IGUAIS' : 'DIFERENTES') . "\n", FILE_APPEND);
             
             // Validar slug duplicado apenas se o slug foi alterado
             if ($slug !== $slugOriginal) {
@@ -861,6 +863,8 @@ class ProductController extends Controller
                 if ($stmtCheck->fetch()) {
                     throw new \Exception('Já existe um produto com este slug. Por favor, informe um slug diferente.');
                 }
+            } else {
+                @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug não foi alterado, pulando validação de duplicidade\n", FILE_APPEND);
             }
 
             $stmt = $db->prepare("
@@ -917,17 +921,6 @@ class ProductController extends Controller
                 'tenant_id' => $tenantId
             ]);
 
-            // Processar atributos do produto (se tipo = variable)
-            if ($tipo === 'variable') {
-                $this->processProductAttributes($db, $tenantId, $id);
-            } else {
-                // Se não é variável, remover atributos e variações
-                $stmt = $db->prepare("DELETE FROM produto_atributos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
-                $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
-                $stmt = $db->prepare("DELETE FROM produto_atributo_termos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
-                $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
-            }
-
             // 2. Processar imagem de destaque
             $this->processMainImage($db, $tenantId, $id, $produto);
 
@@ -937,7 +930,7 @@ class ProductController extends Controller
             // 4. Processar vídeos
             $this->processVideos($db, $tenantId, $id);
 
-            // 5. Processar variações em lote (se tipo = variable)
+            // 5. Processar variações em lote ANTES de processar atributos (se tipo = variable)
             @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Tipo do produto: {$tipo}\n", FILE_APPEND);
             @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] variacoes_json presente: " . (isset($_POST['variacoes_json']) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
             if (isset($_POST['variacoes_json'])) {
@@ -1042,6 +1035,11 @@ class ProductController extends Controller
                         $rowsAffected = $stmt->rowCount();
                         @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Variação {$variacaoId} atualizada - Linhas afetadas: {$rowsAffected}\n", FILE_APPEND);
                         error_log("[Variações] Linhas afetadas no UPDATE da variação {$variacaoId}: {$rowsAffected}");
+                        
+                        if ($rowsAffected === 0) {
+                            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] AVISO: Nenhuma linha foi afetada para variação {$variacaoId}. Verificar se a variação existe.\n", FILE_APPEND);
+                            error_log("[Variações] AVISO: Nenhuma linha foi afetada para variação {$variacaoId}");
+                        }
                     }
                 } else {
                     @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] ERRO: JSON decodificado não é um array!\n", FILE_APPEND);
@@ -1052,7 +1050,26 @@ class ProductController extends Controller
                 error_log("[Variações] Condição não atendida - tipo: {$tipo}, variacoes_json vazio: " . (empty($_POST['variacoes_json']) ? 'SIM' : 'NÃO'));
             }
 
-            // 6. Atualizar categorias (sync: remover antigas e adicionar novas)
+            // 6. Processar atributos do produto (se tipo = variable)
+            // IMPORTANTE: Processar APÓS as variações para evitar problemas de integridade referencial
+            if ($tipo === 'variable') {
+                // Só processar atributos se eles foram enviados no formulário
+                // Isso evita deletar atributos quando apenas as variações estão sendo atualizadas
+                if (isset($_POST['atributos']) || isset($_POST['atributos_para_variacao'])) {
+                    @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Processando atributos do produto\n", FILE_APPEND);
+                    $this->processProductAttributes($db, $tenantId, $id);
+                } else {
+                    @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Atributos não enviados, mantendo atributos existentes\n", FILE_APPEND);
+                }
+            } else {
+                // Se não é variável, remover atributos e variações
+                $stmt = $db->prepare("DELETE FROM produto_atributos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
+                $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
+                $stmt = $db->prepare("DELETE FROM produto_atributo_termos WHERE produto_id = :produto_id AND tenant_id = :tenant_id");
+                $stmt->execute(['produto_id' => $id, 'tenant_id' => $tenantId]);
+            }
+
+            // 7. Atualizar categorias (sync: remover antigas e adicionar novas)
             // Remover todas as categorias atuais do produto
             $stmt = $db->prepare("
                 DELETE FROM produto_categorias 
@@ -1094,7 +1111,14 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] ERRO: " . $e->getMessage() . "\n", FILE_APPEND);
             @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Stack trace: " . $e->getTraceAsString() . "\n", FILE_APPEND);
-            $db->rollBack();
+            
+            error_log("[ProductController::update] ERRO ao atualizar produto ID {$id}: " . $e->getMessage());
+            error_log("[ProductController::update] Stack trace: " . $e->getTraceAsString());
+            
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            
             $_SESSION['product_edit_message'] = $this->formatProductErrorMessage($e, 'atualizar');
             $_SESSION['product_edit_message_type'] = 'error';
         }
