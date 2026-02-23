@@ -928,6 +928,13 @@ class ProductController extends Controller
             $this->processVideos($db, $tenantId, $id);
 
             // 5. Processar variações em lote (se tipo = variable)
+            $logFile = __DIR__ . '/../../../variacoes_debug.log';
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Tipo do produto: {$tipo}\n", FILE_APPEND);
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] variacoes_json presente: " . (isset($_POST['variacoes_json']) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
+            if (isset($_POST['variacoes_json'])) {
+                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Conteúdo de variacoes_json: " . $_POST['variacoes_json'] . "\n", FILE_APPEND);
+            }
+            
             error_log("[Variações] Tipo do produto: {$tipo}");
             error_log("[Variações] variacoes_json presente: " . (isset($_POST['variacoes_json']) ? 'SIM' : 'NÃO'));
             if (isset($_POST['variacoes_json'])) {
@@ -936,8 +943,10 @@ class ProductController extends Controller
             
             if ($tipo === 'variable' && !empty($_POST['variacoes_json'])) {
                 $variacoes = json_decode($_POST['variacoes_json'], true);
+                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] JSON decodificado com sucesso\n", FILE_APPEND);
                 error_log("[Variações] JSON decodificado: " . print_r($variacoes, true));
                 if (is_array($variacoes)) {
+                    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Total de variações a processar: " . count($variacoes) . "\n", FILE_APPEND);
                     error_log("[Variações] Total de variações a processar: " . count($variacoes));
                     foreach ($variacoes as $variacaoData) {
                         $variacaoId = (int)($variacaoData['id'] ?? 0);
@@ -1022,12 +1031,15 @@ class ProductController extends Controller
                         ]);
                         
                         $rowsAffected = $stmt->rowCount();
+                        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Variação {$variacaoId} atualizada - Linhas afetadas: {$rowsAffected}\n", FILE_APPEND);
                         error_log("[Variações] Linhas afetadas no UPDATE da variação {$variacaoId}: {$rowsAffected}");
                     }
                 } else {
+                    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] ERRO: JSON decodificado não é um array!\n", FILE_APPEND);
                     error_log("[Variações] ERRO: JSON decodificado não é um array!");
                 }
             } else {
+                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Condição não atendida - tipo: {$tipo}, variacoes_json vazio: " . (empty($_POST['variacoes_json']) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
                 error_log("[Variações] Condição não atendida - tipo: {$tipo}, variacoes_json vazio: " . (empty($_POST['variacoes_json']) ? 'SIM' : 'NÃO'));
             }
 
