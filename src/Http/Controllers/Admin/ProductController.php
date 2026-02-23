@@ -761,10 +761,17 @@ class ProductController extends Controller
 
             // 1. Atualizar dados básicos do produto
             $nome = trim($_POST['nome'] ?? '');
+            $slugOriginal = $produto['slug']; // Guardar slug original antes de qualquer modificação
             $slug = trim($_POST['slug'] ?? '');
+            
+            // Se slug está vazio, gerar a partir do nome
             if (empty($slug) && !empty($nome)) {
                 $slug = $this->generateSlug($nome, $id);
+            } elseif (empty($slug)) {
+                // Se slug e nome estão vazios, manter o slug original
+                $slug = $slugOriginal;
             }
+            
             $sku = trim($_POST['sku'] ?? '');
             $status = $_POST['status'] ?? 'draft';
             
@@ -828,7 +835,7 @@ class ProductController extends Controller
             $precoPrincipal = $precoPromocional ?? $precoRegular;
 
             // Validar slug duplicado apenas se o slug foi alterado
-            if ($slug !== $produto['slug']) {
+            if ($slug !== $slugOriginal) {
                 $stmtCheck = $db->prepare("
                     SELECT id FROM produtos 
                     WHERE tenant_id = :tenant_id 
