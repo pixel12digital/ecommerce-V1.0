@@ -1127,8 +1127,15 @@ class ProductController extends Controller
                 $db->rollBack();
             }
             
-            $_SESSION['product_edit_message'] = $this->formatProductErrorMessage($e, 'atualizar');
-            $_SESSION['product_edit_message_type'] = 'error';
+            // Tratamento específico para erro de SKU duplicado nas variações
+            $errorMessage = $e->getMessage();
+            if (strpos($errorMessage, 'unique_tenant_sku') !== false) {
+                $_SESSION['product_edit_message'] = 'Erro ao salvar variações: SKU duplicado detectado. Cada variação deve ter um SKU único ou deixe o campo vazio. Verifique se não há SKUs repetidos entre as variações.';
+                $_SESSION['product_edit_message_type'] = 'error';
+            } else {
+                $_SESSION['product_edit_message'] = $this->formatProductErrorMessage($e, 'atualizar');
+                $_SESSION['product_edit_message_type'] = 'error';
+            }
         }
 
         // Preservar contexto de navegação (página, filtros, ordenação) ao redirecionar
