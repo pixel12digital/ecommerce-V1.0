@@ -204,6 +204,33 @@ class ProductController extends Controller
             ]);
             $imagem = $stmtImg->fetch();
             $produto['imagem_principal'] = $imagem ? $imagem : null;
+            
+            // Se for produto variável, buscar menor preço entre as variações
+            if ($produto['tipo'] === 'variable') {
+                $stmtVar = $db->prepare("
+                    SELECT pv.preco_regular, pv.preco_promocional
+                    FROM produto_variacoes pv
+                    WHERE pv.produto_id = :produto_id 
+                    AND pv.tenant_id = :tenant_id
+                    AND pv.status = 'publish'
+                    ORDER BY 
+                        CASE 
+                            WHEN pv.preco_promocional IS NOT NULL AND pv.preco_promocional > 0 THEN pv.preco_promocional
+                            ELSE pv.preco_regular
+                        END ASC
+                    LIMIT 1
+                ");
+                $stmtVar->execute([
+                    'produto_id' => $produto['id'],
+                    'tenant_id' => $tenantId
+                ]);
+                $variacaoMaisBarata = $stmtVar->fetch();
+                
+                if ($variacaoMaisBarata) {
+                    $produto['preco_regular'] = $variacaoMaisBarata['preco_regular'] ?? $produto['preco_regular'];
+                    $produto['preco_promocional'] = $variacaoMaisBarata['preco_promocional'] ?? null;
+                }
+            }
         }
 
         // Buscar categorias para filtro
