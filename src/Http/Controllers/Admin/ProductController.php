@@ -756,10 +756,11 @@ class ProductController extends Controller
             return;
         }
 
+        // Criar arquivo de log ANTES do try-catch
+        $logFile = __DIR__ . '/../../../variacoes_debug.log';
+        @file_put_contents($logFile, "\n\n[" . date('Y-m-d H:i:s') . "] ===== INÍCIO UPDATE PRODUTO ID: {$id} =====\n", FILE_APPEND);
+
         try {
-            $logFile = __DIR__ . '/../../../variacoes_debug.log';
-            file_put_contents($logFile, "\n\n[" . date('Y-m-d H:i:s') . "] ===== INÍCIO UPDATE PRODUTO ID: {$id} =====\n", FILE_APPEND);
-            
             $db->beginTransaction();
 
             // 1. Atualizar dados básicos do produto
@@ -767,14 +768,14 @@ class ProductController extends Controller
             $slugOriginal = $produto['slug']; // Guardar slug original antes de qualquer modificação
             $slug = trim($_POST['slug'] ?? '');
             
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Nome: {$nome}\n", FILE_APPEND);
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug recebido: '{$slug}'\n", FILE_APPEND);
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug original: '{$slugOriginal}'\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Nome: {$nome}\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug recebido: '{$slug}'\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug original: '{$slugOriginal}'\n", FILE_APPEND);
             
             // Se slug está vazio no POST, usar o slug original (não gerar novo)
             if (empty($slug)) {
                 $slug = $slugOriginal;
-                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug vazio, usando original: '{$slug}'\n", FILE_APPEND);
+                @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug vazio, usando original: '{$slug}'\n", FILE_APPEND);
             }
             
             $sku = trim($_POST['sku'] ?? '');
@@ -797,7 +798,7 @@ class ProductController extends Controller
             $dataPromocaoFim = !empty($_POST['data_promocao_fim']) ? $_POST['data_promocao_fim'] : null;
             
             $tipo = $_POST['tipo'] ?? 'simple';
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Tipo recebido: {$tipo}\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Tipo recebido: {$tipo}\n", FILE_APPEND);
             
             // Para produto variável, estoque é sempre 0 e gerencia_estoque = 0
             // O estoque real é gerenciado por variação
@@ -840,11 +841,11 @@ class ProductController extends Controller
             // Preço principal: usar preco_promocional se existir, senão preco_regular
             $precoPrincipal = $precoPromocional ?? $precoRegular;
 
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Comparando slugs - Original: '{$slugOriginal}' vs Atual: '{$slug}'\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Comparando slugs - Original: '{$slugOriginal}' vs Atual: '{$slug}'\n", FILE_APPEND);
             
             // Validar slug duplicado apenas se o slug foi alterado
             if ($slug !== $slugOriginal) {
-                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug foi alterado, validando duplicidade...\n", FILE_APPEND);
+                @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Slug foi alterado, validando duplicidade...\n", FILE_APPEND);
                 $stmtCheck = $db->prepare("
                     SELECT id FROM produtos 
                     WHERE tenant_id = :tenant_id 
@@ -937,11 +938,10 @@ class ProductController extends Controller
             $this->processVideos($db, $tenantId, $id);
 
             // 5. Processar variações em lote (se tipo = variable)
-            $logFile = __DIR__ . '/../../../variacoes_debug.log';
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Tipo do produto: {$tipo}\n", FILE_APPEND);
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] variacoes_json presente: " . (isset($_POST['variacoes_json']) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Tipo do produto: {$tipo}\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] variacoes_json presente: " . (isset($_POST['variacoes_json']) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
             if (isset($_POST['variacoes_json'])) {
-                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Conteúdo de variacoes_json: " . $_POST['variacoes_json'] . "\n", FILE_APPEND);
+                @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Conteúdo de variacoes_json: " . $_POST['variacoes_json'] . "\n", FILE_APPEND);
             }
             
             error_log("[Variações] Tipo do produto: {$tipo}");
@@ -952,10 +952,10 @@ class ProductController extends Controller
             
             if ($tipo === 'variable' && !empty($_POST['variacoes_json'])) {
                 $variacoes = json_decode($_POST['variacoes_json'], true);
-                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] JSON decodificado com sucesso\n", FILE_APPEND);
+                @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] JSON decodificado com sucesso\n", FILE_APPEND);
                 error_log("[Variações] JSON decodificado: " . print_r($variacoes, true));
                 if (is_array($variacoes)) {
-                    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Total de variações a processar: " . count($variacoes) . "\n", FILE_APPEND);
+                    @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Total de variações a processar: " . count($variacoes) . "\n", FILE_APPEND);
                     error_log("[Variações] Total de variações a processar: " . count($variacoes));
                     foreach ($variacoes as $variacaoData) {
                         $variacaoId = (int)($variacaoData['id'] ?? 0);
@@ -1040,15 +1040,15 @@ class ProductController extends Controller
                         ]);
                         
                         $rowsAffected = $stmt->rowCount();
-                        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Variação {$variacaoId} atualizada - Linhas afetadas: {$rowsAffected}\n", FILE_APPEND);
+                        @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Variação {$variacaoId} atualizada - Linhas afetadas: {$rowsAffected}\n", FILE_APPEND);
                         error_log("[Variações] Linhas afetadas no UPDATE da variação {$variacaoId}: {$rowsAffected}");
                     }
                 } else {
-                    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] ERRO: JSON decodificado não é um array!\n", FILE_APPEND);
+                    @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] ERRO: JSON decodificado não é um array!\n", FILE_APPEND);
                     error_log("[Variações] ERRO: JSON decodificado não é um array!");
                 }
             } else {
-                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Condição não atendida - tipo: {$tipo}, variacoes_json vazio: " . (empty($_POST['variacoes_json']) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
+                @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Condição não atendida - tipo: {$tipo}, variacoes_json vazio: " . (empty($_POST['variacoes_json']) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND);
                 error_log("[Variações] Condição não atendida - tipo: {$tipo}, variacoes_json vazio: " . (empty($_POST['variacoes_json']) ? 'SIM' : 'NÃO'));
             }
 
@@ -1092,6 +1092,8 @@ class ProductController extends Controller
             $_SESSION['product_edit_message'] = 'Produto atualizado com sucesso!';
             $_SESSION['product_edit_message_type'] = 'success';
         } catch (\Exception $e) {
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] ERRO: " . $e->getMessage() . "\n", FILE_APPEND);
+            @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Stack trace: " . $e->getTraceAsString() . "\n", FILE_APPEND);
             $db->rollBack();
             $_SESSION['product_edit_message'] = $this->formatProductErrorMessage($e, 'atualizar');
             $_SESSION['product_edit_message_type'] = 'error';
