@@ -1661,11 +1661,34 @@ ob_start();
 
                 if (variationPrice && variationPriceText) {
                     variationPrice.style.display = 'block';
-                    const precoFormatado = new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                    }).format(variation.price_final);
-                    variationPriceText.textContent = precoFormatado;
+                    
+                    // Verificar se tem preço promocional
+                    if (variation.price_promo && variation.price_promo > 0 && variation.price_promo < variation.price_regular) {
+                        // Mostrar preço regular riscado + promocional
+                        const precoRegularFormatado = new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(variation.price_regular);
+                        
+                        const precoPromoFormatado = new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(variation.price_promo);
+                        
+                        variationPriceText.innerHTML = `
+                            <span class="product-price-from">de</span>
+                            <span class="product-price-old">${precoRegularFormatado}</span>
+                            <span class="product-price-from">por</span>
+                            <span class="product-price-promo">${precoPromoFormatado}</span>
+                        `;
+                    } else {
+                        // Mostrar apenas preço regular
+                        const precoFormatado = new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(variation.price_final);
+                        variationPriceText.textContent = precoFormatado;
+                    }
                 }
 
                 if (variationStock && variationStockText) {
