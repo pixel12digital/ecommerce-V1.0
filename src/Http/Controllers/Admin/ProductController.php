@@ -763,7 +763,7 @@ class ProductController extends Controller
             $nome = trim($_POST['nome'] ?? '');
             $slug = trim($_POST['slug'] ?? '');
             if (empty($slug) && !empty($nome)) {
-                $slug = $this->generateSlug($nome);
+                $slug = $this->generateSlug($nome, $id);
             }
             $sku = trim($_POST['sku'] ?? '');
             $status = $_POST['status'] ?? 'draft';
@@ -2014,12 +2014,49 @@ class ProductController extends Controller
         return null;
     }
 
-    private function generateSlug($text): string
+    private function generateSlug($text, $excludeId = null): string
     {
         $text = mb_strtolower($text, 'UTF-8');
         $text = preg_replace('/[^a-z0-9\s-]/', '', $text);
         $text = preg_replace('/[\s-]+/', '-', $text);
         $text = trim($text, '-');
+        
+        // Verificar se slug já existe e adicionar sufixo numérico se necessário
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+        $originalSlug = $text;
+        $counter = 1;
+        
+        while (true) {
+            $stmt = $db->prepare("
+                SELECT id FROM produtos 
+                WHERE tenant_id = :tenant_id 
+                AND slug = :slug
+                " . ($excludeId ? "AND id != :exclude_id" : "") . "
+                LIMIT 1
+            ");
+            
+            $params = [
+                'tenant_id' => $tenantId,
+                'slug' => $text
+            ];
+            
+            if ($excludeId) {
+                $params['exclude_id'] = $excludeId;
+            }
+            
+            $stmt->execute($params);
+            
+            if (!$stmt->fetch()) {
+                // Slug está disponível
+                break;
+            }
+            
+            // Slug já existe, adicionar sufixo
+            $text = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+        
         return $text;
     }
 

@@ -2913,7 +2913,7 @@ window.removeFeaturedImage = function() {
     }
 
     // Salvar variações em lote ao submeter formulário
-    if (mainForm && secaoVariacoes && secaoVariacoes.style.display !== 'none') {
+    if (mainForm && secaoVariacoes) {
         mainForm.addEventListener('submit', function(e) {
             const variacoes = [];
             const gerenciaEstoqueGlobal = document.getElementById('variacoes_gerencia_estoque_global');
