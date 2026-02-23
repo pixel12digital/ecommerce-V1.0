@@ -2948,6 +2948,7 @@ window.removeFeaturedImage = function() {
             });
 
             if (variacoes.length > 0) {
+                console.log('[Variações] Dados coletados:', variacoes);
                 // Adicionar campo hidden com JSON
                 let hiddenInput = document.getElementById('variacoes_json');
                 if (!hiddenInput) {
@@ -2958,6 +2959,9 @@ window.removeFeaturedImage = function() {
                     mainForm.appendChild(hiddenInput);
                 }
                 hiddenInput.value = JSON.stringify(variacoes);
+                console.log('[Variações] JSON enviado:', hiddenInput.value);
+            } else {
+                console.log('[Variações] Nenhuma variação encontrada para enviar');
             }
         });
     }

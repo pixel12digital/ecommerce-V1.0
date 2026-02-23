@@ -921,9 +921,17 @@ class ProductController extends Controller
             $this->processVideos($db, $tenantId, $id);
 
             // 5. Processar variações em lote (se tipo = variable)
+            error_log("[Variações] Tipo do produto: {$tipo}");
+            error_log("[Variações] variacoes_json presente: " . (isset($_POST['variacoes_json']) ? 'SIM' : 'NÃO'));
+            if (isset($_POST['variacoes_json'])) {
+                error_log("[Variações] Conteúdo de variacoes_json: " . $_POST['variacoes_json']);
+            }
+            
             if ($tipo === 'variable' && !empty($_POST['variacoes_json'])) {
                 $variacoes = json_decode($_POST['variacoes_json'], true);
+                error_log("[Variações] JSON decodificado: " . print_r($variacoes, true));
                 if (is_array($variacoes)) {
+                    error_log("[Variações] Total de variações a processar: " . count($variacoes));
                     foreach ($variacoes as $variacaoData) {
                         $variacaoId = (int)($variacaoData['id'] ?? 0);
                         if ($variacaoId <= 0) continue;
