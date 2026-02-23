@@ -983,6 +983,13 @@ class ProductController extends Controller
                             $statusEstoque = ($quantidadeEstoque > 0) ? 'instock' : 'outofstock';
                         }
 
+                        error_log("[Variações] Atualizando variação ID {$variacaoId}:");
+                        error_log("[Variações]   - SKU: {$sku}");
+                        error_log("[Variações]   - Preço Regular: {$precoRegular}");
+                        error_log("[Variações]   - Preço Promocional: {$precoPromocional}");
+                        error_log("[Variações]   - Quantidade: {$quantidadeEstoque}");
+                        error_log("[Variações]   - Status: {$status}");
+                        
                         $stmt = $db->prepare("
                             UPDATE produto_variacoes 
                             SET sku = :sku,
@@ -1013,8 +1020,15 @@ class ProductController extends Controller
                             'imagem' => $imagemPath,
                             'status' => $status
                         ]);
+                        
+                        $rowsAffected = $stmt->rowCount();
+                        error_log("[Variações] Linhas afetadas no UPDATE da variação {$variacaoId}: {$rowsAffected}");
                     }
+                } else {
+                    error_log("[Variações] ERRO: JSON decodificado não é um array!");
                 }
+            } else {
+                error_log("[Variações] Condição não atendida - tipo: {$tipo}, variacoes_json vazio: " . (empty($_POST['variacoes_json']) ? 'SIM' : 'NÃO'));
             }
 
             // 6. Atualizar categorias (sync: remover antigas e adicionar novas)
