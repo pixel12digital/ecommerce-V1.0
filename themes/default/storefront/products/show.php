@@ -276,8 +276,8 @@ ob_start();
                     <span id="variation-stock-text"></span>
                 </div>
 
-                <!-- Preço da Variação -->
-                <div class="product-price variation-price" id="variation-price" style="display: none; margin-bottom: 1rem;">
+                <!-- Preço da Variação (descontinuado - mantido como fallback) -->
+                <div class="product-price variation-price" id="variation-price" style="display: none !important; margin-bottom: 1rem;">
                     <span id="variation-price-text"></span>
                 </div>
             <?php else: ?>
@@ -1503,8 +1503,7 @@ ob_start();
         const quantidadeInput = document.getElementById('quantidade-input');
         const variationStock = document.getElementById('variation-stock');
         const variationStockText = document.getElementById('variation-stock-text');
-        const variationPrice = document.getElementById('variation-price');
-        const variationPriceText = document.getElementById('variation-price-text');
+        const productPrice = document.querySelector('.product-price');
         const mainImage = document.getElementById('mainImage');
         const variationFeedback = document.getElementById('variation-feedback');
         const variationFeedbackText = document.getElementById('variation-feedback-text');
@@ -1659,9 +1658,7 @@ ob_start();
                 // Atualizar imagem (variação completa)
                 updateImage(variation, selectedColorTermId);
 
-                if (variationPrice && variationPriceText) {
-                    variationPrice.style.display = 'block';
-                    
+                if (productPrice) {
                     // Verificar se tem preço promocional
                     if (variation.price_promo && variation.price_promo > 0 && variation.price_promo < variation.price_regular) {
                         // Mostrar preço regular riscado + promocional
@@ -1675,7 +1672,7 @@ ob_start();
                             currency: 'BRL'
                         }).format(variation.price_promo);
                         
-                        variationPriceText.innerHTML = `
+                        productPrice.innerHTML = `
                             <span class="product-price-from">de</span>
                             <span class="product-price-old">${precoRegularFormatado}</span>
                             <span class="product-price-from">por</span>
@@ -1687,7 +1684,7 @@ ob_start();
                             style: 'currency',
                             currency: 'BRL'
                         }).format(variation.price_final);
-                        variationPriceText.textContent = precoFormatado;
+                        productPrice.textContent = precoFormatado;
                     }
                 }
 
@@ -1744,7 +1741,20 @@ ob_start();
                     updateImage(null, null);
                 }
                 
-                if (variationPrice) variationPrice.style.display = 'none';
+                // Restaurar preço original do produto quando não há variação selecionada
+                if (productPrice) {
+                    <?php if ($produto['preco_promocional']): ?>
+                        productPrice.innerHTML = `
+                            <span class="product-price-from">de</span>
+                            <span class="product-price-old">R$ <?= number_format($produto['preco_regular'], 2, ',', '.') ?></span>
+                            <span class="product-price-from">por</span>
+                            <span class="product-price-promo">R$ <?= number_format($produto['preco_promocional'], 2, ',', '.') ?></span>
+                        `;
+                    <?php else: ?>
+                        productPrice.textContent = 'R$ <?= number_format($produto['preco'] ?? $produto['preco_regular'], 2, ',', '.') ?>';
+                    <?php endif; ?>
+                }
+                
                 if (variationStock) variationStock.style.display = 'none';
                 if (btnAddCart) btnAddCart.disabled = true;
 
