@@ -757,8 +757,16 @@ class ProductController extends Controller
         }
 
         // Criar arquivo de log ANTES do try-catch
-        $logFile = __DIR__ . '/../../../storage/logs/variacoes_debug.log';
-        @file_put_contents($logFile, "\n\n[" . date('Y-m-d H:i:s') . "] ===== INÍCIO UPDATE PRODUTO ID: {$id} =====\n", FILE_APPEND);
+        $logDir = dirname(__DIR__, 4) . '/storage/logs';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0775, true);
+        }
+        $logFile = $logDir . '/variacoes_debug.log';
+        
+        $result = file_put_contents($logFile, "\n\n[" . date('Y-m-d H:i:s') . "] ===== INÍCIO UPDATE PRODUTO ID: {$id} =====\n", FILE_APPEND);
+        if ($result === false) {
+            error_log("[ProductController] Falha ao escrever log em: {$logFile} - Erro: " . print_r(error_get_last(), true));
+        }
 
         try {
             $db->beginTransaction();
