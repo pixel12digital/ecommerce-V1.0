@@ -2915,35 +2915,49 @@ window.removeFeaturedImage = function() {
     // Salvar variações em lote ao submeter formulário
     if (mainForm && secaoVariacoes) {
         mainForm.addEventListener('submit', function(e) {
+            console.log('[Variações] Iniciando coleta de dados...');
             const variacoes = [];
             const gerenciaEstoqueGlobal = document.getElementById('variacoes_gerencia_estoque_global');
             const gerenciaEstoqueVal = (gerenciaEstoqueGlobal && gerenciaEstoqueGlobal.checked) ? 1 : 0;
             
-            document.querySelectorAll('tr[data-variacao-id]').forEach(function(row) {
+            const rows = document.querySelectorAll('tr[data-variacao-id]');
+            console.log('[Variações] Total de linhas encontradas:', rows.length);
+            
+            rows.forEach(function(row) {
                 const variacaoId = row.getAttribute('data-variacao-id');
-                const inputs = row.querySelectorAll('input, select');
+                console.log('[Variações] Processando variação ID:', variacaoId);
+                
                 const variacaoData = { 
                     id: variacaoId,
                     gerencia_estoque: gerenciaEstoqueVal,
                     permite_pedidos_falta: 'no'
                 };
                 
-                inputs.forEach(function(input) {
-                    const name = input.name;
-                    const match = name.match(/variacoes\[(\d+)\]\[(\w+)\]/);
-                    if (match && match[1] === variacaoId) {
-                        const field = match[2];
-                        if (field === 'gerencia_estoque') return;
-                        if (input.type === 'checkbox') {
-                            variacaoData[field] = input.checked ? 1 : 0;
-                        } else if (input.type === 'number') {
-                            variacaoData[field] = parseInt(input.value) || 0;
-                        } else {
-                            variacaoData[field] = input.value;
-                        }
-                    }
-                });
+                // Coletar SKU
+                const skuInput = row.querySelector('input[name="variacoes[' + variacaoId + '][sku]"]');
+                if (skuInput) variacaoData.sku = skuInput.value;
                 
+                // Coletar preço regular
+                const precoRegularInput = row.querySelector('input[name="variacoes[' + variacaoId + '][preco_regular]"]');
+                if (precoRegularInput) variacaoData.preco_regular = precoRegularInput.value;
+                
+                // Coletar preço promocional
+                const precoPromocionalInput = row.querySelector('input[name="variacoes[' + variacaoId + '][preco_promocional]"]');
+                if (precoPromocionalInput) variacaoData.preco_promocional = precoPromocionalInput.value;
+                
+                // Coletar quantidade estoque
+                const quantidadeInput = row.querySelector('input[name="variacoes[' + variacaoId + '][quantidade_estoque]"]');
+                if (quantidadeInput) variacaoData.quantidade_estoque = parseInt(quantidadeInput.value) || 0;
+                
+                // Coletar imagem path
+                const imagemPathInput = row.querySelector('input[name="variacoes[' + variacaoId + '][imagem_path]"]');
+                if (imagemPathInput) variacaoData.imagem_path = imagemPathInput.value;
+                
+                // Coletar status
+                const statusSelect = row.querySelector('select[name="variacoes[' + variacaoId + '][status]"]');
+                if (statusSelect) variacaoData.status = statusSelect.value;
+                
+                console.log('[Variações] Dados coletados da variação ' + variacaoId + ':', variacaoData);
                 variacoes.push(variacaoData);
             });
 
