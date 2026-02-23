@@ -1853,6 +1853,38 @@ ob_start();
             });
         }
 
+        // Função para pré-selecionar primeira variação disponível
+        function selectFirstAvailableVariation() {
+            const attributes = document.querySelectorAll('.variation-attribute');
+            
+            attributes.forEach(function(attribute) {
+                const availableSwatches = attribute.querySelectorAll('.variation-swatch:not([disabled]), .variation-pill:not([disabled])');
+                if (availableSwatches.length > 0) {
+                    const firstSwatch = availableSwatches[0];
+                    const atributoId = firstSwatch.getAttribute('data-atributo-id');
+                    const termoId = firstSwatch.getAttribute('data-termo-id');
+                    
+                    // Pré-selecionar sem marcar como interação do usuário
+                    selectedTerms[atributoId] = termoId;
+                    
+                    // Aplicar estilos de seleção
+                    firstSwatch.classList.add('selected');
+                    if (firstSwatch.classList.contains('variation-swatch')) {
+                        firstSwatch.style.borderColor = '#28a745';
+                        firstSwatch.style.borderWidth = '3px';
+                        const check = firstSwatch.querySelector('.swatch-check');
+                        if (check) check.style.display = 'flex';
+                    } else {
+                        firstSwatch.style.borderColor = '#28a745';
+                        firstSwatch.style.background = '#28a745';
+                        firstSwatch.style.color = '#fff';
+                    }
+                }
+            });
+        }
+
+        // Pré-selecionar primeira variação e atualizar UI
+        selectFirstAvailableVariation();
         updateUI();
     })();
     </script>
