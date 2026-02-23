@@ -962,7 +962,6 @@ class ProductController extends Controller
                         $variacaoId = (int)($variacaoData['id'] ?? 0);
                         if ($variacaoId <= 0) continue;
 
-                        $sku = trim($variacaoData['sku'] ?? '');
                         $precoRegularStr = trim($variacaoData['preco_regular'] ?? '');
                         $precoPromocionalStr = trim($variacaoData['preco_promocional'] ?? '');
                         
@@ -1003,7 +1002,6 @@ class ProductController extends Controller
                         }
 
                         error_log("[Variações] Atualizando variação ID {$variacaoId}:");
-                        error_log("[Variações]   - SKU: {$sku}");
                         error_log("[Variações]   - Preço Regular: {$precoRegular}");
                         error_log("[Variações]   - Preço Promocional: {$precoPromocional}");
                         error_log("[Variações]   - Quantidade: {$quantidadeEstoque}");
@@ -1011,7 +1009,7 @@ class ProductController extends Controller
                         
                         $stmt = $db->prepare("
                             UPDATE produto_variacoes 
-                            SET sku = :sku,
+                            SET sku = NULL,
                                 preco_regular = :preco_regular,
                                 preco_promocional = :preco_promocional,
                                 gerencia_estoque = :gerencia_estoque,
@@ -1029,7 +1027,6 @@ class ProductController extends Controller
                             'variacao_id' => $variacaoId,
                             'produto_id' => $id,
                             'tenant_id' => $tenantId,
-                            'sku' => !empty($sku) ? $sku : null,
                             'preco_regular' => $precoRegular,
                             'preco_promocional' => $precoPromocional,
                             'gerencia_estoque' => $gerenciaEstoque,

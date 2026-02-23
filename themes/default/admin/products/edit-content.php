@@ -448,7 +448,6 @@ if (!function_exists('media_url')) {
                         <thead>
                             <tr>
                                 <th class="th-combinacao" title="Combinação de atributos (ex: Cor: Verde, Tamanho: P)">Combinação</th>
-                                <th class="th-sku" title="Código SKU da variação">SKU</th>
                                 <th class="th-preco" title="Preço regular">R$</th>
                                 <th class="th-preco" title="Preço promocional">Promo</th>
                                 <th class="th-qtd" title="Quantidade em estoque">Qtd.</th>
@@ -470,12 +469,6 @@ if (!function_exists('media_url')) {
                                         }
                                         echo htmlspecialchars(implode(', ', $combinacao));
                                         ?>
-                                    </td>
-                                    <td class="td-sku">
-                                        <input type="text" 
-                                               name="variacoes[<?= $variacao['id'] ?>][sku]" 
-                                               value="<?= htmlspecialchars($variacao['sku'] ?? '') ?>"
-                                               class="variacao-input">
                                     </td>
                                     <td class="td-preco">
                                         <input type="text" 
@@ -2932,10 +2925,6 @@ window.removeFeaturedImage = function() {
                     gerencia_estoque: gerenciaEstoqueVal,
                     permite_pedidos_falta: 'no'
                 };
-                
-                // Coletar SKU
-                const skuInput = row.querySelector('input[name="variacoes[' + variacaoId + '][sku]"]');
-                if (skuInput) variacaoData.sku = skuInput.value;
                 
                 // Coletar preço regular
                 const precoRegularInput = row.querySelector('input[name="variacoes[' + variacaoId + '][preco_regular]"]');
