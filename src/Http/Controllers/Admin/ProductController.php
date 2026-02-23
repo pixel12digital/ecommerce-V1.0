@@ -757,7 +757,7 @@ class ProductController extends Controller
         }
 
         // Criar arquivo de log ANTES do try-catch
-        $logFile = __DIR__ . '/../../../variacoes_debug.log';
+        $logFile = __DIR__ . '/../../../storage/logs/variacoes_debug.log';
         @file_put_contents($logFile, "\n\n[" . date('Y-m-d H:i:s') . "] ===== INÍCIO UPDATE PRODUTO ID: {$id} =====\n", FILE_APPEND);
 
         try {
