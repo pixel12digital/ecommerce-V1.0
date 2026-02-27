@@ -528,7 +528,7 @@ $additionalStyles = '
     .filter-group {
         margin-bottom: 1.5rem;
     }
-    .filter-group label {
+    .filter-group > label {
         display: block;
         margin-bottom: 0.5rem;
         font-weight: 600;
@@ -547,6 +547,56 @@ $additionalStyles = '
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
+    }
+    
+    /* Otimização para checkboxes de tamanho */
+    .filter-group .size-filters label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding: 6px 8px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.2s;
+        font-weight: normal;
+    }
+    .filter-group .size-filters label:hover {
+        background: #f5f5f5;
+    }
+    .filter-group .size-filters input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .filter-group .size-filters label span {
+        font-size: 14px;
+        line-height: 1.4;
+        color: #333;
+        flex: 1;
+        min-width: 0;
+        word-break: break-word;
+    }
+    .filter-group .size-filters {
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    .filter-group .size-filters::-webkit-scrollbar {
+        width: 6px;
+    }
+    .filter-group .size-filters::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    .filter-group .size-filters::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+    .filter-group .size-filters::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
     .btn-filter {
         width: 100%;
@@ -921,6 +971,23 @@ $additionalStyles = '
         .mobile-filters-toggle {
             display: block;
         }
+        
+        /* Otimização mobile para checkboxes de tamanho */
+        .filter-group .size-filters label {
+            padding: 8px 10px;
+            gap: 10px;
+        }
+        .filter-group .size-filters input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+        .filter-group .size-filters label span {
+            font-size: 15px;
+        }
+        .filter-group .size-filters {
+            max-height: 250px;
+        }
+        
         .products-grid {
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 1rem;
