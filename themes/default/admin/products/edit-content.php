@@ -243,7 +243,7 @@ if (!function_exists('media_url')) {
                         <?php foreach ($todosAtributos as $attr): ?>
                             <?php if (!in_array($attr['id'], $atributosProdutoIds ?? [])): ?>
                                 <option value="<?= $attr['id'] ?>" data-nome="<?= htmlspecialchars($attr['nome']) ?>" data-tipo="<?= htmlspecialchars($attr['tipo']) ?>">
-                                    <?= htmlspecialchars($attr['nome']) ?> (<?= htmlspecialchars($attr['tipo']) ?>)
+                                    <?= htmlspecialchars($attr['nome']) ?>
                                 </option>
                             <?php endif; ?>
                         <?php endforeach; ?>
@@ -274,13 +274,13 @@ if (!function_exists('media_url')) {
                             }
                         }
                         ?>
-                        <div class="atributo-item" style="border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+                        <div class="atributo-item" style="border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; <?= !$isSelected ? 'display: none;' : '' ?>">
                             <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem;">
                                 <input type="checkbox" name="atributos[]" value="<?= $attr['id'] ?>" 
                                        class="atributo-checkbox" 
                                        data-atributo-id="<?= $attr['id'] ?>"
                                        <?= $isSelected ? 'checked' : '' ?>>
-                                <span><?= htmlspecialchars($attr['nome']) ?> (<?= htmlspecialchars($attr['tipo']) ?>)</span>
+                                <span><?= htmlspecialchars($attr['nome']) ?></span>
                             </label>
 
                             <div class="atributo-options" style="margin-left: 2rem; <?= !$isSelected ? 'display: none;' : '' ?>">
@@ -2457,10 +2457,18 @@ window.removeFeaturedImage = function() {
             const atributoNome = selectedOption.getAttribute('data-nome');
             const atributoTipo = selectedOption.getAttribute('data-tipo');
             
-            // Verificar se já está na lista
-            const existingCheckbox = document.querySelector(`input[name="atributos[]"][value="${atributoId}"]`);
-            if (existingCheckbox) {
-                alert('Este atributo já foi adicionado');
+            // Verificar se já existe um atributo-item oculto para este atributo
+            const existingItem = document.querySelector(`.atributo-item input[data-atributo-id="${atributoId}"]`);
+            if (existingItem) {
+                // Se existe, apenas mostrar e marcar o checkbox
+                const atributoItem = existingItem.closest('.atributo-item');
+                atributoItem.style.display = '';
+                existingItem.checked = true;
+                const options = atributoItem.querySelector('.atributo-options');
+                if (options) {
+                    options.style.display = 'block';
+                }
+                addAtributoSelect.value = '';
                 return;
             }
             
@@ -2480,7 +2488,7 @@ window.removeFeaturedImage = function() {
             atributoItem.innerHTML = `
                 <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem;">
                     ${checkbox.outerHTML}
-                    <span>${atributoNome} (${atributoTipo})</span>
+                    <span>${atributoNome}</span>
                 </label>
                 <div class="atributo-options" style="margin-left: 2rem; display: block;">
                     <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.9rem;">
@@ -2518,13 +2526,24 @@ window.removeFeaturedImage = function() {
         });
     }
 
-    // Mostrar/ocultar opções de atributo quando checkbox é marcado
+    // Mostrar/ocultar atributo completo quando checkbox é marcado/desmarcado
     document.querySelectorAll('.atributo-checkbox').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
-            const atributoId = this.getAttribute('data-atributo-id');
-            const options = this.closest('.atributo-item').querySelector('.atributo-options');
-            if (options) {
-                options.style.display = this.checked ? 'block' : 'none';
+            const atributoItem = this.closest('.atributo-item');
+            const options = atributoItem.querySelector('.atributo-options');
+            
+            if (this.checked) {
+                // Mostrar item e opções
+                atributoItem.style.display = '';
+                if (options) {
+                    options.style.display = 'block';
+                }
+            } else {
+                // Ocultar item completo
+                atributoItem.style.display = 'none';
+                if (options) {
+                    options.style.display = 'none';
+                }
             }
         });
     });
