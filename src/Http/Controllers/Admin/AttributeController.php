@@ -321,6 +321,9 @@ class AttributeController extends Controller
 
         $tenantId = TenantContext::id();
         $db = Database::getConnection();
+        
+        // Detectar se é requisição AJAX
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
         $nome = trim($_POST['nome'] ?? '');
         $slug = trim($_POST['slug'] ?? '');
@@ -328,6 +331,16 @@ class AttributeController extends Controller
         $imagem = trim($_POST['imagem'] ?? '');
 
         if (empty($nome)) {
+            if ($isAjax) {
+                http_response_code(400);
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Nome do termo é obrigatório'
+                ]);
+                exit;
+            }
+            
             $_SESSION['atributo_message'] = 'Nome do termo é obrigatório';
             $_SESSION['atributo_message_type'] = 'error';
             $this->redirect("/admin/atributos/{$atributoId}/editar");
@@ -375,7 +388,7 @@ class AttributeController extends Controller
             $termoCriado = $stmtTermo->fetch(\PDO::FETCH_ASSOC);
 
             // Se for requisição AJAX, retornar JSON
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            if ($isAjax) {
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => true,
@@ -394,7 +407,7 @@ class AttributeController extends Controller
             }
             
             // Se for requisição AJAX, retornar JSON de erro
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            if ($isAjax) {
                 http_response_code(400);
                 header('Content-Type: application/json');
                 echo json_encode([
@@ -412,7 +425,7 @@ class AttributeController extends Controller
             }
             
             // Se for requisição AJAX, retornar JSON de erro
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            if ($isAjax) {
                 http_response_code(400);
                 header('Content-Type: application/json');
                 echo json_encode([
@@ -427,7 +440,7 @@ class AttributeController extends Controller
         }
 
         // Redirecionar apenas se não for AJAX
-        if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
+        if (!$isAjax) {
             $this->redirect("/admin/atributos/{$atributoId}/editar");
         }
     }
