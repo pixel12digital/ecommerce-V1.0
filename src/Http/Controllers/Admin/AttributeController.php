@@ -325,10 +325,16 @@ class AttributeController extends Controller
         // Detectar se é requisição AJAX
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
+        // Debug: Log do $_POST recebido
+        error_log('storeTerm - $_POST recebido: ' . print_r($_POST, true));
+        error_log('storeTerm - isAjax: ' . ($isAjax ? 'true' : 'false'));
+
         $nome = trim($_POST['nome'] ?? '');
         $slug = trim($_POST['slug'] ?? '');
         $valorCor = trim($_POST['valor_cor'] ?? '');
         $imagem = trim($_POST['imagem'] ?? '');
+        
+        error_log('storeTerm - nome extraído: "' . $nome . '"');
 
         if (empty($nome)) {
             if ($isAjax) {

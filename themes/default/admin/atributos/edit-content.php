@@ -428,6 +428,12 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
         
         var formData = new FormData(form);
         
+        // Debug: Verificar dados sendo enviados
+        console.log('FormData sendo enviado:');
+        for (var pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+        
         fetch(form.action, {
             method: 'POST',
             headers: {
