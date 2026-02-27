@@ -256,27 +256,28 @@ class ProductController extends Controller
         $stmt->execute(['tenant_id' => $tenantId]);
         $categoriasFiltro = $stmt->fetchAll();
 
-        // Buscar tamanhos disponíveis na categoria atual (ou em todas se não houver categoria)
+        // Buscar tamanhos disponíveis SOMENTE quando houver categoria selecionada
         $tamanhosDisponiveis = [];
-        $sqlTamanhos = "
-            SELECT DISTINCT at.id, at.nome, at.slug, a.nome as atributo_nome
-            FROM atributo_termos at
-            INNER JOIN atributos a ON a.id = at.atributo_id
-            INNER JOIN produto_atributo_termos pat ON pat.atributo_termo_id = at.id AND pat.tenant_id = :tenant_id_pat
-            INNER JOIN produtos p ON p.id = pat.produto_id AND p.tenant_id = :tenant_id_prod
-            WHERE at.tenant_id = :tenant_id_at
-            AND p.status = 'publish'
-            AND p.exibir_no_catalogo = 1
-        ";
         
-        $paramsTamanhos = [
-            'tenant_id_at' => $tenantId,
-            'tenant_id_pat' => $tenantId,
-            'tenant_id_prod' => $tenantId
-        ];
-        
-        // Se houver categoria, filtrar tamanhos incluindo subcategorias
+        // Só buscar tamanhos se houver categoria selecionada
         if ($categoriaId !== null && isset($categoriaIds) && !empty($categoriaIds)) {
+            $sqlTamanhos = "
+                SELECT DISTINCT at.id, at.nome, at.slug, a.nome as atributo_nome
+                FROM atributo_termos at
+                INNER JOIN atributos a ON a.id = at.atributo_id
+                INNER JOIN produto_atributo_termos pat ON pat.atributo_termo_id = at.id AND pat.tenant_id = :tenant_id_pat
+                INNER JOIN produtos p ON p.id = pat.produto_id AND p.tenant_id = :tenant_id_prod
+                WHERE at.tenant_id = :tenant_id_at
+                AND p.status = 'publish'
+                AND p.exibir_no_catalogo = 1
+            ";
+            
+            $paramsTamanhos = [
+                'tenant_id_at' => $tenantId,
+                'tenant_id_pat' => $tenantId,
+                'tenant_id_prod' => $tenantId
+            ];
+            
             // Usar a mesma lista de IDs (pai + filhos) que foi usada para filtrar produtos
             $placeholdersTam = [];
             foreach ($categoriaIds as $idx => $catId) {
@@ -292,13 +293,13 @@ class ProductController extends Controller
                 AND pc.categoria_id IN (" . implode(',', $placeholdersTam) . ")
             )";
             $paramsTamanhos['tenant_id_pc'] = $tenantId;
+            
+            $sqlTamanhos .= " ORDER BY a.ordem ASC, at.ordem ASC, at.nome ASC";
+            
+            $stmtTamanhos = $db->prepare($sqlTamanhos);
+            $stmtTamanhos->execute($paramsTamanhos);
+            $tamanhosDisponiveis = $stmtTamanhos->fetchAll();
         }
-        
-        $sqlTamanhos .= " ORDER BY a.ordem ASC, at.ordem ASC, at.nome ASC";
-        
-        $stmtTamanhos = $db->prepare($sqlTamanhos);
-        $stmtTamanhos->execute($paramsTamanhos);
-        $tamanhosDisponiveis = $stmtTamanhos->fetchAll();
 
         // Carregar tema completo para breadcrumb e header
         $theme = ThemeConfig::getFullThemeConfig();
