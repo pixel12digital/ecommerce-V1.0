@@ -134,8 +134,8 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                                     <span style="color: #999;">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?= htmlspecialchars($pill['label'] ?: $pill['categoria_nome']) ?></td>
-                            <td><?= htmlspecialchars($pill['categoria_nome']) ?></td>
+                            <td><?= htmlspecialchars($pill['label'] ?: $pill['categoria_nome'] ?: '') ?></td>
+                            <td><?= htmlspecialchars($pill['categoria_nome'] ?? '') ?></td>
                             <td><?= $pill['ativo'] ? '<i class="bi bi-check-circle-fill" style="color: #2e7d32;"></i> Ativo' : '<i class="bi bi-x-circle-fill" style="color: #d32f2f;"></i> Inativo' ?></td>
                             <td>
                                 <a href="<?= $basePath ?>/admin/home/categorias-pills/<?= $pill['id'] ?>/editar" 
