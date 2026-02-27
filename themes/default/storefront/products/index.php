@@ -338,6 +338,45 @@ ob_start();
             </select>
         </div>
         
+        <!-- Filtro de Tamanhos em Destaque -->
+        <?php if (!empty($tamanhosDisponiveis)): ?>
+            <div class="size-filter-highlight">
+                <div class="size-filter-label">
+                    <i class="bi bi-rulers icon"></i>
+                    <span>Filtrar por Tamanho:</span>
+                </div>
+                <div class="size-chips">
+                    <?php foreach ($tamanhosDisponiveis as $tamanho): ?>
+                        <?php 
+                        $isActive = in_array($tamanho['id'], $filtrosAtuais['tamanhos']);
+                        $currentTamanhos = $filtrosAtuais['tamanhos'];
+                        
+                        if ($isActive) {
+                            // Remover este tamanho
+                            $newTamanhos = array_filter($currentTamanhos, fn($id) => $id != $tamanho['id']);
+                        } else {
+                            // Adicionar este tamanho
+                            $newTamanhos = array_merge($currentTamanhos, [$tamanho['id']]);
+                        }
+                        
+                        $url = $buildQuery(['tamanhos' => $newTamanhos, 'page' => null]);
+                        ?>
+                        <a href="<?= $url ?>" 
+                           class="size-chip <?= $isActive ? 'is-active' : '' ?>"
+                           data-size-id="<?= $tamanho['id'] ?>">
+                            <?= htmlspecialchars($tamanho['nome']) ?>
+                        </a>
+                    <?php endforeach; ?>
+                    <?php if (!empty($filtrosAtuais['tamanhos'])): ?>
+                        <a href="<?= $buildQuery(['tamanhos' => [], 'page' => null]) ?>" 
+                           class="size-chip-clear">
+                            <i class="bi bi-x-circle icon"></i> Limpar
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        
         <!-- Chips de Subcategorias -->
         <?php if (!empty($subcategoriasParaFiltro) && !empty($categoriaAtual)): ?>
             <div class="subcat-chips">
@@ -561,6 +600,83 @@ $additionalStyles = '
         border-radius: 4px;
         font-size: 0.9rem;
     }
+    /* Filtro de Tamanhos em Destaque */
+    .size-filter-highlight {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border: 2px solid ' . htmlspecialchars($theme['color_primary']) . ';
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .size-filter-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+        color: #333;
+    }
+    .size-filter-label .icon {
+        color: ' . htmlspecialchars($theme['color_primary']) . ';
+        font-size: 1.25rem;
+    }
+    .size-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .size-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        min-width: 50px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        background: #fff;
+        color: #333;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .size-chip:hover {
+        border-color: ' . htmlspecialchars($theme['color_primary']) . ';
+        background: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .size-chip.is-active {
+        border-color: ' . htmlspecialchars($theme['color_primary']) . ';
+        background: ' . htmlspecialchars($theme['color_primary']) . ';
+        color: white;
+        box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+    }
+    .size-chip-clear {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 1rem;
+        border: 2px solid #dc3545;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        background: #fff;
+        color: #dc3545;
+        transition: all 0.2s ease;
+    }
+    .size-chip-clear:hover {
+        background: #dc3545;
+        color: white;
+    }
+    .size-chip-clear .icon {
+        font-size: 1rem;
+    }
+    
     /* Chips de Subcategorias */
     .subcat-chips {
         margin-top: 10px;

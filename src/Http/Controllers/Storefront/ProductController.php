@@ -275,16 +275,23 @@ class ProductController extends Controller
             'tenant_id_prod' => $tenantId
         ];
         
-        // Se houver categoria, filtrar tamanhos apenas dessa categoria
-        if ($categoriaId !== null) {
+        // Se houver categoria, filtrar tamanhos incluindo subcategorias
+        if ($categoriaId !== null && isset($categoriaIds) && !empty($categoriaIds)) {
+            // Usar a mesma lista de IDs (pai + filhos) que foi usada para filtrar produtos
+            $placeholdersTam = [];
+            foreach ($categoriaIds as $idx => $catId) {
+                $key = "cat_tam_id_{$idx}";
+                $placeholdersTam[] = ":{$key}";
+                $paramsTamanhos[$key] = $catId;
+            }
+            
             $sqlTamanhos .= " AND EXISTS (
                 SELECT 1 FROM produto_categorias pc 
                 WHERE pc.produto_id = p.id 
                 AND pc.tenant_id = :tenant_id_pc
-                AND pc.categoria_id = :categoria_id_tamanhos
+                AND pc.categoria_id IN (" . implode(',', $placeholdersTam) . ")
             )";
             $paramsTamanhos['tenant_id_pc'] = $tenantId;
-            $paramsTamanhos['categoria_id_tamanhos'] = $categoriaId;
         }
         
         $sqlTamanhos .= " ORDER BY a.ordem ASC, at.ordem ASC, at.nome ASC";
