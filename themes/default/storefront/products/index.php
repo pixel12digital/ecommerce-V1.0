@@ -277,6 +277,24 @@ ob_start();
                 </div>
             </div>
             
+            <!-- Filtro de Tamanhos -->
+            <?php if (!empty($tamanhosDisponiveis)): ?>
+            <div class="filter-group">
+                <label>Tamanhos</label>
+                <div class="size-filters" style="max-height: 200px; overflow-y: auto;">
+                    <?php foreach ($tamanhosDisponiveis as $tamanho): ?>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" 
+                                   name="tamanhos[]" 
+                                   value="<?= $tamanho['id'] ?>"
+                                   <?= in_array($tamanho['id'], $filtrosAtuais['tamanhos']) ? 'checked' : '' ?>>
+                            <span><?= htmlspecialchars($tamanho['nome']) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <!-- Ordenação -->
             <div class="filter-group">
                 <label>Ordenar por</label>

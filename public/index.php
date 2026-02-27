@@ -561,6 +561,9 @@ $router->post('/api/shipping/calculate', ShippingController::class . '@calculate
 // Rotas públicas - API Checkout (busca de cliente)
 $router->post('/api/checkout/buscar-cliente', CheckoutController::class . '@buscarCliente');
 
+// Rotas públicas - API Tamanhos por Categoria
+$router->get('/api/tamanhos-categoria', 'App\Http\Controllers\Api\CategorySizeController@getSizesByCategory');
+
 // Rotas públicas - Webhook de Pagamento (Cielo)
 $router->post('/api/payment/webhook/cielo', PaymentWebhookController::class . '@cieloWebhook');
 $router->get('/api/payment/status/{numero_pedido}', PaymentWebhookController::class . '@checkStatus');

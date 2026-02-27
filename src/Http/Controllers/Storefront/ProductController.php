@@ -47,6 +47,7 @@ class ProductController extends Controller
         $q = trim($_GET['q'] ?? '');
         $precoMin = !empty($_GET['preco_min']) ? (float)$_GET['preco_min'] : null;
         $precoMax = !empty($_GET['preco_max']) ? (float)$_GET['preco_max'] : null;
+        $tamanhosSelecionados = isset($_GET['tamanhos']) && is_array($_GET['tamanhos']) ? array_map('intval', $_GET['tamanhos']) : [];
         $ordenar = $_GET['ordenar'] ?? 'novidades';
         $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $perPage = 12;
@@ -142,6 +143,19 @@ class ProductController extends Controller
                 $where[] = "{$precoCondition} <= :preco_max";
                 $params['preco_max'] = $precoMax;
             }
+        }
+
+        // Filtro de tamanho
+        if (!empty($tamanhosSelecionados)) {
+            $joins[] = "INNER JOIN produto_atributo_termos pat ON pat.produto_id = p.id AND pat.tenant_id = :tenant_id_pat";
+            $tamanhoPlaceholders = [];
+            foreach ($tamanhosSelecionados as $idx => $tamanhoId) {
+                $key = "tamanho_id_{$idx}";
+                $tamanhoPlaceholders[] = ":{$key}";
+                $params[$key] = $tamanhoId;
+            }
+            $where[] = "pat.atributo_termo_id IN (" . implode(',', $tamanhoPlaceholders) . ")";
+            $params['tenant_id_pat'] = $tenantId;
         }
 
         $whereClause = implode(' AND ', $where);
@@ -242,6 +256,43 @@ class ProductController extends Controller
         $stmt->execute(['tenant_id' => $tenantId]);
         $categoriasFiltro = $stmt->fetchAll();
 
+        // Buscar tamanhos disponíveis na categoria atual (ou em todas se não houver categoria)
+        $tamanhosDisponiveis = [];
+        $sqlTamanhos = "
+            SELECT DISTINCT at.id, at.nome, at.slug, a.nome as atributo_nome
+            FROM atributo_termos at
+            INNER JOIN atributos a ON a.id = at.atributo_id
+            INNER JOIN produto_atributo_termos pat ON pat.atributo_termo_id = at.id AND pat.tenant_id = :tenant_id_pat
+            INNER JOIN produtos p ON p.id = pat.produto_id AND p.tenant_id = :tenant_id_prod
+            WHERE at.tenant_id = :tenant_id_at
+            AND p.status = 'publish'
+            AND p.exibir_no_catalogo = 1
+        ";
+        
+        $paramsTamanhos = [
+            'tenant_id_at' => $tenantId,
+            'tenant_id_pat' => $tenantId,
+            'tenant_id_prod' => $tenantId
+        ];
+        
+        // Se houver categoria, filtrar tamanhos apenas dessa categoria
+        if ($categoriaId !== null) {
+            $sqlTamanhos .= " AND EXISTS (
+                SELECT 1 FROM produto_categorias pc 
+                WHERE pc.produto_id = p.id 
+                AND pc.tenant_id = :tenant_id_pc
+                AND pc.categoria_id = :categoria_id_tamanhos
+            )";
+            $paramsTamanhos['tenant_id_pc'] = $tenantId;
+            $paramsTamanhos['categoria_id_tamanhos'] = $categoriaId;
+        }
+        
+        $sqlTamanhos .= " ORDER BY a.ordem ASC, at.ordem ASC, at.nome ASC";
+        
+        $stmtTamanhos = $db->prepare($sqlTamanhos);
+        $stmtTamanhos->execute($paramsTamanhos);
+        $tamanhosDisponiveis = $stmtTamanhos->fetchAll();
+
         // Carregar tema completo para breadcrumb e header
         $theme = ThemeConfig::getFullThemeConfig();
         
@@ -284,11 +335,13 @@ class ProductController extends Controller
             'produtos' => $produtos,
             'categoriasFiltro' => $categoriasFiltro,
             'categoriaAtual' => $categoriaAtual,
+            'tamanhosDisponiveis' => $tamanhosDisponiveis,
             'filtrosAtuais' => [
                 'q' => $q,
                 'categoria' => $categoriaAtual ? $categoriaAtual['slug'] : ($_GET['categoria'] ?? ''),
                 'preco_min' => $precoMin,
                 'preco_max' => $precoMax,
+                'tamanhos' => $tamanhosSelecionados,
                 'ordenar' => $ordenar,
             ],
             'paginacao' => [
