@@ -336,7 +336,8 @@ class AttributeController extends Controller
         
         error_log('storeTerm - nome extraído: "' . $nome . '"');
 
-        if (empty($nome)) {
+        // Validar nome: aceita "0" como válido, mas não aceita string vazia
+        if ($nome === '' || $nome === null) {
             if ($isAjax) {
                 http_response_code(400);
                 header('Content-Type: application/json');
