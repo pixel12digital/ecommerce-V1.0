@@ -483,7 +483,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                         </div>
                         <div class="admin-form-group">
                             <label>Texto Introdutório (opcional)</label>
-                            <textarea name="pages[<?= $slug ?>][intro]" id="pages-<?= $slug ?>-intro" class="pg-richtext" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= htmlspecialchars($page['intro'] ?? '') ?></textarea>
+                            <textarea name="pages[<?= $slug ?>][intro]" id="pages-<?= $slug ?>-intro" class="pg-richtext" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= $page['intro'] ?? '' ?></textarea>
                             <small style="color: #666; font-size: 0.875rem;">Use o editor acima para um texto breve antes da lista de perguntas.</small>
                         </div>
                         <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ddd;">
@@ -502,7 +502,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                                     </div>
                                     <div class="admin-form-group">
                                         <label>Resposta</label>
-                                        <textarea name="pages[<?= $slug ?>][items][<?= (int)$index ?>][answer]" class="form-control pg-richtext" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= htmlspecialchars($item['answer'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                                        <textarea name="pages[<?= $slug ?>][items][<?= (int)$index ?>][answer]" class="form-control pg-richtext" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= $item['answer'] ?? '' ?></textarea>
                                     </div>
                                     <button type="button" class="pg-faq-remove-item admin-btn" style="background: #dc3545; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
                                         <i class="bi bi-trash icon"></i> Remover pergunta
@@ -541,7 +541,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                         </div>
                         <div class="admin-form-group">
                             <label>Texto Introdutório</label>
-                            <textarea name="pages[<?= $slug ?>][intro]" id="pages-<?= $slug ?>-intro" class="pg-richtext" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= htmlspecialchars($page['intro'] ?? '') ?></textarea>
+                            <textarea name="pages[<?= $slug ?>][intro]" id="pages-<?= $slug ?>-intro" class="pg-richtext" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= $page['intro'] ?? '' ?></textarea>
                             <small style="color: #666; font-size: 0.875rem;">Use o editor acima para formatar títulos, parágrafos, listas e links.</small>
                         </div>
                     </div>
@@ -554,7 +554,7 @@ if (strpos($requestUri, '/ecommerce-v1.0/public') === 0) {
                         </div>
                         <div class="admin-form-group">
                             <label>Conteúdo</label>
-                            <textarea name="pages[<?= $slug ?>][content]" id="pages-<?= $slug ?>-content" class="pg-richtext" rows="8" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= htmlspecialchars($page['content'] ?? '') ?></textarea>
+                            <textarea name="pages[<?= $slug ?>][content]" id="pages-<?= $slug ?>-content" class="pg-richtext" rows="8" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"><?= $page['content'] ?? '' ?></textarea>
                             <small style="color: #666; font-size: 0.875rem;">Use o editor acima para formatar títulos, parágrafos, listas e links.</small>
                         </div>
                     </div>
