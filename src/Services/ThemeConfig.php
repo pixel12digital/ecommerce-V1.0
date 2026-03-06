@@ -360,7 +360,7 @@ class ThemeConfig
                         'politica_privacidade' => ['label' => 'Política de privacidade', 'enabled' => true, 'route' => '/politica-de-privacidade'],
                         'termos_uso' => ['label' => 'Termos de uso', 'enabled' => true, 'route' => '/termos-de-uso'],
                         'politica_cookies' => ['label' => 'Política de cookies', 'enabled' => true, 'route' => '/politica-de-cookies'],
-                        'seja_parceiro' => ['label' => 'Seja parceiro / Atacado', 'enabled' => true, 'route' => '/seja-parceiro'],
+                        'seja_parceiro' => ['label' => 'Seja parceiro / Atacado', 'enabled' => false, 'route' => '/seja-parceiro'],
                     ],
                 ],
                 'categorias' => [
