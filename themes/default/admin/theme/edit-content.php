@@ -603,17 +603,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 ClassicEditor.create(ta, {
                     toolbar: [
                         'undo', 'redo',
-                        '|', 'bold', 'italic', 'underline',
+                        '|', 'bold', 'italic',
                         '|', 'heading',
                         '|', 'bulletedList', 'numberedList',
-                        '|', 'alignment',
                         '|', 'link'
                     ],
                     heading: {
                         options: [
                             { model: 'paragraph', title: 'Parágrafo', class: 'ck-heading_paragraph' },
-                            { model: 'heading2', title: 'Título Médio', class: 'ck-heading_heading2' },
-                            { model: 'heading3', title: 'Subtítulo', class: 'ck-heading_heading3' }
+                            { model: 'heading2', view: 'h2', title: 'Título H2', class: 'ck-heading_heading2' },
+                            { model: 'heading3', view: 'h3', title: 'Título H3', class: 'ck-heading_heading3' },
+                            { model: 'heading4', view: 'h4', title: 'Título H4', class: 'ck-heading_heading4' }
+                        ]
+                    },
+                    htmlSupport: {
+                        allow: [
+                            {
+                                name: /.*/,
+                                attributes: true,
+                                classes: true,
+                                styles: true
+                            }
                         ]
                     }
                 }).catch(function (error) {
