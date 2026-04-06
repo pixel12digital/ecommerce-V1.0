@@ -416,7 +416,11 @@ ob_start();
                             </a>
                             
                             <div class="product-price">
-                                <?php if ($produto['preco_promocional']): ?>
+                                <?php if (!empty($produto['preco_faixa_min']) && !empty($produto['preco_faixa_max']) && $produto['preco_faixa_min'] != $produto['preco_faixa_max']): ?>
+                                    R$ <?= number_format($produto['preco_faixa_min'], 2, ',', '.') ?> ~ R$ <?= number_format($produto['preco_faixa_max'], 2, ',', '.') ?>
+                                <?php elseif (!empty($produto['preco_faixa_min'])): ?>
+                                    R$ <?= number_format($produto['preco_faixa_min'], 2, ',', '.') ?>
+                                <?php elseif ($produto['preco_promocional']): ?>
                                     <span class="product-price-old">R$ <?= number_format($produto['preco_regular'], 2, ',', '.') ?></span>
                                     <span class="product-price-promo">R$ <?= number_format($produto['preco_promocional'], 2, ',', '.') ?></span>
                                 <?php else: ?>

@@ -318,6 +318,171 @@
                 );
             });
         }
+
+        // ========== BULK DELETE FUNCTIONALITY ==========
+        
+        // Controle de seleção de produtos
+        var selectedProducts = new Set();
+        
+        function updateBulkActionsUI() {
+            var count = selectedProducts.size;
+            var bulkContainer = document.getElementById('bulk-actions-container');
+            var selectedCountEl = document.getElementById('selected-count');
+            
+            if (bulkContainer && selectedCountEl) {
+                if (count > 0) {
+                    bulkContainer.style.display = 'flex';
+                    selectedCountEl.textContent = count + ' selecionado' + (count > 1 ? 's' : '');
+                } else {
+                    bulkContainer.style.display = 'none';
+                }
+            }
+        }
+        
+        // Select all checkbox
+        var selectAllCheckbox = document.getElementById('select-all-products');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                var checkboxes = document.querySelectorAll('.product-checkbox');
+                var isChecked = this.checked;
+                
+                checkboxes.forEach(function(checkbox) {
+                    checkbox.checked = isChecked;
+                    var productId = parseInt(checkbox.value);
+                    
+                    if (isChecked) {
+                        selectedProducts.add(productId);
+                    } else {
+                        selectedProducts.delete(productId);
+                    }
+                });
+                
+                updateBulkActionsUI();
+            });
+        }
+        
+        // Individual product checkboxes
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('product-checkbox')) {
+                var productId = parseInt(e.target.value);
+                
+                if (e.target.checked) {
+                    selectedProducts.add(productId);
+                } else {
+                    selectedProducts.delete(productId);
+                    // Desmarcar "select all" se algum item foi desmarcado
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = false;
+                    }
+                }
+                
+                updateBulkActionsUI();
+            }
+        });
+        
+        // Abrir modal de exclusão em lote
+        var btnBulkDelete = document.getElementById('btn-bulk-delete');
+        if (btnBulkDelete) {
+            btnBulkDelete.addEventListener('click', function() {
+                if (selectedProducts.size === 0) {
+                    alert('Nenhum produto selecionado.');
+                    return;
+                }
+                
+                var modal = document.getElementById('modal-excluir-lote');
+                var countEl = document.getElementById('modal-lote-count');
+                var listEl = document.getElementById('modal-lote-produtos-list');
+                
+                if (modal && countEl && listEl) {
+                    countEl.textContent = selectedProducts.size;
+                    
+                    // Construir lista de produtos
+                    var listHtml = '<ul style="margin: 0; padding-left: 1.5rem; list-style: disc;">';
+                    selectedProducts.forEach(function(productId) {
+                        var checkbox = document.querySelector('.product-checkbox[value="' + productId + '"]');
+                        if (checkbox) {
+                            var productName = checkbox.getAttribute('data-produto-nome') || 'Produto #' + productId;
+                            listHtml += '<li style="margin: 0.25rem 0; color: #333;">' + productName + '</li>';
+                        }
+                    });
+                    listHtml += '</ul>';
+                    
+                    listEl.innerHTML = listHtml;
+                    modal.style.display = 'flex';
+                }
+            });
+        }
+        
+        // Fechar modal de exclusão em lote
+        window.fecharModalExclusaoLote = function() {
+            var modal = document.getElementById('modal-excluir-lote');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        };
+        
+        // Fechar modal ao clicar no overlay
+        var modalExcluirLote = document.getElementById('modal-excluir-lote');
+        if (modalExcluirLote) {
+            modalExcluirLote.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    window.fecharModalExclusaoLote();
+                }
+            });
+        }
+        
+        // Confirmar exclusão em lote
+        var btnConfirmarExclusaoLote = document.getElementById('btn-confirmar-exclusao-lote');
+        if (btnConfirmarExclusaoLote) {
+            btnConfirmarExclusaoLote.addEventListener('click', function() {
+                if (selectedProducts.size === 0) {
+                    alert('Nenhum produto selecionado.');
+                    return;
+                }
+                
+                // Desabilitar botão e mostrar loading
+                btnConfirmarExclusaoLote.disabled = true;
+                var originalText = btnConfirmarExclusaoLote.innerHTML;
+                btnConfirmarExclusaoLote.innerHTML = '<i class="bi bi-hourglass-split icon"></i> Excluindo...';
+                
+                // Converter Set para Array
+                var productIds = Array.from(selectedProducts);
+                
+                makeRequest(
+                    basePath + '/admin/produtos/excluir-lote',
+                    'POST',
+                    { produto_ids: productIds },
+                    function(error, response) {
+                        btnConfirmarExclusaoLote.disabled = false;
+                        btnConfirmarExclusaoLote.innerHTML = originalText;
+                        
+                        if (error || !response) {
+                            alert('Erro ao excluir produtos: ' + (error || 'Erro desconhecido'));
+                        } else if (!response.success) {
+                            alert('Erro ao excluir produtos: ' + (response.message || 'Erro desconhecido'));
+                        } else {
+                            // Fechar modal
+                            window.fecharModalExclusaoLote();
+                            
+                            // Mostrar mensagem de sucesso
+                            var message = response.message || 'Produtos excluídos com sucesso!';
+                            if (response.excluidos > 0 && response.nao_excluidos > 0) {
+                                message = response.excluidos + ' produto(s) excluído(s) com sucesso. ' + 
+                                         response.nao_excluidos + ' produto(s) não puderam ser excluídos (vinculados a pedidos).';
+                            } else if (response.nao_excluidos > 0) {
+                                message = 'Nenhum produto foi excluído. ' + response.nao_excluidos + 
+                                         ' produto(s) estão vinculados a pedidos e não podem ser excluídos.';
+                            }
+                            
+                            alert(message);
+                            
+                            // Recarregar página para atualizar a lista
+                            window.location.reload();
+                        }
+                    }
+                );
+            });
+        }
     });
 })();
 

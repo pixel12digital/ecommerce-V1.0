@@ -2660,6 +2660,240 @@ class ProductController extends Controller
     }
 
     /**
+     * Exclui múltiplos produtos em lote
+     */
+    public function destroyBulk(): void
+    {
+        // Iniciar sessão se necessário
+        if (session_status() === PHP_SESSION_NONE) {
+            $config = require __DIR__ . '/../../../config/app.php';
+            session_name($config['session_name']);
+            session_start();
+        }
+
+        // Verificar se é requisição AJAX
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+                  strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        $tenantId = TenantContext::id();
+        $db = Database::getConnection();
+
+        // Obter IDs dos produtos a excluir
+        $produtoIds = $_POST['produto_ids'] ?? [];
+        
+        // Se vier como string (não deveria, mas por segurança)
+        if (is_string($produtoIds)) {
+            $produtoIds = json_decode($produtoIds, true) ?? [];
+        }
+
+        // Validar que é um array e tem elementos
+        if (!is_array($produtoIds) || empty($produtoIds)) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Nenhum produto selecionado para exclusão.'
+                ]);
+                exit;
+            }
+            
+            $_SESSION['product_edit_message'] = 'Nenhum produto selecionado para exclusão.';
+            $_SESSION['product_edit_message_type'] = 'error';
+            header('Location: ' . $this->getBasePath() . '/admin/produtos');
+            exit;
+        }
+
+        // Sanitizar IDs (garantir que são inteiros)
+        $produtoIds = array_map('intval', $produtoIds);
+        $produtoIds = array_filter($produtoIds, function($id) { return $id > 0; });
+
+        if (empty($produtoIds)) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'IDs de produtos inválidos.'
+                ]);
+                exit;
+            }
+            
+            $_SESSION['product_edit_message'] = 'IDs de produtos inválidos.';
+            $_SESSION['product_edit_message_type'] = 'error';
+            header('Location: ' . $this->getBasePath() . '/admin/produtos');
+            exit;
+        }
+
+        $excluidos = 0;
+        $naoExcluidos = 0;
+        $erros = [];
+
+        try {
+            foreach ($produtoIds as $produtoId) {
+                try {
+                    $db->beginTransaction();
+
+                    // Buscar produto
+                    $stmt = $db->prepare("
+                        SELECT id, nome FROM produtos 
+                        WHERE id = :id AND tenant_id = :tenant_id 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([
+                        'id' => $produtoId,
+                        'tenant_id' => $tenantId
+                    ]);
+                    $produto = $stmt->fetch();
+
+                    if (!$produto) {
+                        $naoExcluidos++;
+                        $db->rollBack();
+                        continue;
+                    }
+
+                    // Verificar se o produto tem pedidos associados
+                    $stmt = $db->prepare("
+                        SELECT COUNT(*) as total FROM pedido_itens 
+                        WHERE produto_id = :produto_id
+                    ");
+                    $stmt->execute(['produto_id' => $produtoId]);
+                    $result = $stmt->fetch();
+                    
+                    if ($result && $result['total'] > 0) {
+                        $naoExcluidos++;
+                        $erros[] = $produto['nome'] . ' (vinculado a pedidos)';
+                        $db->rollBack();
+                        continue;
+                    }
+
+                    // Verificar se o produto tem variações com pedidos associados
+                    $stmt = $db->prepare("
+                        SELECT COUNT(*) as total FROM pedido_itens pi
+                        INNER JOIN produto_variacoes pv ON pi.variacao_id = pv.id
+                        WHERE pv.produto_id = :produto_id
+                    ");
+                    $stmt->execute(['produto_id' => $produtoId]);
+                    $result = $stmt->fetch();
+                    
+                    if ($result && $result['total'] > 0) {
+                        $naoExcluidos++;
+                        $erros[] = $produto['nome'] . ' (variações vinculadas a pedidos)';
+                        $db->rollBack();
+                        continue;
+                    }
+
+                    // Remover vínculos em produto_categorias
+                    $stmt = $db->prepare("
+                        DELETE FROM produto_categorias 
+                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+                    ");
+                    $stmt->execute([
+                        'tenant_id' => $tenantId,
+                        'produto_id' => $produtoId
+                    ]);
+
+                    // Remover imagens
+                    $stmt = $db->prepare("
+                        DELETE FROM produto_imagens 
+                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+                    ");
+                    $stmt->execute([
+                        'tenant_id' => $tenantId,
+                        'produto_id' => $produtoId
+                    ]);
+
+                    // Remover vídeos
+                    $stmt = $db->prepare("
+                        DELETE FROM produto_videos 
+                        WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+                    ");
+                    $stmt->execute([
+                        'tenant_id' => $tenantId,
+                        'produto_id' => $produtoId
+                    ]);
+
+                    // Remover tags (se houver)
+                    try {
+                        $stmt = $db->prepare("
+                            DELETE FROM produto_tags 
+                            WHERE tenant_id = :tenant_id AND produto_id = :produto_id
+                        ");
+                        $stmt->execute([
+                            'tenant_id' => $tenantId,
+                            'produto_id' => $produtoId
+                        ]);
+                    } catch (\Exception $e) {
+                        // Tabela pode não existir, ignorar
+                    }
+
+                    // Remover o produto
+                    $stmt = $db->prepare("
+                        DELETE FROM produtos 
+                        WHERE id = :id AND tenant_id = :tenant_id
+                    ");
+                    $stmt->execute([
+                        'id' => $produtoId,
+                        'tenant_id' => $tenantId
+                    ]);
+
+                    $db->commit();
+                    $excluidos++;
+
+                } catch (\Exception $e) {
+                    $db->rollBack();
+                    $naoExcluidos++;
+                    $erros[] = ($produto['nome'] ?? 'Produto #' . $produtoId) . ' (erro: ' . $e->getMessage() . ')';
+                }
+            }
+
+            // Preparar mensagem de resposta
+            $message = '';
+            if ($excluidos > 0 && $naoExcluidos === 0) {
+                $message = $excluidos . ' produto(s) excluído(s) com sucesso!';
+                $messageType = 'success';
+            } elseif ($excluidos > 0 && $naoExcluidos > 0) {
+                $message = $excluidos . ' produto(s) excluído(s) com sucesso. ' . 
+                          $naoExcluidos . ' produto(s) não puderam ser excluídos.';
+                $messageType = 'warning';
+            } else {
+                $message = 'Nenhum produto foi excluído. ' . $naoExcluidos . 
+                          ' produto(s) não puderam ser excluídos (vinculados a pedidos ou outros erros).';
+                $messageType = 'error';
+            }
+
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => $message,
+                    'excluidos' => $excluidos,
+                    'nao_excluidos' => $naoExcluidos,
+                    'erros' => $erros
+                ]);
+                exit;
+            }
+
+            $_SESSION['product_edit_message'] = $message;
+            $_SESSION['product_edit_message_type'] = $messageType;
+
+        } catch (\Exception $e) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Erro ao excluir produtos: ' . $e->getMessage()
+                ]);
+                exit;
+            }
+
+            $_SESSION['product_edit_message'] = 'Erro ao excluir produtos: ' . $e->getMessage();
+            $_SESSION['product_edit_message_type'] = 'error';
+        }
+
+        header('Location: ' . $this->getBasePath() . '/admin/produtos');
+        exit;
+    }
+
+    /**
      * Retorna as categorias de um produto (ids, nomes e HTML dos badges)
      * Método unificado usado tanto na listagem quanto no retorno JSON
      * 
@@ -3379,19 +3613,23 @@ class ProductController extends Controller
             $stmtProduto->execute(['id' => $produtoId, 'tenant_id' => $tenantId]);
             $produto = $stmtProduto->fetch(\PDO::FETCH_ASSOC);
 
-            // Criar variação
+            // Criar variação (herda preços do produto pai como padrão)
             $stmtVariacao = $db->prepare("
                 INSERT INTO produto_variacoes (
-                    tenant_id, produto_id, gerencia_estoque, quantidade_estoque, 
+                    tenant_id, produto_id, preco_regular, preco_promocional,
+                    gerencia_estoque, quantidade_estoque, 
                     status_estoque, permite_pedidos_falta, status, signature, created_at, updated_at
                 ) VALUES (
-                    :tenant_id, :produto_id, :gerencia_estoque, 0,
+                    :tenant_id, :produto_id, :preco_regular, :preco_promocional,
+                    :gerencia_estoque, 0,
                     'instock', :permite_pedidos_falta, 'publish', :signature, NOW(), NOW()
                 )
             ");
             $stmtVariacao->execute([
                 'tenant_id' => $tenantId,
                 'produto_id' => $produtoId,
+                'preco_regular' => $produto['preco_regular'] ?? null,
+                'preco_promocional' => $produto['preco_promocional'] ?? null,
                 'gerencia_estoque' => $produto['gerencia_estoque'] ?? 1,
                 'permite_pedidos_falta' => $produto['permite_pedidos_falta'] ?? 'no',
                 'signature' => $assinatura

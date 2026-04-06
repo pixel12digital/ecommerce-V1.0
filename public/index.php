@@ -202,6 +202,10 @@ $router->post('/admin/produtos/{id}/excluir', AdminProductController::class . '@
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'
 ]);
+$router->post('/admin/produtos/excluir-lote', AdminProductController::class . '@destroyBulk', [
+    AuthMiddleware::class => [false, true],
+    CheckPermissionMiddleware::class => 'manage_products'
+]);
 $router->post('/admin/produtos/{id}/atributos/salvar', AdminProductController::class . '@saveAttributes', [
     AuthMiddleware::class => [false, true],
     CheckPermissionMiddleware::class => 'manage_products'

@@ -13,10 +13,19 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
         <h1 class="admin-page-title" style="font-size: 1.875rem; font-weight: 700; color: #333; margin: 0;">
             Produtos
         </h1>
-        <a href="<?= $basePath ?>/admin/produtos/novo" class="admin-btn admin-btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
-            <i class="bi bi-plus-circle icon"></i>
-            Novo produto
-        </a>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div id="bulk-actions-container" style="display: none; gap: 0.75rem; align-items: center;">
+                <span id="selected-count" style="font-size: 0.875rem; color: #666;">0 selecionados</span>
+                <button type="button" id="btn-bulk-delete" class="admin-btn admin-btn-danger" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <i class="bi bi-trash icon"></i>
+                    Excluir Selecionados
+                </button>
+            </div>
+            <a href="<?= $basePath ?>/admin/produtos/novo" class="admin-btn admin-btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-plus-circle icon"></i>
+                Novo produto
+            </a>
+        </div>
     </div>
     
     <div class="admin-filters">
@@ -68,6 +77,9 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="select-all-products" title="Selecionar todos">
+                        </th>
                         <th>Imagem</th>
                         <th>
                             <?php
@@ -115,6 +127,9 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
                 <tbody>
                     <?php foreach ($produtos as $produto): ?>
                         <tr data-produto-id="<?= (int)$produto['id'] ?>">
+                            <td>
+                                <input type="checkbox" class="product-checkbox" value="<?= (int)$produto['id'] ?>" data-produto-nome="<?= htmlspecialchars($produto['nome']) ?>">
+                            </td>
                             <td>
                                 <?php 
                                 $imagem = $produto['imagem_principal_data'] ?? null;
@@ -446,6 +461,39 @@ $ordenacao = $ordenacao ?? ['sort' => '', 'direction' => 'asc'];
                         Excluir Produto
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Exclusão em Lote -->
+<div class="pg-modal-overlay" id="modal-excluir-lote" style="display: none;">
+    <div class="pg-modal-dialog">
+        <div class="pg-modal-content">
+            <div class="pg-modal-header">
+                <h5 class="pg-modal-title">Excluir Produtos em Lote</h5>
+                <button type="button" class="pg-modal-close" onclick="window.fecharModalExclusaoLote()" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="pg-modal-body">
+                <p style="margin: 0; color: #333; font-size: 1rem; line-height: 1.6;">
+                    Tem certeza que deseja excluir <strong id="modal-lote-count"></strong> produto(s) selecionado(s)?
+                </p>
+                <div id="modal-lote-produtos-list" style="margin: 1rem 0; max-height: 200px; overflow-y: auto; padding: 0.75rem; background: #f5f5f5; border-radius: 4px;">
+                    <!-- Lista de produtos será preenchida via JS -->
+                </div>
+                <p style="margin: 1rem 0 0 0; color: #d32f2f; font-size: 0.875rem;">
+                    <i class="bi bi-exclamation-triangle icon"></i>
+                    Esta ação não pode ser desfeita. Produtos vinculados a pedidos não serão excluídos.
+                </p>
+            </div>
+            <div class="pg-modal-footer">
+                <button type="button" class="admin-btn admin-btn-secondary" onclick="window.fecharModalExclusaoLote()">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-confirmar-exclusao-lote" class="admin-btn admin-btn-danger">
+                    <i class="bi bi-trash icon"></i>
+                    Excluir Produtos
+                </button>
             </div>
         </div>
     </div>

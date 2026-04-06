@@ -219,30 +219,37 @@ class ProductController extends Controller
             $imagem = $stmtImg->fetch();
             $produto['imagem_principal'] = $imagem ? $imagem : null;
             
-            // Se for produto variável, buscar menor preço entre as variações
+            // Se for produto variável, buscar faixa de preços entre as variações
             if ($produto['tipo'] === 'variable') {
                 $stmtVar = $db->prepare("
-                    SELECT pv.preco_regular, pv.preco_promocional
+                    SELECT 
+                        MIN(CASE 
+                            WHEN pv.preco_promocional IS NOT NULL AND pv.preco_promocional > 0 THEN pv.preco_promocional
+                            ELSE pv.preco_regular
+                        END) as preco_min,
+                        MAX(CASE 
+                            WHEN pv.preco_promocional IS NOT NULL AND pv.preco_promocional > 0 THEN pv.preco_promocional
+                            ELSE pv.preco_regular
+                        END) as preco_max,
+                        MIN(pv.preco_regular) as preco_regular_min,
+                        MAX(pv.preco_regular) as preco_regular_max
                     FROM produto_variacoes pv
                     WHERE pv.produto_id = :produto_id 
                     AND pv.tenant_id = :tenant_id
                     AND pv.status = 'publish'
-                    ORDER BY 
-                        CASE 
-                            WHEN pv.preco_promocional IS NOT NULL AND pv.preco_promocional > 0 THEN pv.preco_promocional
-                            ELSE pv.preco_regular
-                        END ASC
-                    LIMIT 1
+                    AND (pv.preco_regular IS NOT NULL AND pv.preco_regular > 0)
                 ");
                 $stmtVar->execute([
                     'produto_id' => $produto['id'],
                     'tenant_id' => $tenantId
                 ]);
-                $variacaoMaisBarata = $stmtVar->fetch();
+                $faixaPrecos = $stmtVar->fetch();
                 
-                if ($variacaoMaisBarata) {
-                    $produto['preco_regular'] = $variacaoMaisBarata['preco_regular'] ?? $produto['preco_regular'];
-                    $produto['preco_promocional'] = $variacaoMaisBarata['preco_promocional'] ?? null;
+                if ($faixaPrecos && $faixaPrecos['preco_min'] > 0) {
+                    $produto['preco_regular'] = $faixaPrecos['preco_regular_min'];
+                    $produto['preco_promocional'] = null;
+                    $produto['preco_faixa_min'] = (float)$faixaPrecos['preco_min'];
+                    $produto['preco_faixa_max'] = (float)$faixaPrecos['preco_max'];
                 }
             }
         }
